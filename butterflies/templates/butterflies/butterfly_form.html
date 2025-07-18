@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Butterfly Collection</title>
+</head>
+<body>
+    <h1>Add Butterfly Collection</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+    <a href="{% url 'butterfly_list' %}">View All Butterflies</a>
+</body>
+</html>

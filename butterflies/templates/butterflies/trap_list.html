@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trap List</title>
+</head>
+<body>
+    <h1>Trap List</h1>
+    <table border="1">
+        <tr>
+            <th>Trap Identifier</th>
+            <th>Location Description</th>
+            <th>Setup Date</th>
+            <th>Notes</th>
+            <th>Created At</th>
+            <th>Updated At</th>
+        </tr>
+        {% for trap in traps %}
+        <tr>
+            <td>{{ trap.name }}</td>
+            <td>{{ trap.location_description }}</td>
+            <td>{{ trap.setup_date }}</td>
+            <td>{{ trap.notes }}</td>
+            <td>{{ trap.created_at }}</td>
+            <td>{{ trap.updated_at }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No traps found.</td></tr>
+        {% endfor %}
+    </table>
+    <a href="{% url 'create_trap' %}">Add New Trap</a>
+    <a href="{% url 'all_list' %}">Back to All List</a>
+</body>
+</html>
