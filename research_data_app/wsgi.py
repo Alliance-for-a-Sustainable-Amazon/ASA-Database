@@ -1,10 +1,12 @@
+
 """
+wsgi.py
 WSGI config for research_data_app project.
+This file sets up the WSGI application for synchronous web servers and deployment.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
+Main functionality:
+    - Sets the default settings module for the project.
+    - Exposes the WSGI application callable for use by WSGI servers.
 """
 
 import os

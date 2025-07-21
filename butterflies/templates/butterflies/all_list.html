@@ -3,56 +3,17 @@
 {% block title %}All Collections{% endblock %}
 {% block header %}Butterfly & Trap Collections{% endblock %}
 {% block content %}
+
 <h2>Butterfly Collections</h2>
-<table border="1">
-    <tr>
-        {% for field in butterfly_fields %}
-            <th>{{ field.verbose_name }}</th>
-        {% endfor %}
-    </tr>
-    {% for butterfly in butterflies %}
-    <tr>
-        {% for field in butterfly_fields %}
-            <td>{{ butterfly|get_field_value:field.name }}</td>
-        {% endfor %}
-    </tr>
-    {% empty %}
-    <tr><td colspan="{{ butterfly_fields|length }}">No butterfly collections found.</td></tr>
-    {% endfor %}
-</table>
+{% include "butterflies/_table.html" with objects=butterflies fields=butterfly_fields request=request %}
+
 
 <h2>Trap Information</h2>
-<table border="1">
-    <tr>
-        {% for field in trap_fields %}
-            <th>{{ field.verbose_name }}</th>
-        {% endfor %}
-    </tr>
-    {% for trap in traps %}
-    <tr>
-        {% for field in trap_fields %}
-            <td>{{ trap|get_field_value:field.name }}</td>
-        {% endfor %}
-    </tr>
-    {% empty %}
-    <tr><td colspan="{{ trap_fields|length }}">No traps found.</td></tr>
-    {% endfor %}
-</table>
+{% include "butterflies/_table.html" with objects=traps fields=trap_fields request=request %}
 <a href="{% url 'create_butterfly' %}">Add New Butterfly</a>
 <a href="{% url 'create_trap' %}">Add New Trap</a>
 <br><br>
 <a href="{% url 'butterfly_list' %}">View Butterfly List Only</a>
 <a href="{% url 'trap_list' %}">View Trap List Only</a>
-<br><br>
-<form method="get" action="">
-        <label for="species">Filter Butterflies by Species:</label>
-        <input type="text" name="species" id="species" placeholder="Enter species">
-        <button type="submit">Filter</button>
-    </form>
-    <form method="get" action="">
-        <label for="trap_name">Filter Traps by Identifier:</label>
-        <input type="text" name="trap_name" id="trap_name" placeholder="Enter trap identifier">
-        <button type="submit">Filter</button>
-    </form>
 
 {% endblock %}

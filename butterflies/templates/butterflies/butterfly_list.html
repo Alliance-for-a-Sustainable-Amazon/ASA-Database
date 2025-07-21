@@ -9,6 +9,18 @@
             <th>{{ field.verbose_name }}</th>
         {% endfor %}
     </tr>
+    <tr>
+        <form method="get">
+        {% for field in fields %}
+            <td>
+                <input type="text" name="{{ field.name }}" value="{{ request.GET|get_item:field.name }}" placeholder="Search {{ field.verbose_name }}">
+            </td>
+        {% endfor %}
+        <td>
+            <button type="submit">Search</button>
+        </td>
+        </form>
+    </tr>
     {% for butterfly in butterflies %}
     <tr>
         {% for field in fields %}

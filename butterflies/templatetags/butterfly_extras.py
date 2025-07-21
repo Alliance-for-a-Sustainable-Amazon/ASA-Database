@@ -1,8 +1,26 @@
-# Add get_field_value template filter for dynamic field access
+
+# butterfly_extras.py
+# Custom template tags and filters for the butterflies app.
+# Provides utility functions for use in Django templates.
+
 from django import template
 
 register = template.Library()
 
 @register.filter
 def get_field_value(obj, field_name):
+    """
+    Template filter to dynamically access a field value from a model instance.
+    Usage in template: {{ object|get_field_value:"field_name" }}
+    """
     return getattr(obj, field_name)
+
+
+# Utility filter to get a value from a dict-like object by key (for request.GET)
+@register.filter
+def get_item(dictionary, key):
+    """
+    Returns the value for a given key from a dictionary-like object.
+    Usage: {{ request.GET|get_item:field.name }}
+    """
+    return dictionary.get(key, '')

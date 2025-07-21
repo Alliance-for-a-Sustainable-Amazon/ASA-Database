@@ -1,10 +1,12 @@
+
 """
+asgi.py
 ASGI config for research_data_app project.
+This file sets up the ASGI application for asynchronous web servers and deployment.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
+Main functionality:
+    - Sets the default settings module for the project.
+    - Exposes the ASGI application callable for use by ASGI servers.
 """
 
 import os
