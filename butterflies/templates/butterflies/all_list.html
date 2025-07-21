@@ -4,16 +4,16 @@
 {% block header %}Butterfly & Trap Collections{% endblock %}
 {% block content %}
 
-<h2>Butterfly Collections</h2>
-{% include "butterflies/_table.html" with objects=butterflies fields=butterfly_fields request=request %}
+{% for table in model_tables %}
+    <h2>{{ table.model_name }}</h2>
+    <a href="{% url 'dynamic_create' table.model_name_internal %}">Add New {{ table.model_name }}</a>
+    {% include "butterflies/_table.html" with objects=table.objects fields=table.fields request=request %}
+{% endfor %}
 
-
-<h2>Trap Information</h2>
-{% include "butterflies/_table.html" with objects=traps fields=trap_fields request=request %}
-<a href="{% url 'create_butterfly' %}">Add New Butterfly</a>
-<a href="{% url 'create_trap' %}">Add New Trap</a>
 <br><br>
-<a href="{% url 'butterfly_list' %}">View Butterfly List Only</a>
-<a href="{% url 'trap_list' %}">View Trap List Only</a>
+
+{% for table in model_tables %}
+    <a href="{% url 'dynamic_list' table.model_name_internal %}">View {{ table.model_name }} List Only</a><br>
+{% endfor %}
 
 {% endblock %}

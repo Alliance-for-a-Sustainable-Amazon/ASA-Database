@@ -1,7 +1,5 @@
-{% extends "butterflies/base.html" %}
-{% block title %}Add Butterfly Collection{% endblock %}
-{% block header %}Add Butterfly Collection{% endblock %}
-{% block content %}
+{# _form.html - Dynamic form for any model #}
+{% load butterfly_extras %}
 <form method="post">
     {% csrf_token %}
     {% if form.non_field_errors %}
@@ -19,10 +17,3 @@
     {% endfor %}
     <button type="submit">Save</button>
 </form>
-<a href="{% url 'butterfly_list' %}">View All Butterflies</a>
-{% if messages %}
-    {% for message in messages %}
-        <div class="message {{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-{% endif %}
-{% endblock %}

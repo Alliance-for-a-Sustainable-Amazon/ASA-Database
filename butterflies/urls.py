@@ -13,8 +13,15 @@ urlpatterns = [
     path('butterflies/add/', views.create_butterfly, name='create_butterfly'),
     # Form to add a new trap
     path('traps/add/', views.create_trap, name='create_trap'),
-    # List view for butterfly collections
-    path('butterflies/', views.ButterflyListView.as_view(), name='butterfly_list'),
-    # List view for traps
-    path('traps/', views.TrapListView.as_view(), name='trap_list'),
+
+    # Generic dynamic list view for any model
+    path('list/<str:model_name>/', views.dynamic_list, name='dynamic_list'),
+
+    # Generic create/edit for any model
+    path('add/<str:model_name>/', views.dynamic_create_edit, name='dynamic_create'),
+    path('edit/<str:model_name>/<str:object_id>/', views.dynamic_create_edit, name='dynamic_edit'),
+
+    # Generic detail and delete for any model
+    path('detail/<str:model_name>/<str:object_id>/', views.dynamic_detail, name='dynamic_detail'),
+    path('delete/<str:model_name>/<str:object_id>/', views.dynamic_delete, name='dynamic_delete'),
 ]

@@ -1,0 +1,9 @@
+{% extends "butterflies/base.html" %}
+{% block title %}{{ model_name }} List{% endblock %}
+{% block header %}{{ model_name }} List{% endblock %}
+{% block content %}
+<h2>{{ model_name }} List</h2>
+{% include "butterflies/_table.html" with objects=objects fields=fields request=request %}
+<a href="{% url 'dynamic_create' model_name_internal %}">Add New {{ model_name }}</a>
+<a href="{% url 'all_list' %}">Back to All List</a>
+{% endblock %}

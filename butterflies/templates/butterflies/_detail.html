@@ -1,0 +1,22 @@
+{# _detail.html - Dynamic detail view for any model #}
+{% load butterfly_extras %}
+<h2>{{ model_name }} Details</h2>
+<table border="1">
+    {% for field in fields %}
+    <tr>
+        <th>{{ field.verbose_name }}</th>
+        <td>{{ object|get_field_value:field.name }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<a href="{% url 'dynamic_edit' object.model_name_internal object.pk %}">Edit</a>
+{% if delete_confirm %}
+    <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit">Confirm Delete</button>
+    </form>
+    <a href="{% url 'dynamic_detail' object.model_name_internal object.pk %}">Cancel</a>
+{% else %}
+    <a href="{% url 'dynamic_delete' object.model_name_internal object.pk %}">Delete</a>
+{% endif %}
+<a href="{% url 'all_list' %}">Back to All List</a>

@@ -21,8 +21,16 @@
     {% for obj in objects %}
     <tr>
         {% for field in fields %}
-            <td>{{ obj|get_field_value:field.name }}</td>
+            {% if forloop.first %}
+                <td><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{{ obj|get_field_value:field.name }}</a></td>
+            {% else %}
+                <td>{{ obj|get_field_value:field.name }}</td>
+            {% endif %}
         {% endfor %}
+        <td>
+            <a href="{% url 'dynamic_edit' obj.model_name_internal obj.pk %}">Edit</a> |
+            <a href="{% url 'dynamic_delete' obj.model_name_internal obj.pk %}">Delete</a>
+        </td>
     </tr>
     {% empty %}
     <tr><td colspan="{{ fields|length }}">No records found.</td></tr>
