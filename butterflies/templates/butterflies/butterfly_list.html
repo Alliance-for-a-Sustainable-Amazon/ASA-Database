@@ -1,33 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Butterfly Collections</title>
-</head>
-<body>
-    <h1>Butterfly Collections</h1>
-    <table border="1">
-        <tr>
-            <th>Species</th>
-            <th>Collection Date</th>
-            <th>Collector Name</th>
-            <th>Notes</th>
-            <th>Created At</th>
-            <th>Updated At</th>
-        </tr>
-        {% for butterfly in butterflies %}
-        <tr>
-            <td>{{ butterfly.species }}</td>
-            <td>{{ butterfly.collection_date }}</td>
-            <td>{{ butterfly.collector_name }}</td>
-            <td>{{ butterfly.notes }}</td>
-            <td>{{ butterfly.created_at }}</td>
-            <td>{{ butterfly.updated_at }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6">No butterfly collections found.</td></tr>
+{% extends "butterflies/base.html" %}
+{% load butterfly_extras %}
+{% block title %}Butterfly List{% endblock %}
+{% block header %}Butterfly Collections{% endblock %}
+{% block content %}
+<table border="1">
+    <tr>
+        {% for field in fields %}
+            <th>{{ field.verbose_name }}</th>
         {% endfor %}
-    </table>
-    <a href="{% url 'create_butterfly' %}">Add New Butterfly</a>
-    <a href="{% url 'all_list' %}">Back to All List</a>
-</body>
-</html>
+    </tr>
+    {% for butterfly in butterflies %}
+    <tr>
+        {% for field in fields %}
+            <td>{{ butterfly|get_field_value:field.name }}</td>
+        {% endfor %}
+    </tr>
+    {% empty %}
+    <tr><td colspan="{{ fields|length }}">No butterfly collections found.</td></tr>
+    {% endfor %}
+</table>
+<a href="{% url 'create_butterfly' %}">Add New Butterfly</a>
+<a href="{% url 'all_list' %}">Back to All List</a>
+{% endblock %}

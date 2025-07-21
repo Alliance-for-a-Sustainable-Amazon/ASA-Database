@@ -4,23 +4,25 @@ from .models import ButterflyCollection, Trap
 from .forms import ButterflyCollectionForm, TrapForm
 
 def create_butterfly(request):
+    from django.contrib import messages
+    form = ButterflyCollectionForm()
     if request.method == 'POST':
         form = ButterflyCollectionForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('butterfly_list')
-    else:
-        form = ButterflyCollectionForm()
+            messages.success(request, 'Butterfly collection added successfully!')
+            form = ButterflyCollectionForm()  # reset form after success
     return render(request, 'butterflies/butterfly_form.html', {'form': form})
 
 def create_trap(request):
+    from django.contrib import messages
+    form = TrapForm()
     if request.method == 'POST':
         form = TrapForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('create_trap')  # Optionally redirect elsewhere
-    else:
-        form = TrapForm()
+            messages.success(request, 'Trap added successfully!')
+            form = TrapForm()  # reset form after success
     return render(request, 'butterflies/trap_form.html', {'form': form})
 
 
@@ -29,10 +31,30 @@ class ButterflyListView(ListView):
     template_name = 'butterflies/butterfly_list.html'
     context_object_name = 'butterflies'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        fields = [
+            {'name': field.name, 'verbose_name': field.verbose_name}
+            for field in ButterflyCollection._meta.fields
+            if field.name != 'id'
+        ]
+        context['fields'] = fields
+        return context
+
 class TrapListView(ListView):
     model = Trap
     template_name = 'butterflies/trap_list.html'
     context_object_name = 'traps'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        fields = [
+            {'name': field.name, 'verbose_name': field.verbose_name}
+            for field in Trap._meta.fields
+            if field.name != 'id'
+        ]
+        context['fields'] = fields
+        return context
 
 def all_list(request):
     butterflies = ButterflyCollection.objects.all()
@@ -43,7 +65,22 @@ def all_list(request):
         butterflies = butterflies.filter(species__icontains=species)
     if trap_name:
         traps = traps.filter(name__icontains=trap_name)
-    return render(request, 'butterflies/all_list.html', {'butterflies': butterflies, 'traps': traps})
+    butterfly_fields = [
+        {'name': field.name, 'verbose_name': field.verbose_name}
+        for field in ButterflyCollection._meta.fields
+        if field.name != 'id'
+    ]
+    trap_fields = [
+        {'name': field.name, 'verbose_name': field.verbose_name}
+        for field in Trap._meta.fields
+        if field.name != 'id'
+    ]
+    return render(request, 'butterflies/all_list.html', {
+        'butterflies': butterflies,
+        'traps': traps,
+        'butterfly_fields': butterfly_fields,
+        'trap_fields': trap_fields,
+    })
 
 def showdetails(request, template):
     objects = model.objects.all()
