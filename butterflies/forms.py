@@ -4,30 +4,50 @@
 # These forms are used in views to handle user input and validation.
 
 from django import forms
-from .models import ButterflyCollection, Trap
+from .models import Initials, Locality, Specimen
 
-class ButterflyCollectionForm(forms.ModelForm):
-    """
-    Form for creating and editing ButterflyCollection instances.
-    Fields:
-        - species: Name of the butterfly species
-        - collection_date: Date and time the butterfly was collected
-        - collector_name: Name of the person who collected the butterfly
-        - notes: Optional notes about the collection
-    """
+# --- Forms for Biological Specimen Database ---
+class InitialsForm(forms.ModelForm):
     class Meta:
-        model = ButterflyCollection
-        fields = ['species', 'collection_date', 'collector_name', 'notes']
+        model = Initials
+        fields = '__all__'
 
-class TrapForm(forms.ModelForm):
-    """
-    Form for creating and editing Trap instances.
-    Fields:
-        - name: Unique name/identifier for the trap
-        - location_description: Description of the trap's location
-        - setup_date: Date the trap was set up
-        - notes: Optional notes about the trap
-    """
+class LocalityForm(forms.ModelForm):
     class Meta:
-        model = Trap
-        fields = ['name', 'location_description', 'setup_date', 'notes']
+        model = Locality
+        fields = '__all__'
+
+
+# Custom SpecimenForm with append-only logic for 'modified' field
+class SpecimenForm(forms.ModelForm):
+    # Extra fields for the 'modified' entry
+    mod_month = forms.CharField(max_length=2, required=False, label="Modification Month")
+    mod_day = forms.CharField(max_length=2, required=False, label="Modification Day")
+    mod_year = forms.CharField(max_length=4, required=False, label="Modification Year")
+    mod_initials = forms.ModelChoiceField(queryset=Initials.objects.all(), required=False, label="Modification Initials")
+    mod_description = forms.CharField(max_length=255, required=False, label="Modification Description")
+
+    class Meta:
+        model = Specimen
+        fields = '__all__'
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # If any mod fields are filled, append to 'modified' field
+        mod_fields = [
+            self.cleaned_data.get('mod_month'),
+            self.cleaned_data.get('mod_day'),
+            self.cleaned_data.get('mod_year'),
+            str(self.cleaned_data.get('mod_initials') or ''),
+            self.cleaned_data.get('mod_description')
+        ]
+        if any(mod_fields):
+            entry = ','.join([f or '' for f in mod_fields])
+            if instance.modified:
+                instance.modified += f';{entry}'
+            else:
+                instance.modified = entry
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance

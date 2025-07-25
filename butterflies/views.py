@@ -131,25 +131,43 @@ def dynamic_create_edit(request, model_name, object_id=None):
 
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
-from .models import ButterflyCollection, Trap
-from .forms import ButterflyCollectionForm, TrapForm
+from .models import Specimen, Locality, Initials
+from .forms import SpecimenForm, LocalityForm, InitialsForm
 
 
-def create_butterfly(request):
-    """
-    View for creating a new butterfly collection event.
-    Handles GET (show empty form) and POST (process submitted form) requests.
-    On successful submission, saves the new collection and displays a success message.
-    """
-    from django.contrib import messages
-    form = ButterflyCollectionForm()
+
+# --- New Views for Biological Specimen Database ---
+from django.contrib import messages
+
+def create_specimen(request):
+    form = SpecimenForm()
     if request.method == 'POST':
-        form = ButterflyCollectionForm(request.POST)
+        form = SpecimenForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Butterfly collection added successfully!')
-            form = ButterflyCollectionForm()  # reset form after success
-    return render(request, 'butterflies/butterfly_form.html', {'form': form})
+            messages.success(request, 'Specimen added successfully!')
+            form = SpecimenForm()
+    return render(request, 'butterflies/specimen_form.html', {'form': form})
+
+def create_locality(request):
+    form = LocalityForm()
+    if request.method == 'POST':
+        form = LocalityForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Locality added successfully!')
+            form = LocalityForm()
+    return render(request, 'butterflies/locality_form.html', {'form': form})
+
+def create_initials(request):
+    form = InitialsForm()
+    if request.method == 'POST':
+        form = InitialsForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Initials added successfully!')
+            form = InitialsForm()
+    return render(request, 'butterflies/initials_form.html', {'form': form})
 
 
 def create_trap(request):
@@ -170,77 +188,6 @@ def create_trap(request):
 
 
 
-class ButterflyListView(ListView):
-    """
-    Displays a list of all butterfly collection events.
-    Uses a template to render the list and provides field metadata for display.
-    """
-    model = ButterflyCollection
-    template_name = 'butterflies/butterfly_list.html'
-    context_object_name = 'butterflies'
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        for field in ButterflyCollection._meta.fields:
-            if field.name == 'id':
-                continue
-            value = self.request.GET.get(field.name)
-            if value:
-                queryset = queryset.filter(**{f"{field.name}__icontains": value})
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        fields = [
-            {'name': field.name, 'verbose_name': field.verbose_name}
-            for field in ButterflyCollection._meta.fields
-            if field.name != 'id'
-        ]
-        # Attach model_name to each object for template use
-        obj_list = []
-        for obj in context['butterflies']:
-            obj.model_name = ButterflyCollection._meta.model_name
-            obj_list.append(obj)
-        context['butterflies'] = obj_list
-        context['fields'] = fields
-        context['request'] = self.request
-        return context
-
-class TrapListView(ListView):
-    """
-    Displays a list of all traps used for butterfly collection.
-    Uses a template to render the list and provides field metadata for display.
-    """
-    model = Trap
-    template_name = 'butterflies/trap_list.html'
-    context_object_name = 'traps'
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        for field in Trap._meta.fields:
-            if field.name == 'id':
-                continue
-            value = self.request.GET.get(field.name)
-            if value:
-                queryset = queryset.filter(**{f"{field.name}__icontains": value})
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        fields = [
-            {'name': field.name, 'verbose_name': field.verbose_name}
-            for field in Trap._meta.fields
-            if field.name != 'id'
-        ]
-        # Attach model_name to each object for template use
-        obj_list = []
-        for obj in context['traps']:
-            obj.model_name = Trap._meta.model_name
-            obj_list.append(obj)
-        context['traps'] = obj_list
-        context['fields'] = fields
-        context['request'] = self.request
-        return context
 
 from django.apps import apps
 

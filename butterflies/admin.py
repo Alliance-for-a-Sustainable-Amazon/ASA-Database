@@ -3,26 +3,23 @@
 # Registers models with the Django admin site and customizes their display and search options.
 
 from django.contrib import admin
-from .models import ButterflyCollection, Trap
+from .models import Specimen, Locality, Initials
 
-@admin.register(ButterflyCollection)
-class ButterflyCollectionAdmin(admin.ModelAdmin):
-    """
-    Admin customization for ButterflyCollection model.
-    list_display: Fields shown in the admin list view.
-    list_filter: Fields to filter by in the admin list view.
-    search_fields: Fields to search by in the admin list view.
-    """
-    list_display = ("species", "collector_name", "collection_date", "created_at", "updated_at")
-    list_filter = ("collection_date", "species")
-    search_fields = ("species", "collector_name", "notes")
 
-@admin.register(Trap)
-class TrapAdmin(admin.ModelAdmin):
-    """
-    Admin customization for Trap model.
-    list_display: Fields shown in the admin list view.
-    search_fields: Fields to search by in the admin list view.
-    """
-    list_display = ("name", "location_description", "setup_date", "created_at", "updated_at")
-    search_fields = ("name", "location_description", "notes")
+@admin.register(Locality)
+class LocalityAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in Locality._meta.fields]
+    search_fields = ['localityCode', 'siteName', 'siteDescription', 'habitat']
+    list_filter = ['localityCode', 'country']
+
+@admin.register(Initials)
+class InitialsAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in Initials._meta.fields]
+    search_fields = ['initials', 'full_name']
+    list_filter = ['initials']
+
+@admin.register(Specimen)
+class SpecimenAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in Specimen._meta.fields]
+    search_fields = ['specimen_number', 'catalog_number', 'notes']
+    list_filter = ['uploaded_iNaturalist', 'sex', 'locality', 'recordedBy']

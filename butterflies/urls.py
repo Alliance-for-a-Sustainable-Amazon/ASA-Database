@@ -9,10 +9,12 @@ from . import views
 urlpatterns = [
     # Main list view for all collections and traps (custom view)
     path('', views.all_list, name='all_list'),
-    # Form to add a new butterfly collection
-    path('butterflies/add/', views.create_butterfly, name='create_butterfly'),
-    # Form to add a new trap
-    path('traps/add/', views.create_trap, name='create_trap'),
+    # Form to add a new specimen
+    path('specimen/add/', views.create_specimen, name='create_specimen'),
+    # Form to add a new locality
+    path('locality/add/', views.create_locality, name='create_locality'),
+    # Form to add new initials
+    path('initials/add/', views.create_initials, name='create_initials'),
 
     # Generic dynamic list view for any model
     path('list/<str:model_name>/', views.dynamic_list, name='dynamic_list'),
