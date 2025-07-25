@@ -1,0 +1,2 @@
+Django>=5.2
+# Add any other required packages for local use here

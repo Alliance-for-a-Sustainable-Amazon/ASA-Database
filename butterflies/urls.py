@@ -3,8 +3,11 @@
 # Defines URL patterns for the butterflies app.
 # Maps URLs to view functions and class-based views for butterfly collections and traps.
 
+
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     # Main list view for all collections and traps (custom view)
@@ -24,4 +27,11 @@ urlpatterns = [
     # Generic detail and delete for any model
     path('detail/<str:model_name>/<str:object_id>/', views.dynamic_detail, name='dynamic_detail'),
     path('delete/<str:model_name>/<str:object_id>/', views.dynamic_delete, name='dynamic_delete'),
+
+    # Test butterflyID detail view
+    path('butterflyid/<str:butterflyid>/', views.butterflyid_detail, name='butterflyid_detail'),
 ]
+
+# Serve static files in development (for admin CSS/JS)
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

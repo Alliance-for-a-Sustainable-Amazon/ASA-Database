@@ -1,0 +1,25 @@
+<!--
+butterflyid_detail.html
+Displays both Trap and ButterflyCollection details for a given butterflyID.
+-->
+<h1>Details for Butterfly ID: {{ butterflyid }}</h1>
+
+<h2>Trap Details</h2>
+<ul>
+    <li><strong>Name:</strong> {{ trap.name }}</li>
+    <li><strong>Location:</strong> {{ trap.location_description }}</li>
+    <li><strong>Setup Date:</strong> {{ trap.setup_date }}</li>
+    <li><strong>Notes:</strong> {{ trap.notes }}</li>
+</ul>
+
+{% if butterfly_collection %}
+<h2>Butterfly Collection Details</h2>
+<ul>
+    <li><strong>Species:</strong> {{ butterfly_collection.species }}</li>
+    <li><strong>Collector:</strong> {{ butterfly_collection.collector_name }}</li>
+    <li><strong>Collection Date:</strong> {{ butterfly_collection.collection_date }}</li>
+    <li><strong>Notes:</strong> {{ butterfly_collection.notes }}</li>
+</ul>
+{% else %}
+<p>No butterfly collection found for this ID.</p>
+{% endif %}

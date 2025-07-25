@@ -25,6 +25,15 @@ class ButterflyCollection(models.Model):
         updated_at (DateTimeField): Timestamp when the record was last updated.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # ForeignKey for linking to a Trap. Allows multiple butterflies per trap and always shows options in forms.
+    trap = models.ForeignKey(
+        'Trap',
+        on_delete=models.CASCADE,
+        related_name='butterfly_collections',
+        null=True,
+        blank=True,
+        help_text="Trap to which this butterfly collection is linked. Dropdown shows butterflyID and name."
+    )
     species = models.CharField(max_length=255, verbose_name="Butterfly Species")
     collection_date = models.DateTimeField(default=timezone.now)
     collector_name = models.CharField(max_length=255)
@@ -52,6 +61,14 @@ class Trap(models.Model):
         updated_at (DateTimeField): Timestamp when the record was last updated.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Unique butterflyID for this trap (can be CharField or UUIDField)
+    butterflyID = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Unique butterfly ID for this trap."
+    )
     name = models.CharField(max_length=255, unique=True, verbose_name="Trap Identifier")
     location_description = models.TextField(blank=True, null=True)
     setup_date = models.DateField(default=timezone.now)
@@ -60,5 +77,9 @@ class Trap(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        """String representation for admin and shell."""
+        """
+        String representation for admin and forms: shows butterflyID and name for clarity.
+        """
+        if self.butterflyID:
+            return f"{self.butterflyID} — {self.name}"
         return self.name

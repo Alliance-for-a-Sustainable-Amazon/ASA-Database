@@ -15,11 +15,17 @@ Sections:
     - Other: Additional Django settings.
 """
 
+import os
+
+import os
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Static files (CSS, JavaScript, Images)
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -30,8 +36,8 @@ SECRET_KEY = 'django-insecure-e=8mk1vqea**n%0goz!4bvm5el^!63@2s=_of_2$--a&_^mhn1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+# Read ALLOWED_HOSTS from environment (.env), split by comma, and strip whitespace
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', '').split(',') if host.strip()]
 
 # Application definition
 
@@ -78,12 +84,28 @@ WSGI_APPLICATION = 'research_data_app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+import os
+
+# Dynamic database settings: use PostgreSQL if env vars are set, else SQLite
+if os.environ.get('DJANGO_DB_HOST'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DJANGO_DB_NAME', 'asa_db'),
+            'USER': os.environ.get('DJANGO_DB_USER', 'asa_user'),
+            'PASSWORD': os.environ.get('DJANGO_DB_PASSWORD', 'asa_pass'),
+            'HOST': os.environ.get('DJANGO_DB_HOST', 'db'),
+            'PORT': os.environ.get('DJANGO_DB_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

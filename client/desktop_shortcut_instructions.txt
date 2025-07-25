@@ -1,0 +1,19 @@
+# How to Create a Desktop Shortcut to ASA-Database
+
+1. Ask the host for the server’s IP address (e.g., 192.168.1.10).
+2. Right-click your desktop and choose "Create Launcher" or "Create Shortcut" (varies by OS).
+3. For the URL, enter: http://<host-ip>:8000 (e.g., http://192.168.1.10:8000)
+4. Name it "ASA-Database".
+5. Save. Now you can double-click the shortcut to open the app in your browser.
+
+## Windows
+- Right-click desktop > New > Shortcut
+- Enter the URL above
+- Name it and finish
+
+## Mac
+- Open Safari, go to the URL, drag the address bar icon to the desktop
+
+## Linux
+- Right-click desktop > Create Launcher or Shortcut
+- Or use your browser’s "Create shortcut" feature

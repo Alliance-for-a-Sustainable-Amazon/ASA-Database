@@ -1,3 +1,20 @@
+# Dynamic view to fetch both ButterflyCollection and Trap by butterflyID
+from django.shortcuts import render, get_object_or_404
+from .models import ButterflyCollection, Trap
+
+def butterflyid_detail(request, butterflyid):
+    """
+    Given a butterflyID, fetch and display both the ButterflyCollection and Trap details.
+    This view is dynamic and works for any valid butterflyID present in the database.
+    """
+    trap = get_object_or_404(Trap, butterflyID=butterflyid)
+    # Fetch all ButterflyCollection objects linked to this trap
+    butterfly_collections = trap.butterfly_collections.all()
+    return render(request, 'butterflies/butterflyid_detail.html', {
+        'trap': trap,
+        'butterfly_collections': butterfly_collections,
+        'butterflyid': butterflyid,
+    })
 def dynamic_list(request, model_name):
     """
     Generic dynamic list view for any model.

@@ -13,9 +13,16 @@ class ButterflyCollectionAdmin(admin.ModelAdmin):
     list_filter: Fields to filter by in the admin list view.
     search_fields: Fields to search by in the admin list view.
     """
-    list_display = ("species", "collector_name", "collection_date", "created_at", "updated_at")
-    list_filter = ("collection_date", "species")
-    search_fields = ("species", "collector_name", "notes")
+    # Show every field except id
+    list_display = (
+        "species", "collector_name", "collection_date", "trap", "notes",
+        "created_at", "updated_at"
+    )
+    list_filter = ("collection_date", "species", "trap", "created_at", "updated_at")
+    search_fields = (
+        "species", "collector_name", "notes", "trap__butterflyID", "trap__name",
+        "created_at", "updated_at"
+    )
 
 @admin.register(Trap)
 class TrapAdmin(admin.ModelAdmin):
@@ -24,5 +31,13 @@ class TrapAdmin(admin.ModelAdmin):
     list_display: Fields shown in the admin list view.
     search_fields: Fields to search by in the admin list view.
     """
-    list_display = ("name", "location_description", "setup_date", "created_at", "updated_at")
-    search_fields = ("name", "location_description", "notes")
+    # Show every field except id
+    list_display = (
+        "butterflyID", "name", "location_description", "setup_date", "notes",
+        "created_at", "updated_at"
+    )
+    list_filter = ("setup_date", "created_at", "updated_at")
+    search_fields = (
+        "butterflyID", "name", "location_description", "notes",
+        "created_at", "updated_at"
+    )
