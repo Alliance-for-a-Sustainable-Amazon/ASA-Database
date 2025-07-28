@@ -1,0 +1,11 @@
+{# _disposition_history.html - Shows previous disposition entries for a specimen #}
+{% if instance and instance.disposition %}
+    <div style="margin-bottom: 1em;">
+        <strong>Previous Disposition Entries:</strong>
+        <ul style="margin: 0; padding-left: 1.2em;">
+            {% for entry in instance.disposition|default:''|split_semi %}
+                {% if entry.strip %}<li>{{ entry }}</li>{% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

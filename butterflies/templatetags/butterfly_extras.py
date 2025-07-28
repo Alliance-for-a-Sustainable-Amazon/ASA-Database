@@ -7,6 +7,14 @@ from django import template
 
 register = template.Library()
 
+# Utility filter to check if a string starts with a given substring
+@register.filter
+def startswith(text, starts):
+    """Return True if text starts with the given substring."""
+    if not text:
+        return False
+    return str(text).startswith(starts)
+
 @register.filter
 def get_field_value(obj, field_name):
     """
@@ -24,3 +32,10 @@ def get_item(dictionary, key):
     Usage: {{ request.GET|get_item:field.name }}
     """
     return dictionary.get(key, '')
+
+@register.filter
+def split_semi(value):
+    """Split a string by semicolons and return a list."""
+    if not value:
+        return []
+    return [v.strip() for v in value.split('; ') if v.strip()]

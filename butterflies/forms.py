@@ -19,34 +19,61 @@ class LocalityForm(forms.ModelForm):
 
 
 # Custom SpecimenForm with append-only logic for 'modified' field
+
+# Clean, explicit SpecimenForm
 class SpecimenForm(forms.ModelForm):
-    # Extra fields for the 'modified' entry
-    mod_month = forms.CharField(max_length=2, required=False, label="Modification Month")
-    mod_day = forms.CharField(max_length=2, required=False, label="Modification Day")
-    mod_year = forms.CharField(max_length=4, required=False, label="Modification Year")
-    mod_initials = forms.ModelChoiceField(queryset=Initials.objects.all(), required=False, label="Modification Initials")
-    mod_description = forms.CharField(max_length=255, required=False, label="Modification Description")
+    # Disposition mini-fields (not part of model)
+    disp_day = forms.ChoiceField(
+        choices=[('', 'Day')] + [(str(i), str(i)) for i in range(1, 32)],
+        required=False,
+        label="Disposition Day"
+    )
+    disp_month = forms.ChoiceField(
+        choices=[('', 'Month'), ('Jan.', 'Jan.'), ('Feb.', 'Feb.'), ('Mar.', 'Mar.'), ('Apr.', 'Apr.'), ('May', 'May'), ('Jun.', 'Jun.'), ('Jul.', 'Jul.'), ('Aug.', 'Aug.'), ('Sep.', 'Sep.'), ('Oct.', 'Oct.'), ('Nov.', 'Nov.'), ('Dec.', 'Dec.')],
+        required=False,
+        label="Disposition Month"
+    )
+    disp_year = forms.ChoiceField(
+        choices=[('', 'Year')] + [(str(y), str(y)) for y in range(1900, 2051)],
+        required=False,
+        label="Disposition Year"
+    )
+    disp_initials = forms.ModelChoiceField(
+        queryset=Initials.objects.all(),
+        required=False,
+        label="Disposition Initials"
+    )
+    disp_description = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Disposition Description"
+    )
 
     class Meta:
         model = Specimen
-        fields = '__all__'
+        exclude = ['disposition']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make catalogNumber field disabled and styled for display only
+        self.fields['catalogNumber'].disabled = True
+        self.fields['catalogNumber'].widget.attrs['style'] = 'background-color: #eee; color: #888;'
+        self.fields['catalogNumber'].widget.attrs['placeholder'] = '(auto generated)'
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # If any mod fields are filled, append to 'modified' field
-        mod_fields = [
-            self.cleaned_data.get('mod_month'),
-            self.cleaned_data.get('mod_day'),
-            self.cleaned_data.get('mod_year'),
-            str(self.cleaned_data.get('mod_initials') or ''),
-            self.cleaned_data.get('mod_description')
-        ]
-        if any(mod_fields):
-            entry = ','.join([f or '' for f in mod_fields])
-            if instance.modified:
-                instance.modified += f';{entry}'
+        # Append-only logic for disposition
+        disp_day = self.cleaned_data.get('disp_day')
+        disp_month = self.cleaned_data.get('disp_month')
+        disp_year = self.cleaned_data.get('disp_year')
+        disp_initials = self.cleaned_data.get('disp_initials')
+        disp_description = self.cleaned_data.get('disp_description')
+        if disp_day and disp_month and disp_year and disp_initials and disp_description:
+            entry = f"{disp_day} {disp_month} {disp_year}, {disp_initials}, {disp_description}".strip()
+            if instance.disposition:
+                instance.disposition += f";{entry}"
             else:
-                instance.modified = entry
+                instance.disposition = entry
         if commit:
             instance.save()
             self.save_m2m()

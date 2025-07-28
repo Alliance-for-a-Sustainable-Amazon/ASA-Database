@@ -56,7 +56,15 @@ class Specimen(models.Model):
     # Concatenated modification history (append-only, semicolon-separated)
     modified = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     specimenNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Manual entry. If duplicate, error.")
-    catalogNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Unique voucher code.")
+    catalogNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Auto-generated: year-localityCode-specimenNumber (nnnn). Do not edit.")
+    def save(self, *args, **kwargs):
+        # Auto-generate catalogNumber if not set and required fields are present
+        if not self.catalogNumber:
+            year = self.year or ''
+            locality_code = self.locality.localityCode if self.locality and self.locality.localityCode else ''
+            specimen_number = self.specimenNumber or ''
+            self.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
+        super().save(*args, **kwargs)
     recordedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, help_text="Dropdown: initials from Initials table.")
     uploaded_iNaturalist = models.CharField(max_length=5, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text="Dropdown: TRUE/FALSE.")
     sex = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('.', '.')], help_text="Dropdown: male/female/.")

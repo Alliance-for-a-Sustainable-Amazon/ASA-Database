@@ -107,7 +107,12 @@ def dynamic_create_edit(request, model_name, object_id=None):
             break
     if not model:
         raise Http404("Model not found")
-    form_class = modelform_factory(model, exclude=['id'])
+    # Use custom SpecimenForm for Specimen, dynamic form for others
+    if model._meta.model_name == 'specimen':
+        from .forms import SpecimenForm
+        form_class = SpecimenForm
+    else:
+        form_class = modelform_factory(model, exclude=['id'])
     instance = None
     if object_id:
         try:
@@ -168,24 +173,6 @@ def create_initials(request):
             messages.success(request, 'Initials added successfully!')
             form = InitialsForm()
     return render(request, 'butterflies/initials_form.html', {'form': form})
-
-
-def create_trap(request):
-    """
-    View for creating a new trap.
-    Handles GET (show empty form) and POST (process submitted form) requests.
-    On successful submission, saves the new trap and displays a success message.
-    """
-    from django.contrib import messages
-    form = TrapForm()
-    if request.method == 'POST':
-        form = TrapForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Trap added successfully!')
-            form = TrapForm()  # reset form after success
-    return render(request, 'butterflies/trap_form.html', {'form': form})
-
 
 
 

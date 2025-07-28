@@ -9,11 +9,42 @@
         <div class="error summary">Please correct the errors below.</div>
     {% endif %}
     {% for field in form.visible_fields %}
-        <div>
-            {{ field.label_tag }} {{ field }}
-            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-            {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
-        </div>
+        {% if field.name == 'catalogNumber' %}
+            <div>
+                {{ field.label_tag }}
+                <input type="text" value="auto generated" disabled style="background-color: #eee; color: #888; width: 300px;" placeholder="auto generated">
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            </div>
+        {% elif field.name == 'disposition' %}
+            {# skip rendering disposition textarea #}
+            {% include "butterflies/_disposition_history.html" with instance=form.instance %}
+        {% elif field.name|startswith:'disp_' %}
+            {# skip rendering disposition mini-fields in the loop #}
+        {% else %}
+            <div>
+                {{ field.label_tag }} {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+        {% endif %}
     {% endfor %}
+    {# Display current disposition value above the input section #}
+    {% if form.instance and form.instance.disposition %}
+        <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
+            <strong>Disposition History:</strong><br>
+            <span style="white-space: pre-line;">{{ form.instance.disposition }}</span>
+        </div>
+    {% endif %}
+    <div>
+        <label>Disposition Entry</label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
+            {{ form.disp_day }}
+            {{ form.disp_month }}
+            {{ form.disp_year }}
+            {{ form.disp_initials }}
+            {{ form.disp_description }}
+        </div>
+        <small>Format: Day Month Year, Initials, Description. Appends to disposition history. Cannot be edited or removed after submission.</small>
+    </div>
     <button type="submit">Save</button>
 </form>
