@@ -4,6 +4,7 @@
 # Provides utility functions for use in Django templates.
 
 from django import template
+import re
 
 register = template.Library()
 
@@ -35,7 +36,7 @@ def get_item(dictionary, key):
 
 @register.filter
 def split_semi(value):
-    """Split a string by semicolons and return a list."""
+    """Split a string by semicolons (with optional space) and return a list."""
     if not value:
         return []
-    return [v.strip() for v in value.split('; ') if v.strip()]
+    return [v.strip() for v in re.split(r';\s*', value) if v.strip()]

@@ -76,7 +76,6 @@ class Specimen(models.Model):
     year = models.CharField(max_length=4, blank=True, null=True, help_text="Dropdown/typeable: 1900-2050.")
     month = models.CharField(max_length=2, blank=True, null=True, help_text="Dropdown/typeable.")
     day = models.CharField(max_length=2, blank=True, null=True, help_text="Dropdown/typeable.")
-    habitat = models.CharField(max_length=255, blank=True, null=True, help_text="Text.")
     habitatNotes = models.TextField(blank=True, null=True, help_text="Text.")
     samplingProtocol = models.TextField(blank=True, null=True, help_text="Text.")
     # Locality is a relation; all other locality info is in Locality table
