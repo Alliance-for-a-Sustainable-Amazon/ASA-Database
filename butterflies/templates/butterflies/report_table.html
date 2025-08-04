@@ -1,0 +1,123 @@
+{# report_table.html - Verbose report table for specimens and related fields #}
+{% load butterfly_extras %}
+<div style="margin-bottom: 1em; display: flex; align-items: center;">
+  <div>
+    <h3 style="margin: 0 0 5px 0;">Export Full Report Table</h3>
+    <a href="{{ export_csv_url }}" class="btn btn-primary" style="margin-right: 10px;">CSV Format</a>
+    <a href="{{ export_excel_url }}" class="btn btn-primary">Excel Format</a>
+  </div>
+  <div style="margin-left: 20px; color: #666; max-width: 400px;">
+    <p style="margin: 0;">These exports include all data shown in the table below, including related fields.</p>
+    <p style="margin: 5px 0 0 0;">For individual table management, use the links at the bottom of the page.</p>
+  </div>
+</div>
+<h2>Specimen Report Table</h2>
+<table border="1" cellpadding="4" cellspacing="0" style="font-size: 0.95em;">
+    <thead>
+        <tr>
+            <th>modified</th>
+            <th>specimenNumber</th>
+            <th>catalogNumber</th>
+            <th>recordedBy</th>
+            <th>uploaded.iNaturalist?</th>
+            <th>sex</th>
+            <th>behavior</th>
+            <th>disposition</th>
+            <th>occurrenceRemarks</th>
+            <th>eventDate</th>
+            <th>eventTime</th>
+            <th>year</th>
+            <th>month</th>
+            <th>day</th>
+            <th>habitat</th>
+            <th>habitatNotes</th>
+            <th>samplingProtocol</th>
+            <th>country</th>
+            <th>stateProvince</th>
+            <th>county</th>
+            <th>municipality</th>
+            <th>locality</th>
+            <th>localityDescriptionNotes</th>
+            <th>minimumElevationInMeters</th>
+            <th>maximumElevationInMeters</th>
+            <th>decimalLatitude</th>
+            <th>decimalLongitude</th>
+            <th>exact_loc.?</th>
+            <th>coordinateUncertaintyInMeters</th>
+            <th>georeferencedBy</th>
+            <th>georeferencedDate</th>
+            <th>georeferenceProtocol</th>
+            <th>identifiedBy</th>
+            <th>dateIdentified</th>
+            <th>identificationReferences</th>
+            <th>identificationRemarks</th>
+            <th>family</th>
+            <th>subfamily</th>
+            <th>tribe</th>
+            <th>subtribe</th>
+            <th>genus</th>
+            <th>specificEpithet</th>
+            <th>binomial</th>
+            <th>infraspecificEpithet</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for specimen in specimens %}
+        <tr>
+            <td>{{ specimen.modified }}</td>
+            <td>{{ specimen.specimenNumber }}</td>
+            <td>{{ specimen.catalogNumber }}</td>
+            <td>{{ specimen.recordedBy }}</td>
+            <td>{{ specimen.uploaded_iNaturalist }}</td>
+            <td>{{ specimen.sex }}</td>
+            <td>{{ specimen.behavior }}</td>
+            <td>{{ specimen.disposition }}</td>
+            <td>{{ specimen.occurrenceRemarks }}</td>
+            <td>{{ specimen.eventDate }}</td>
+            <td>{{ specimen.eventTime }}</td>
+            <td>{{ specimen.year }}</td>
+            <td>{{ specimen.month }}</td>
+            <td>{{ specimen.day }}</td>
+            <td>{{ specimen.locality.habitat }}</td>
+            <td>{{ specimen.habitatNotes }}</td>
+            <td>{{ specimen.samplingProtocol }}</td>
+            <td>{{ specimen.locality.country }}</td>
+            <td>{{ specimen.locality.region }}</td>
+            <td>{{ specimen.locality.province }}</td>
+            <td>{{ specimen.locality.district }}</td>
+            <td>{{ specimen.locality }}</td>
+            <td>{{ specimen.localityDescriptionNotes }}</td>
+            <td>{{ specimen.minimumElevationInMeters }}</td>
+            <td>{{ specimen.maximumElevationInMeters }}</td>
+            <td>{{ specimen.decimalLatitude }}</td>
+            <td>{{ specimen.decimalLongitude }}</td>
+            <td>{{ specimen.exact_loc }}</td>
+            <td>{{ specimen.coordinateUncertaintyInMeters }}</td>
+            <td>{{ specimen.georeferencedBy }}</td>
+            <td>{{ specimen.georeferencedDate }}</td>
+            <td>{{ specimen.georeferenceProtocol }}</td>
+            <td>{{ specimen.identifiedBy }}</td>
+            <td>{{ specimen.dateIdentified }}</td>
+            <td>{{ specimen.identificationReferences }}</td>
+            <td>{{ specimen.identificationRemarks }}</td>
+            <td>{{ specimen.family }}</td>
+            <td>{{ specimen.subfamily }}</td>
+            <td>{{ specimen.tribe }}</td>
+            <td>{{ specimen.subtribe }}</td>
+            <td>{{ specimen.genus }}</td>
+            <td>{{ specimen.specificEpithet }}</td>
+            <td>{{ specimen.binomial }}</td>
+            <td>{{ specimen.infraspecificEpithet }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+<div style="margin-top: 2em;">
+    <h3>Other Tables</h3>
+    <ul>
+        <li><a href="{% url 'dynamic_list' 'specimen' %}">Specimen Table</a></li>
+        <li><a href="{% url 'dynamic_list' 'locality' %}">Locality Table</a></li>
+        <li><a href="{% url 'dynamic_list' 'initials' %}">Initials Table</a></li>
+    </ul>
+</div>

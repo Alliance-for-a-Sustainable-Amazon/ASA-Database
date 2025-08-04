@@ -20,6 +20,7 @@ from django.db import models
 class Locality(models.Model):
     class Meta:
         db_table = 'localityTable'
+        verbose_name_plural = 'Localities'
     """
     Stores information about collection localities.
     """

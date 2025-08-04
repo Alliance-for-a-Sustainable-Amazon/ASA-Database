@@ -1,0 +1,30 @@
+{# Template for importing data to any model #}
+{% load butterfly_extras %}
+<h2>Import {{ model_name_plural }}</h2>
+
+{% if error %}
+<div style="color: red; margin-bottom: 15px;">{{ error }}</div>
+{% endif %}
+
+<p>Upload a CSV or Excel file with the following columns:</p>
+
+<ul>
+{% for field in model_fields %}
+    <li>{{ field }}</li>
+{% endfor %}
+</ul>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div>
+        <label for="file">Select file:</label>
+        <input type="file" name="file" id="file" required accept=".csv,.xls,.xlsx">
+    </div>
+    <div style="margin-top: 10px;">
+        <button type="submit">Upload</button>
+    </div>
+</form>
+
+<div style="margin-top: 20px;">
+    <a href="{% url 'dynamic_list' model_name_internal %}">Back to {{ model_name }} List</a>
+</div>

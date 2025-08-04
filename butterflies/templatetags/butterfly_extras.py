@@ -15,6 +15,18 @@ def startswith(text, starts):
     if not text:
         return False
     return str(text).startswith(starts)
+    
+@register.filter
+def get_item(dictionary, key):
+    """
+    Get an item from a dictionary using the key.
+    Returns the value for a given key from a dictionary-like object.
+    Usage: {{ request.GET|get_item:field.name }}
+          {{ item.data|get_item:field }}
+    """
+    if dictionary is None:
+        return ''
+    return dictionary.get(key, '')
 
 @register.filter
 def get_field_value(obj, field_name):
@@ -23,16 +35,6 @@ def get_field_value(obj, field_name):
     Usage in template: {{ object|get_field_value:"field_name" }}
     """
     return getattr(obj, field_name)
-
-
-# Utility filter to get a value from a dict-like object by key (for request.GET)
-@register.filter
-def get_item(dictionary, key):
-    """
-    Returns the value for a given key from a dictionary-like object.
-    Usage: {{ request.GET|get_item:field.name }}
-    """
-    return dictionary.get(key, '')
 
 @register.filter
 def split_semi(value):

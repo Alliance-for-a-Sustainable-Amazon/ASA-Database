@@ -1,0 +1,70 @@
+{# Preview template for data import #}
+{% load butterfly_extras %}
+<h2>Preview {{ model_name_plural }} Import</h2>
+
+{% if has_unique_field %}
+<div style="margin-bottom: 15px;">
+    <p>Review the data before confirming import. <strong>Important:</strong></p>
+    <ul>
+        <li>Duplicate records (with the same "{{ unique_field }}") are highlighted in <span style="background-color: #ffeeee; padding: 2px 5px;">pink</span>.</li>
+        <li>For duplicates, we'll automatically modify the "{{ unique_field }}" by adding a numbered suffix (e.g., "ABC123-2").</li>
+        <li>You can edit any values before confirming the import.</li>
+    </ul>
+</div>
+{% else %}
+<p>Review the data before confirming import. You can edit any values before confirming.</p>
+<p><em>Note: No unique field was found for this model, so duplicate detection is not available.</em></p>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="confirm" value="true">
+    <input type="hidden" name="row_count" value="{{ preview|length }}">
+    
+    <table border="1" cellpadding="4" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Status</th>
+                {% for field in fields %}
+                <th>{{ field }}{% if field == unique_field %} <small>(unique key)</small>{% endif %}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in preview %}
+            <tr {% if item.duplicate %}style="background-color: #ffeeee;"{% endif %}>
+                <td>
+                    {% if item.duplicate %}
+                    <strong>Duplicate</strong><br>
+                    <small>Will use: {{ item.suggested_key }}</small>
+                    {% else %}
+                    New
+                    {% endif %}
+                </td>
+                {% for field in fields %}
+                <td>
+                    {% if field == unique_field and item.duplicate %}
+                    <input type="text" name="row_{{ forloop.parentloop.counter0 }}_{{ field }}" 
+                           value="{{ item.suggested_key|default:'' }}"
+                           title="Original value: {{ item.data|get_item:field|default:'' }}">
+                    <div style="font-size: 0.8em; color: #666;">Original: {{ item.data|get_item:field|default:'' }}</div>
+                    {% else %}
+                    <input type="text" name="row_{{ forloop.parentloop.counter0 }}_{{ field }}" 
+                           value="{{ item.data|get_item:field|default:'' }}">
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 15px;">
+        <button type="submit">Confirm Import</button>
+        <a href="{% url 'import_model' model_name_internal %}" style="margin-left: 10px;">Cancel</a>
+    </div>
+</form>
+
+<div style="margin-top: 20px;">
+    <a href="{% url 'dynamic_list' model_name_internal %}">Back to {{ model_name }} List</a>
+</div>
