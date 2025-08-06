@@ -8,69 +8,703 @@
     {% if form.errors %}
         <div class="error summary">Please correct the errors below.</div>
     {% endif %}
-    {% for field in form.visible_fields %}
-        {% if field.name == 'catalogNumber' %}
-            <div>
-                {{ field.label_tag }}
-                <input type="text" value="auto generated" disabled style="background-color: #eee; color: #888; width: 300px;" placeholder="auto generated">
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+    
+    <!-- Standard CSS for all form elements -->
+    <style>
+        /* Base styling for all inputs */
+        input, select, textarea, .searchable-input {
+            padding: 6px 8px;
+            border: 1px solid #6b8e23; /* Olive green border */
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        
+        input:focus, select:focus, textarea:focus, .searchable-input:focus {
+            outline: none;
+            border-color: #8fbc8f; /* Sea green when focused */
+            box-shadow: 0 0 3px rgba(143, 188, 143, 0.5);
+        }
+        
+        /* Field section styling */
+        .field-section {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 4px;
+        }
+        
+        .field-section:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* History section styling */
+        .history-section {
+            margin-bottom: 1em;
+            padding: 0.5em;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        /* Flex container for form sections */
+        .flex-container {
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+            width: 100%;
+        }
+        
+        /* Container styling */
+        .date-container {
+            flex: 0 0 220px; /* Fixed width for date fields */
+        }
+        
+        .initials-container {
+            flex: 0 0 150px; /* Fixed width for initials */
+        }
+        
+        .description-container {
+            flex: 1; /* Grow to fill available space */
+            min-width: 200px;
+        }
+        
+        /* Searchable dropdown styling */
+        .searchable-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .searchable-input {
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        .searchable-dropdown {
+            position: absolute;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .searchable-option {
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        
+        .searchable-option:hover {
+            background-color: #f0f8ff; /* Light blue on hover */
+        }
+        
+        /* Form field error styling */
+        .field-error, .error {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+    </style>
+
+    <div id="form-info" class="form-info">
+        <!-- <p><strong>Enhanced Dropdowns:</strong> Lightweight custom dropdowns with search functionality and consistent styling throughout the form.</p> -->
+        
+        {% load static %}
+        <script src="{% static 'butterflies/js/searchable-dropdowns.js' %}"></script>
+    </div>
+    
+    {# Render fields based on the form type - first check if we're using the generic template directly #}
+    {% if form|stringformat:"s"|lower|contains:"specimenform" or form.instance|stringformat:"s"|lower|contains:"specimen" or model_name == "Specimen" %}
+        {# Specimen form - full complex rendering with all special fields #}
+        {% if form.instance %}
+        {# 1. modified field #}
+        {% if form.instance.modified %}
+            <div class="history-section">
+                <strong>Modified History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.modified }}</span>
             </div>
-        {% elif field.name == 'eventDate' %}
+        {% endif %}
+        <div class="field-section">
             <div>
-                <label>Event Date</label>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
-                    {{ form.event_day }}
-                    {{ form.event_month }}
-                    {{ form.event_year }}
+                <label>Modification Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.mod_day|attr:"data-field-type:day,data-label:day" }} 
+                        {{ form.mod_month|attr:"data-field-type:month,data-label:month" }} 
+                        {{ form.mod_year|attr:"data-field-type:year,data-label:year" }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.mod_initials|attr:"data-field-type:initials,data-label:initials" }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.mod_description }}
+                    </span>
                 </div>
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
             </div>
-        {% elif field.name == 'georeferencedDate' %}
+        </div>        {# 2. specimenNumber field #}
+        <div>
+            <label for="{{ form.specimenNumber.id_for_label }}">Specimen Number:</label>
+            {{ form.specimenNumber }}
+            {% if form.specimenNumber.help_text %}<small>{{ form.specimenNumber.help_text }}</small>{% endif %}
+            {% for error in form.specimenNumber.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 3. catalogNumber field #}
+        <div>
+            <label for="{{ form.catalogNumber.id_for_label }}">Catalog Number:</label>
+            <input type="text" value="auto generated" disabled style="background-color: #eee; color: #888; width: 300px;" placeholder="auto generated">
+            {% if form.catalogNumber.help_text %}<small>{{ form.catalogNumber.help_text }}</small>{% endif %}
+        </div>
+        
+        {# 4. recordedBy field #}
+        <div>
+            <label for="{{ form.recordedBy.id_for_label }}">Recorded By:</label>
+            {{ form.recordedBy|attr:"data-field-type:person,data-label:recorder" }}
+            {% if form.recordedBy.help_text %}<small>{{ form.recordedBy.help_text }}</small>{% endif %}
+            {% for error in form.recordedBy.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 5. uploaded_iNaturalist field #}
+        <div>
+            <label for="{{ form.uploaded_iNaturalist.id_for_label }}">Uploaded to iNaturalist:</label>
+            {{ form.uploaded_iNaturalist|attr:"data-field-type:boolean,data-label:iNaturalist upload" }}
+            {% if form.uploaded_iNaturalist.help_text %}<small>{{ form.uploaded_iNaturalist.help_text }}</small>{% endif %}
+            {% for error in form.uploaded_iNaturalist.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 6. sex field #}
+        <div>
+            <label for="{{ form.sex.id_for_label }}">Sex:</label>
+            {{ form.sex|attr:"data-field-type:sex,data-label:sex" }}
+            {% if form.sex.help_text %}<small>{{ form.sex.help_text }}</small>{% endif %}
+            {% for error in form.sex.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 7. behavior field - append-only #}
+        {% if form.instance.behavior %}
+            <div class="history-section">
+                <strong>Behavior History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.behavior }}</span>
+            </div>
+        {% endif %}
+        <div class="field-section">
             <div>
-                <label>Georeferenced Date</label>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
-                    {{ form.georef_day }}
-                    {{ form.georef_month }}
-                    {{ form.georef_year }}
+                <label>Behavior Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.behavior_day }} {{ form.behavior_month }} {{ form.behavior_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.behavior_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.behavior_description }}
+                    </span>
                 </div>
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                <small>Format: Day Month Year, Initials, Description. Appends to behavior history. Cannot be edited or removed after submission.</small>
             </div>
-        {% elif field.name == 'behavior' %}
-            <div>
-                {{ field.label_tag }} {{ field }}
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 8. disposition field - append-only #}
+        {% if form.instance.disposition %}
+            <div class="history-section">
+                <strong>Disposition History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.disposition }}</span>
             </div>
-            {% if form.instance and form.instance.disposition %}
-                <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
-                    <strong>Disposition History:</strong><br>
-                    <span style="white-space: pre-line;">{{ form.instance.disposition }}</span>
-                </div>
-            {% endif %}
+        {% endif %}
+        <div class="field-section">
             <div>
                 <label>Disposition Entry</label>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
-                    {{ form.disp_day }}
-                    {{ form.disp_month }}
-                    {{ form.disp_year }}
-                    {{ form.disp_initials }}
-                    {{ form.disp_description }}
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.disp_day }} {{ form.disp_month }} {{ form.disp_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.disp_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.disp_description }}
+                    </span>
                 </div>
                 <small>Format: Day Month Year, Initials, Description. Appends to disposition history. Cannot be edited or removed after submission.</small>
             </div>
-        {% elif field.name == 'disposition' %}
-            {# skip rendering disposition textarea #}
-        {% elif field.name|startswith:'disp_' %}
-            {# skip rendering disposition mini-fields in the loop #}
-        {% elif field.name == 'event_day' or field.name == 'event_month' or field.name == 'event_year' or field.name == 'georef_day' or field.name == 'georef_month' or field.name == 'georef_year' %}
-            {# skip rendering year/month/day and event/georef mini-fields, handled by custom dropdowns above #}
-        {% else %}
-            <div>
-                {{ field.label_tag }} {{ field }}
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 9. occurrenceRemarks field - append-only #}
+        {% if form.instance.occurrenceRemarks %}
+            <div class="history-section">
+                <strong>Occurrence Remarks History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.occurrenceRemarks }}</span>
             </div>
         {% endif %}
-    {% endfor %}
+        <div class="field-section">
+            <div>
+                <label>Occurrence Remarks Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.remarks_day }} {{ form.remarks_month }} {{ form.remarks_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.remarks_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.remarks_description }}
+                    </span>
+                </div>
+                <small>Format: Day Month Year, Initials, Description. Appends to occurrence remarks history. Cannot be edited or removed after submission.</small>
+            </div>
+        </div>
+        
+        {# 10. eventDate field - custom date components #}
+        <div class="field-section">
+            <div>
+                <label>Event Date</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.event_day }} {{ form.event_month }} {{ form.event_year }}
+                    </span>
+                </div>
+                {% if form.eventDate.help_text %}<small>{{ form.eventDate.help_text }}</small>{% endif %}
+            </div>
+        </div>
+        
+        {# 11. eventTime field #}
+        <div>
+            <label for="{{ form.eventTime.id_for_label }}">Event Time:</label>
+            {{ form.eventTime }}
+            {% if form.eventTime.help_text %}<small>{{ form.eventTime.help_text }}</small>{% endif %}
+            {% for error in form.eventTime.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 12. year field #}
+        <div>
+            <label for="{{ form.year.id_for_label }}">Year:</label>
+            {{ form.year }}
+            {% if form.year.help_text %}<small>{{ form.year.help_text }}</small>{% endif %}
+            {% for error in form.year.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 13. month field #}
+        <div>
+            <label for="{{ form.month.id_for_label }}">Month:</label>
+            {{ form.month }}
+            {% if form.month.help_text %}<small>{{ form.month.help_text }}</small>{% endif %}
+            {% for error in form.month.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 14. day field #}
+        <div>
+            <label for="{{ form.day.id_for_label }}">Day:</label>
+            {{ form.day }}
+            {% if form.day.help_text %}<small>{{ form.day.help_text }}</small>{% endif %}
+            {% for error in form.day.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 15. habitatNotes field - append-only #}
+        {% if form.instance.habitatNotes %}
+            <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
+                <strong>Habitat Notes History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.habitatNotes }}</span>
+            </div>
+        {% endif %}
+        <div class="field-section">
+            <div>
+                <label>Habitat Notes Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.habitat_day }} {{ form.habitat_month }} {{ form.habitat_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.habitat_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.habitat_description }}
+                    </span>
+                </div>
+                <small>Format: Day Month Year, Initials, Description. Appends to habitat notes history. Cannot be edited or removed after submission.</small>
+            </div>
+        </div>
+        
+        {# 16. samplingProtocol field - append-only #}
+        {% if form.instance.samplingProtocol %}
+            <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
+                <strong>Sampling Protocol History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.samplingProtocol }}</span>
+            </div>
+        {% endif %}
+        <div class="field-section">
+            <div>
+                <label>Sampling Protocol Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.protocol_day }} {{ form.protocol_month }} {{ form.protocol_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.protocol_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.protocol_description }}
+                    </span>
+                </div>
+                <small>Format: Day Month Year, Initials, Description. Appends to sampling protocol history. Cannot be edited or removed after submission.</small>
+            </div>
+        </div>
+        
+        {# 17. locality field #}
+        <div>
+            <label for="{{ form.locality.id_for_label }}">Locality:</label>
+            {{ form.locality|attr:"data-field-type:locality,data-label:locality" }}
+            {% if form.locality.help_text %}<small>{{ form.locality.help_text }}</small>{% endif %}
+            {% for error in form.locality.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 18. localityDescriptionNotes field - append-only #}
+        {% if form.instance.localityDescriptionNotes %}
+            <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
+                <strong>Locality Description Notes History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.localityDescriptionNotes }}</span>
+            </div>
+        {% endif %}
+        <div class="field-section">
+            <div>
+                <label>Locality Description Notes Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.locality_notes_day }} {{ form.locality_notes_month }} {{ form.locality_notes_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.locality_notes_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.locality_notes_description }}
+                    </span>
+                </div>
+                <small>Format: Day Month Year, Initials, Description. Appends to locality description notes history. Cannot be edited or removed after submission.</small>
+            </div>
+        </div>
+        
+        {# 19. minimumElevationInMeters field #}
+        <div>
+            <label for="{{ form.minimumElevationInMeters.id_for_label }}">Minimum Elevation In Meters:</label>
+            {{ form.minimumElevationInMeters }}
+            {% if form.minimumElevationInMeters.help_text %}<small>{{ form.minimumElevationInMeters.help_text }}</small>{% endif %}
+            {% for error in form.minimumElevationInMeters.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 20. maximumElevationInMeters field #}
+        <div>
+            <label for="{{ form.maximumElevationInMeters.id_for_label }}">Maximum Elevation In Meters:</label>
+            {{ form.maximumElevationInMeters }}
+            {% if form.maximumElevationInMeters.help_text %}<small>{{ form.maximumElevationInMeters.help_text }}</small>{% endif %}
+            {% for error in form.maximumElevationInMeters.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 21. decimalLatitude field #}
+        <div>
+            <label for="{{ form.decimalLatitude.id_for_label }}">Decimal Latitude:</label>
+            {{ form.decimalLatitude }}
+            {% if form.decimalLatitude.help_text %}<small>{{ form.decimalLatitude.help_text }}</small>{% endif %}
+            {% for error in form.decimalLatitude.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 22. decimalLongitude field #}
+        <div>
+            <label for="{{ form.decimalLongitude.id_for_label }}">Decimal Longitude:</label>
+            {{ form.decimalLongitude }}
+            {% if form.decimalLongitude.help_text %}<small>{{ form.decimalLongitude.help_text }}</small>{% endif %}
+            {% for error in form.decimalLongitude.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 23. exact_loc field #}
+        <div>
+            <label for="{{ form.exact_loc.id_for_label }}">Exact Location:</label>
+            {{ form.exact_loc }}
+            {% if form.exact_loc.help_text %}<small>{{ form.exact_loc.help_text }}</small>{% endif %}
+            {% for error in form.exact_loc.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 24. coordinateUncertaintyInMeters field #}
+        <div>
+            <label for="{{ form.coordinateUncertaintyInMeters.id_for_label }}">Coordinate Uncertainty In Meters:</label>
+            {{ form.coordinateUncertaintyInMeters }}
+            {% if form.coordinateUncertaintyInMeters.help_text %}<small>{{ form.coordinateUncertaintyInMeters.help_text }}</small>{% endif %}
+            {% for error in form.coordinateUncertaintyInMeters.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 25. georeferencedBy field #}
+        <div>
+            <label for="{{ form.georeferencedBy.id_for_label }}">Georeferenced By:</label>
+            {{ form.georeferencedBy }}
+            {% if form.georeferencedBy.help_text %}<small>{{ form.georeferencedBy.help_text }}</small>{% endif %}
+            {% for error in form.georeferencedBy.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 26. georeferencedDate field - custom date components #}
+        <div class="field-section">
+            <div>
+                <label>Georeferenced Date</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.georef_day }} {{ form.georef_month }} {{ form.georef_year }}
+                    </span>
+                </div>
+                {% if form.georeferencedDate.help_text %}<small>{{ form.georeferencedDate.help_text }}</small>{% endif %}
+            </div>
+        </div>
+        
+        {# 27. georeferenceProtocol field - append-only #}
+        {% if form.instance.georeferenceProtocol %}
+            <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
+                <strong>Georeference Protocol History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.georeferenceProtocol }}</span>
+            </div>
+        {% endif %}
+        <div class="field-section">
+            <div>
+                <label>Georeference Protocol Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.georef_protocol_day }} {{ form.georef_protocol_month }} {{ form.georef_protocol_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.georef_protocol_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.georef_protocol_description }}
+                    </span>
+                </div>
+                <small>Format: Day Month Year, Initials, Description. Appends to georeference protocol history. Cannot be edited or removed after submission.</small>
+            </div>
+        </div>
+        
+        {# 28. identifiedBy field #}
+        <div>
+            <label for="{{ form.identifiedBy.id_for_label }}">Identified By:</label>
+            {{ form.identifiedBy }}
+            {% if form.identifiedBy.help_text %}<small>{{ form.identifiedBy.help_text }}</small>{% endif %}
+            {% for error in form.identifiedBy.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 29. dateIdentified field #}
+        <div>
+            <label for="{{ form.dateIdentified.id_for_label }}">Date Identified:</label>
+            {{ form.dateIdentified }}
+            {% if form.dateIdentified.help_text %}<small>{{ form.dateIdentified.help_text }}</small>{% endif %}
+            {% for error in form.dateIdentified.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 30. identificationReferences field - append-only #}
+        {% if form.instance.identificationReferences %}
+            <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
+                <strong>Identification References History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.identificationReferences }}</span>
+            </div>
+        {% endif %}
+        <div class="field-section">
+            <div>
+                <label>Identification References Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.id_references_day }} {{ form.id_references_month }} {{ form.id_references_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.id_references_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.id_references_description }}
+                    </span>
+                </div>
+                <small>Format: Day Month Year, Initials, Description. Appends to identification references history. Cannot be edited or removed after submission.</small>
+            </div>
+        </div>
+        
+        {# 31. identificationRemarks field - append-only #}
+        {% if form.instance.identificationRemarks %}
+            <div style="margin-bottom: 1em; padding: 0.5em; background: #f8f8f8; border: 1px solid #ddd;">
+                <strong>Identification Remarks History:</strong><br>
+                <span style="white-space: pre-line;">{{ form.instance.identificationRemarks }}</span>
+            </div>
+        {% endif %}
+        <div class="field-section">
+            <div>
+                <label>Identification Remarks Entry</label>
+                <div class="flex-container">
+                    <span class="date-container">
+                        {{ form.id_remarks_day }} {{ form.id_remarks_month }} {{ form.id_remarks_year }}
+                    </span>
+                    <span class="initials-container">
+                        {{ form.id_remarks_initials }}
+                    </span>
+                    <span class="description-container">
+                        {{ form.id_remarks_description }}
+                    </span>
+                </div>
+                <small>Format: Day Month Year, Initials, Description. Appends to identification remarks history. Cannot be edited or removed after submission.</small>
+            </div>
+        </div>
+        
+        {# 32. family field #}
+        <div>
+            <label for="{{ form.family.id_for_label }}">Family:</label>
+            {{ form.family|attr:"data-field-type:taxonomy,data-taxonomy-level:family,data-label:family" }}
+            {% if form.family.help_text %}<small>{{ form.family.help_text }}</small>{% endif %}
+            {% for error in form.family.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 33. subfamily field #}
+        <div>
+            <label for="{{ form.subfamily.id_for_label }}">Subfamily:</label>
+            {{ form.subfamily|attr:"data-field-type:taxonomy,data-taxonomy-level:subfamily,data-label:subfamily" }}
+            {% if form.subfamily.help_text %}<small>{{ form.subfamily.help_text }}</small>{% endif %}
+            {% for error in form.subfamily.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 34. tribe field #}
+        <div>
+            <label for="{{ form.tribe.id_for_label }}">Tribe:</label>
+            {{ form.tribe|attr:"data-field-type:taxonomy,data-taxonomy-level:tribe,data-label:tribe" }}
+            {% if form.tribe.help_text %}<small>{{ form.tribe.help_text }}</small>{% endif %}
+            {% for error in form.tribe.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 35. subtribe field #}
+        <div>
+            <label for="{{ form.subtribe.id_for_label }}">Subtribe:</label>
+            {{ form.subtribe|attr:"data-field-type:taxonomy,data-taxonomy-level:subtribe,data-label:subtribe" }}
+            {% if form.subtribe.help_text %}<small>{{ form.subtribe.help_text }}</small>{% endif %}
+            {% for error in form.subtribe.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 36. genus field #}
+        <div>
+            <label for="{{ form.genus.id_for_label }}">Genus:</label>
+            {{ form.genus|attr:"data-field-type:taxonomy,data-taxonomy-level:genus,data-label:genus" }}
+            {% if form.genus.help_text %}<small>{{ form.genus.help_text }}</small>{% endif %}
+            {% for error in form.genus.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 37. specificEpithet field #}
+        <div>
+            <label for="{{ form.specificEpithet.id_for_label }}">Specific Epithet:</label>
+            {{ form.specificEpithet|attr:"data-field-type:taxonomy,data-taxonomy-level:specific-epithet,data-label:specific epithet" }}
+            {% if form.specificEpithet.help_text %}<small>{{ form.specificEpithet.help_text }}</small>{% endif %}
+            {% for error in form.specificEpithet.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        
+        {# 38. infraspecificEpithet field #}
+        <div>
+            <label for="{{ form.infraspecificEpithet.id_for_label }}">Infraspecific Epithet:</label>
+            {{ form.infraspecificEpithet|attr:"data-field-type:taxonomy,data-taxonomy-level:infraspecific-epithet,data-label:infraspecific epithet" }}
+            {% if form.infraspecificEpithet.help_text %}<small>{{ form.infraspecificEpithet.help_text }}</small>{% endif %}
+            {% for error in form.infraspecificEpithet.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+    {% endif %}
+        {% else %}
+        {# For Locality, Initials, and other simpler forms - render similar to specimen form #}
+        {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+            {% if field|stringformat:"s"|contains:"select" %}
+                {# Apply data attributes to select fields to improve dropdown handling #}
+                {% if model_name %}
+                    {{ field|attr:"data-field-type:field,data-model-type:"|add:model_name|add:",data-label:"|add:field.label|lower }}
+                {% else %}
+                    {{ field|attr:"data-field-type:field,data-label:"|add:field.label|lower }}
+                {% endif %}
+            {% else %}
+                {{ field }}
+            {% endif %}
+            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% if field.errors %}<div class="field-error">{{ field.errors|first }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    {% endif %}
+    
     <button type="submit">Save</button>
 </form>
+
+<!-- Enhanced CSS for consistent form styling -->
+<style>
+    /* Base styles for all form elements */
+    input, select, .searchable-input {
+        padding: 6px;
+        border: 1px solid #6b8e23; /* Olive green border for inputs */
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    
+    input:focus, select:focus, .searchable-input:focus {
+        border-color: #4682b4; /* Steel blue when focused */
+        outline: none;
+        box-shadow: 0 0 5px rgba(70, 130, 180, 0.5);
+    }
+    
+    /* Searchable input specific styles */
+    input.searchable-input {
+        min-width: 150px;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23555555' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: calc(100% - 8px) center;
+        padding-right: 24px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .searchable-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .searchable-dropdown {
+        position: absolute;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #ccc;
+        max-height: 250px;
+        overflow-y: auto;
+        width: 100%;
+        display: none;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        scrollbar-width: thin;
+    }
+    
+    .searchable-dropdown::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .searchable-dropdown::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 3px;
+    }
+    
+    .searchable-option {
+        padding: 8px 10px;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    
+    .searchable-option:hover {
+        background-color: #f0f8ff; /* Light blue background on hover */
+    }
+    
+    .searchable-option.highlighted {
+        background-color: #e6f2ff; /* Slightly darker blue for keyboard navigation */
+        border-left: 2px solid #6b8e23; /* Olive green indicator */
+    }
+    
+    /* Form container spacing */
+    form > div {
+        margin-bottom: 15px;
+    }
+    
+    /* Help text styling */
+    small {
+        display: block;
+        margin-top: 4px;
+        color: #666;
+    }
+</style>

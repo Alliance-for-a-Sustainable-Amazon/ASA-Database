@@ -16,14 +16,14 @@ urlpatterns = [
     # Form to add new initials
     path('initials/add/', views.create_initials, name='create_initials'),
 
+    # Report table exports (specific routes first)
+    path('report/export/csv/', views.export_report_csv, name='export_report_csv'),
+    path('report/export/excel/', views.export_report_excel, name='export_report_excel'),
+    
     # Generic model export/import
     path('<str:model_name>/export/csv/', views.export_model_csv, name='export_model_csv'),
     path('<str:model_name>/export/excel/', views.export_model_excel, name='export_model_excel'),
     path('<str:model_name>/import/', views.import_model, name='import_model'),
-    
-    # Report table exports
-    path('report/export/csv/', views.export_report_csv, name='export_report_csv'),
-    path('report/export/excel/', views.export_report_excel, name='export_report_excel'),
     
     # Generic dynamic list view for any model
     path('list/<str:model_name>/', views.dynamic_list, name='dynamic_list'),

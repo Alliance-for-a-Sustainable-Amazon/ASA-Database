@@ -157,18 +157,24 @@ def dynamic_create_edit(request, model_name, object_id=None):
             break
     if not model:
         raise Http404("Model not found")
-    # Use custom SpecimenForm for Specimen, dynamic form for others
+    
+    # Use appropriate form class based on model
     if model._meta.model_name == 'specimen':
-        from .forms import SpecimenForm
         form_class = SpecimenForm
+    elif model._meta.model_name == 'locality':
+        form_class = LocalityForm
+    elif model._meta.model_name == 'initials':
+        form_class = InitialsForm
     else:
         form_class = modelform_factory(model, exclude=['id'])
+    
     instance = None
     if object_id:
         try:
             instance = model.objects.get(pk=object_id)
         except model.DoesNotExist:
             raise Http404("Object not found")
+    
     if request.method == 'POST':
         form = form_class(request.POST, instance=instance)
         if form.is_valid():
@@ -178,7 +184,20 @@ def dynamic_create_edit(request, model_name, object_id=None):
             return redirect(reverse('report_table'))
     else:
         form = form_class(instance=instance)
-    return render(request, 'butterflies/_form.html', {'form': form, 'model_name': model._meta.verbose_name.title()})
+    
+    # Use model-specific template if it exists
+    template_name = f'butterflies/{model._meta.model_name}_form.html'
+    try:
+        from django.template.loader import get_template
+        get_template(template_name)
+    except:
+        # Fall back to generic form template
+        template_name = 'butterflies/_form.html'
+    
+    return render(request, template_name, {
+        'form': form, 
+        'model_name': model._meta.verbose_name.title()
+    })
 
 # --- Model-Specific Create Views ---
 

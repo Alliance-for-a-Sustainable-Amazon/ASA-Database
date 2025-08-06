@@ -42,3 +42,30 @@ def split_semi(value):
     if not value:
         return []
     return [v.strip() for v in re.split(r';\s*', value) if v.strip()]
+
+@register.filter
+def contains(value, arg):
+    """Check if a string contains a substring."""
+    if not value:
+        return False
+    return str(value).lower().find(str(arg).lower()) != -1
+
+@register.filter
+def attr(value, attrs):
+    """
+    Adds HTML attributes to a form widget.
+    Usage: {{ form.field|attr:"data-field-type:value,class:special-input" }}
+    """
+    if not attrs:
+        return value
+    
+    attrs_dict = {}
+    for attr_pair in attrs.split(','):
+        if ':' in attr_pair:
+            key, val = attr_pair.split(':')
+            attrs_dict[key.strip()] = val.strip()
+    
+    if hasattr(value, 'field') and hasattr(value, 'as_widget'):
+        return value.as_widget(attrs=attrs_dict)
+    return value
+    return str(arg).lower() in str(value).lower()

@@ -1,12 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{% block title %}Butterfly Collections{% endblock %}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Butterfly Collections{% endblock %}</title>    <style>
+        /* Add some basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        /* Style for standard dropdowns */
+        select {
+            min-width: 150px;
+            padding: 8px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+        
+        /* Style for searchable inputs with datalist */
+        .searchable-input {
+            min-width: 150px;
+            padding: 8px;
+            border: 1px solid #6c2eb9;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            background-color: #f9f9ff;
+        }
+        
+        .searchable-input:focus {
+            outline: none;
+            border-color: #8c43e6;
+            box-shadow: 0 0 5px rgba(140, 67, 230, 0.5);
+        }
+        
+        /* Form info display */
+        .form-info {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
     <h1>{% block header %}Butterfly Collections{% endblock %}</h1>
+    
     <div>
         {% block content %}{% endblock %}
     </div>
+    
+    <!-- Navigation -->
+    <nav>
+        <a href="{% url 'report_table' %}">Home</a> |
+        <a href="{% url 'dynamic_create' 'specimen' %}">New Specimen</a> |
+        <a href="{% url 'dynamic_create' 'locality' %}">New Locality</a>
+    </nav>
+    
+    <script>
+    // Custom dropdown functionality is now handled in the _form.html template
+    // This keeps the base template clean and simple
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Base template loaded successfully');
+    });
+    </script>
 </body>
 </html>
