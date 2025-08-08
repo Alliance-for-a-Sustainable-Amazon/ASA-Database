@@ -16,6 +16,7 @@ Tables: Specimen, Locality, Initials
 """
 
 from django.db import models
+from .utils import dot_if_none, str_with_dots
 
 class Locality(models.Model):
     class Meta:
@@ -33,6 +34,7 @@ class Locality(models.Model):
     siteDescription = models.TextField(blank=True, null=True, default=None)
     habitat = models.CharField(max_length=255, blank=True, null=True, default=None)
 
+    @str_with_dots
     def __str__(self):
         return self.localityCode
 
@@ -47,6 +49,7 @@ class Initials(models.Model):
     relationshipOrTitle = models.CharField(max_length=255, blank=True, null=True, default=None, help_text="Relationship or title")
     yearAndTerm = models.CharField(max_length=50, blank=True, null=True, default=None, help_text="Year and term")
 
+    @str_with_dots
     def __str__(self):
         return self.initials
 
@@ -108,7 +111,10 @@ class Specimen(models.Model):
         """Generate the binomial name from genus and specificEpithet"""
         if self.genus and self.specificEpithet:
             return f"{self.genus} {self.specificEpithet}"
-        return ""
+        return "."
     
+    @str_with_dots
     def __str__(self):
-        return f"Specimen {self.specimenNumber} (Catalog {self.catalogNumber})"
+        specimen_num = dot_if_none(self.specimenNumber)
+        catalog_num = dot_if_none(self.catalogNumber)
+        return f"Specimen {specimen_num} (Catalog {catalog_num})"

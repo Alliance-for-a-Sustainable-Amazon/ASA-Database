@@ -17,24 +17,58 @@ def startswith(text, starts):
     return str(text).startswith(starts)
     
 @register.filter
+def dot_if_none(value, use_dot=True):
+    """
+    Returns a dot (.) if the value is None, empty string, or "None" string.
+    Otherwise returns the original value.
+    
+    Args:
+        value: The value to check
+        use_dot: Boolean indicating whether to return a dot (True) or empty string (False)
+                 for empty values. Default is True.
+    
+    Usage: 
+        {{ value|dot_if_none }}           # Returns "." for empty values
+        {{ value|dot_if_none:False }}     # Returns "" for empty values
+    """
+    if value is None or value == "" or value == "None":
+        return "." if use_dot else ""
+    return value
+
+@register.filter
 def get_item(dictionary, key):
     """
     Get an item from a dictionary using the key.
     Returns the value for a given key from a dictionary-like object.
-    Usage: {{ request.GET|get_item:field.name }}
-          {{ item.data|get_item:field }}
+    
+    Usage: 
+        {{ request.GET|get_item:field.name }}
+        {{ item.data|get_item:field }}
     """
     if dictionary is None:
-        return ''
-    return dictionary.get(key, '')
+        return None
+    return dictionary.get(key)
+
+@register.filter
+def get_search_value(dictionary, key):
+    """
+    Get an item from a dictionary using the key specifically for search fields.
+    Returns empty string instead of dots for empty/null values.
+    
+    Usage: {{ request.GET|get_search_value:field.name }}
+    """
+    value = get_item(dictionary, key)
+    return dot_if_none(value, use_dot=False)
 
 @register.filter
 def get_field_value(obj, field_name):
     """
     Template filter to dynamically access a field value from a model instance.
+    
     Usage in template: {{ object|get_field_value:"field_name" }}
     """
-    return getattr(obj, field_name)
+    value = getattr(obj, field_name, None)
+    return value
 
 @register.filter
 def split_semi(value):
@@ -68,4 +102,3 @@ def attr(value, attrs):
     if hasattr(value, 'field') and hasattr(value, 'as_widget'):
         return value.as_widget(attrs=attrs_dict)
     return value
-    return str(arg).lower() in str(value).lower()

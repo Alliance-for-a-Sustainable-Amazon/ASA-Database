@@ -12,6 +12,7 @@ import pandas as pd
 from django.views.decorators.csrf import csrf_exempt
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, LocalityForm, InitialsForm
+from .utils import dot_if_none
 
 # --- Utility Functions ---
 def model_list():

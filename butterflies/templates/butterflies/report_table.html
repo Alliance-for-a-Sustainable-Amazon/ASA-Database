@@ -1,5 +1,5 @@
 {# report_table.html - Verbose report table for specimens and related fields #}
-{% load butterfly_extras %}
+{% load butterfly_extras butterfly_display %}
 <div style="margin-bottom: 1em; display: flex; align-items: center;">
   <div>
     <h3 style="margin: 0 0 5px 0;">Export Full Report Table</h3>
@@ -64,50 +64,50 @@
     <tbody>
     {% for specimen in specimens %}
         <tr>
-            <td>{{ specimen.modified }}</td>
-            <td>{{ specimen.specimenNumber }}</td>
-            <td>{{ specimen.catalogNumber }}</td>
-            <td>{{ specimen.recordedBy }}</td>
-            <td>{{ specimen.uploaded_iNaturalist }}</td>
-            <td>{{ specimen.sex }}</td>
-            <td>{{ specimen.behavior }}</td>
-            <td>{{ specimen.disposition }}</td>
-            <td>{{ specimen.occurrenceRemarks }}</td>
-            <td>{{ specimen.eventDate }}</td>
-            <td>{{ specimen.eventTime }}</td>
-            <td>{{ specimen.year }}</td>
-            <td>{{ specimen.month }}</td>
-            <td>{{ specimen.day }}</td>
-            <td>{{ specimen.locality.habitat }}</td>
-            <td>{{ specimen.habitatNotes }}</td>
-            <td>{{ specimen.samplingProtocol }}</td>
-            <td>{{ specimen.locality.country }}</td>
-            <td>{{ specimen.locality.region }}</td>
-            <td>{{ specimen.locality.province }}</td>
-            <td>{{ specimen.locality.district }}</td>
-            <td>{{ specimen.locality }}</td>
-            <td>{{ specimen.localityDescriptionNotes }}</td>
-            <td>{{ specimen.minimumElevationInMeters }}</td>
-            <td>{{ specimen.maximumElevationInMeters }}</td>
-            <td>{{ specimen.decimalLatitude }}</td>
-            <td>{{ specimen.decimalLongitude }}</td>
-            <td>{{ specimen.exact_loc }}</td>
-            <td>{{ specimen.coordinateUncertaintyInMeters }}</td>
-            <td>{{ specimen.georeferencedBy }}</td>
-            <td>{{ specimen.georeferencedDate }}</td>
-            <td>{{ specimen.georeferenceProtocol }}</td>
-            <td>{{ specimen.identifiedBy }}</td>
-            <td>{{ specimen.dateIdentified }}</td>
-            <td>{{ specimen.identificationReferences }}</td>
-            <td>{{ specimen.identificationRemarks }}</td>
-            <td>{{ specimen.family }}</td>
-            <td>{{ specimen.subfamily }}</td>
-            <td>{{ specimen.tribe }}</td>
-            <td>{{ specimen.subtribe }}</td>
-            <td>{{ specimen.genus }}</td>
-            <td>{{ specimen.specificEpithet }}</td>
-            <td>{{ specimen.binomial }}</td>
-            <td>{{ specimen.infraspecificEpithet }}</td>
+            <td>{{ specimen.modified|dot_if_none }}</td>
+            <td>{{ specimen.specimenNumber|dot_if_none }}</td>
+            <td>{{ specimen.catalogNumber|dot_if_none }}</td>
+            <td>{{ specimen.recordedBy|dot_if_none }}</td>
+            <td>{{ specimen.uploaded_iNaturalist|dot_if_none }}</td>
+            <td>{{ specimen.sex|dot_if_none }}</td>
+            <td>{{ specimen.behavior|dot_if_none }}</td>
+            <td>{{ specimen.disposition|dot_if_none }}</td>
+            <td>{{ specimen.occurrenceRemarks|dot_if_none }}</td>
+            <td>{{ specimen.eventDate|dot_if_none }}</td>
+            <td>{{ specimen.eventTime|dot_if_none }}</td>
+            <td>{{ specimen.year|dot_if_none }}</td>
+            <td>{{ specimen.month|dot_if_none }}</td>
+            <td>{{ specimen.day|dot_if_none }}</td>
+            <td>{{ specimen.locality.habitat|dot_if_none }}</td>
+            <td>{{ specimen.habitatNotes|dot_if_none }}</td>
+            <td>{{ specimen.samplingProtocol|dot_if_none }}</td>
+            <td>{{ specimen.locality.country|dot_if_none }}</td>
+            <td>{{ specimen.locality.region|dot_if_none }}</td>
+            <td>{{ specimen.locality.province|dot_if_none }}</td>
+            <td>{{ specimen.locality.district|dot_if_none }}</td>
+            <td>{{ specimen.locality|dot_if_none }}</td>
+            <td>{{ specimen.localityDescriptionNotes|dot_if_none }}</td>
+            <td>{{ specimen.minimumElevationInMeters|dot_if_none }}</td>
+            <td>{{ specimen.maximumElevationInMeters|dot_if_none }}</td>
+            <td>{{ specimen.decimalLatitude|dot_if_none }}</td>
+            <td>{{ specimen.decimalLongitude|dot_if_none }}</td>
+            <td>{{ specimen.exact_loc|dot_if_none }}</td>
+            <td>{{ specimen.coordinateUncertaintyInMeters|dot_if_none }}</td>
+            <td>{{ specimen.georeferencedBy|dot_if_none }}</td>
+            <td>{{ specimen.georeferencedDate|dot_if_none }}</td>
+            <td>{{ specimen.georeferenceProtocol|dot_if_none }}</td>
+            <td>{{ specimen.identifiedBy|dot_if_none }}</td>
+            <td>{{ specimen.dateIdentified|dot_if_none }}</td>
+            <td>{{ specimen.identificationReferences|dot_if_none }}</td>
+            <td>{{ specimen.identificationRemarks|dot_if_none }}</td>
+            <td>{{ specimen.family|dot_if_none }}</td>
+            <td>{{ specimen.subfamily|dot_if_none }}</td>
+            <td>{{ specimen.tribe|dot_if_none }}</td>
+            <td>{{ specimen.subtribe|dot_if_none }}</td>
+            <td>{{ specimen.genus|dot_if_none }}</td>
+            <td>{{ specimen.specificEpithet|dot_if_none }}</td>
+            <td>{{ specimen.binomial|dot_if_none }}</td>
+            <td>{{ specimen.infraspecificEpithet|dot_if_none }}</td>
         </tr>
     {% endfor %}
     </tbody>

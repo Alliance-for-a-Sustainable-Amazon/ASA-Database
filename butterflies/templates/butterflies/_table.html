@@ -1,5 +1,5 @@
 {# _table.html - Reusable table and search row for any model #}
-{% load butterfly_extras %}
+{% load butterfly_extras butterfly_display %}
 <table border="1">
     <tr>
         {% for field in fields %}
@@ -10,7 +10,7 @@
         <form method="get">
         {% for field in fields %}
             <td>
-                <input type="text" name="{{ field.name }}" value="{{ request.GET|get_item:field.name }}" placeholder="Search {{ field.verbose_name }}">
+                <input type="text" name="{{ field.name }}" value="{{ request.GET|get_search_value:field.name }}" placeholder="Search...">
             </td>
         {% endfor %}
         <td>
@@ -22,9 +22,9 @@
     <tr>
         {% for field in fields %}
             {% if forloop.first %}
-                <td><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{{ obj|get_field_value:field.name }}</a></td>
+                <td><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{{ obj|get_field_value:field.name|dot_if_none }}</a></td>
             {% else %}
-                <td>{{ obj|get_field_value:field.name }}</td>
+                <td>{{ obj|get_field_value:field.name|dot_if_none }}</td>
             {% endif %}
         {% endfor %}
         <td>
