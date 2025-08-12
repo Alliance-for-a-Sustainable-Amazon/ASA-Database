@@ -1,6 +1,5 @@
-# forms.py
+# forms_organized.py
 # Defines Django ModelForm classes for butterfly collections with fields organized into logical groups.
-# This is the consolidated forms file that uses the organized form layout for all forms.
 
 from django import forms
 from django.utils.functional import cached_property

@@ -1,19 +1,18 @@
-{% extends 'butterflies/base.html' %}
-{% load butterfly_extras %}
+{% extends "butterflies/base.html" %}
+{% load static %}
 
-{% block title %}Add Specimen{% endblock %}
+{% block title %}
+  {{ form.instance.pk|yesno:"Edit,Add" }} Specimen
+{% endblock %}
 
 {% block content %}
-<h2>Add Single Record</h2>
-
-{% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-            <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</div>
-        {% endfor %}
-    </div>
+{% if form.instance.pk %}
+<h2>Edit Specimen: {{ form.instance.catalogNumber }}</h2>
+{% else %}
+<h2>Add New Specimen</h2>
 {% endif %}
-
-{% include 'butterflies/_form.html' with form=form model_name="Specimen" %}
-
+<div id="form-container" class="form-container">
+    {# Include the form layout for specimen model #}
+    {% include 'butterflies/_form.html' with form=form model_name="Specimen" %}
+</div>
 {% endblock %}

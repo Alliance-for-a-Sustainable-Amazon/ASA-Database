@@ -3,7 +3,33 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Butterfly Collections{% endblock %}</title>    <style>
+    <title>{% block title %}Butterfly Collections{% endblock %}</title>
+    <!-- Simple script to prevent Enter key from submitting forms -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('keydown', function(e) {
+            // Check if Enter key was pressed in a form element that's not a textarea or button
+            if (e.key === 'Enter' && 
+                e.target.form && 
+                e.target.tagName.toLowerCase() !== 'textarea' && 
+                e.target.tagName.toLowerCase() !== 'button' && 
+                e.target.type !== 'submit') {
+                
+                // Prevent default form submission
+                e.preventDefault();
+                
+                // Move focus to next form element
+                const form = e.target.form;
+                const index = Array.prototype.indexOf.call(form, e.target);
+                const nextElement = form.elements[index + 1];
+                if (nextElement) {
+                    nextElement.focus();
+                }
+            }
+        });
+    });
+    </script>
+    <style>
         /* Add some basic styling */
         body {
             font-family: Arial, sans-serif;
@@ -37,14 +63,14 @@
         }
         
         /* Form info display */
-        .form-info {
+        /* .form-info {
             background-color: #f0f0f0;
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
-        }
+        } */
     </style>
 </head>
 <body>

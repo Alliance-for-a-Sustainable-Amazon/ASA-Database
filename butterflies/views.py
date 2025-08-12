@@ -1,3 +1,7 @@
+# views.py
+# Consolidated view functions for butterfly collections using the organized form approach.
+# All forms now use the organized layout for better usability.
+
 # --- Imports ---
 from django.apps import apps
 from django.shortcuts import render, redirect
@@ -5,11 +9,13 @@ from django.views.generic import ListView
 from django.http import Http404, HttpResponse
 from django.forms import modelform_factory
 from django.contrib import messages
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 import csv
 import io
 import openpyxl
 import pandas as pd
-from django.views.decorators.csrf import csrf_exempt
+# App-specific imports
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, LocalityForm, InitialsForm
 from .utils import dot_if_none
@@ -141,8 +147,8 @@ def dynamic_delete(request, model_name, object_id):
 
 def dynamic_create_edit(request, model_name, object_id=None):
     """
-    Generic create/edit view for any model.
-    Uses modelform_factory to generate the form dynamically.
+    Generic create/edit view for any model using the organized form approach.
+    Uses the organized form template for Specimen model.
     
     Parameters:
         request: HTTP request object
@@ -181,19 +187,22 @@ def dynamic_create_edit(request, model_name, object_id=None):
         if form.is_valid():
             form.save()
             # Redirect to home after save
-            from django.urls import reverse
             return redirect(reverse('report_table'))
     else:
         form = form_class(instance=instance)
     
-    # Use model-specific template if it exists
-    template_name = f'butterflies/{model._meta.model_name}_form.html'
-    try:
-        from django.template.loader import get_template
-        get_template(template_name)
-    except:
-        # Fall back to generic form template
-        template_name = 'butterflies/_form.html'
+    # Use model-specific organized template if it's a specimen
+    if model._meta.model_name == 'specimen':
+        template_name = 'butterflies/specimen_form.html'
+    else:
+        # Use model-specific template if it exists
+        template_name = f'butterflies/{model._meta.model_name}_form.html'
+        try:
+            from django.template.loader import get_template
+            get_template(template_name)
+        except:
+            # Fall back to generic form template
+            template_name = 'butterflies/_form.html'
     
     return render(request, template_name, {
         'form': form, 
@@ -204,13 +213,13 @@ def dynamic_create_edit(request, model_name, object_id=None):
 
 def create_specimen(request):
     """
-    Create a new Specimen object.
+    Create a new Specimen object using the organized form layout.
     Handles both form display and processing.
     
     Parameters:
         request: HTTP request object
     Returns:
-        Rendered form template with success message on submission
+        Rendered organized form template with success message on submission
     """
     form = SpecimenForm()
     if request.method == 'POST':
@@ -379,20 +388,31 @@ def export_report_csv(request):
     response['Content-Disposition'] = 'attachment; filename="specimen_report.csv"'
     writer = csv.writer(response)
     
-    # Define all the headers based on the report table columns
+    # Define all the headers based on the organized form categories
     headers = [
-        'modified', 'specimenNumber', 'catalogNumber', 'recordedBy',
-        'uploaded_iNaturalist', 'sex', 'behavior', 'disposition',
-        'occurrenceRemarks', 'eventDate', 'eventTime', 'year',
-        'month', 'day', 'habitat', 'habitatNotes', 'samplingProtocol',
-        'country', 'stateProvince', 'county', 'municipality', 
-        'locality', 'localityDescriptionNotes', 'minimumElevationInMeters',
-        'maximumElevationInMeters', 'decimalLatitude', 'decimalLongitude',
-        'exact_loc', 'coordinateUncertaintyInMeters', 'georeferencedBy',
-        'georeferencedDate', 'georeferenceProtocol', 'identifiedBy',
-        'dateIdentified', 'identificationReferences', 'identificationRemarks',
+        # 1. Record-level Fields
+        'modified',
+        
+        # 2. Location Fields
+        'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc', 
+        'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate', 
+        'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
+        'localityDescriptionNotes', 'country', 'stateProvince', 'county', 'municipality',
+        
+        # 3. Occurrence Fields
+        'specimenNumber', 'catalogNumber', 'recordedBy', 'sex', 
+        'uploaded_iNaturalist', 'behavior', 'occurrenceRemarks', 'disposition',
+        
+        # 4. Event Fields
+        'year', 'month', 'day', 'eventTime', 'eventDate', 'habitat',
+        'habitatNotes', 'samplingProtocol',
+        
+        # 5. Taxon Fields
         'family', 'subfamily', 'tribe', 'subtribe', 'genus',
-        'specificEpithet', 'binomial', 'infraspecificEpithet'
+        'specificEpithet', 'binomial', 'infraspecificEpithet',
+        
+        # 6. Identification Fields
+        'identifiedBy', 'dateIdentified', 'identificationReferences', 'identificationRemarks'
     ]
     
     writer.writerow(headers)
@@ -467,20 +487,31 @@ def export_report_excel(request):
     ws = wb.active
     ws.title = "Specimen Report"
     
-    # Define all the headers based on the report table columns
+    # Define all the headers based on the organized form categories
     headers = [
-        'modified', 'specimenNumber', 'catalogNumber', 'recordedBy',
-        'uploaded_iNaturalist', 'sex', 'behavior', 'disposition',
-        'occurrenceRemarks', 'eventDate', 'eventTime', 'year',
-        'month', 'day', 'habitat', 'habitatNotes', 'samplingProtocol',
-        'country', 'stateProvince', 'county', 'municipality', 
-        'locality', 'localityDescriptionNotes', 'minimumElevationInMeters',
-        'maximumElevationInMeters', 'decimalLatitude', 'decimalLongitude',
-        'exact_loc', 'coordinateUncertaintyInMeters', 'georeferencedBy',
-        'georeferencedDate', 'georeferenceProtocol', 'identifiedBy',
-        'dateIdentified', 'identificationReferences', 'identificationRemarks',
+        # 1. Record-level Fields
+        'modified',
+        
+        # 2. Location Fields
+        'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc', 
+        'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate', 
+        'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
+        'localityDescriptionNotes', 'country', 'stateProvince', 'county', 'municipality',
+        
+        # 3. Occurrence Fields
+        'specimenNumber', 'catalogNumber', 'recordedBy', 'sex', 
+        'uploaded_iNaturalist', 'behavior', 'occurrenceRemarks', 'disposition',
+        
+        # 4. Event Fields
+        'year', 'month', 'day', 'eventTime', 'eventDate', 'habitat',
+        'habitatNotes', 'samplingProtocol',
+        
+        # 5. Taxon Fields
         'family', 'subfamily', 'tribe', 'subtribe', 'genus',
-        'specificEpithet', 'binomial', 'infraspecificEpithet'
+        'specificEpithet', 'binomial', 'infraspecificEpithet',
+        
+        # 6. Identification Fields
+        'identifiedBy', 'dateIdentified', 'identificationReferences', 'identificationRemarks'
     ]
     
     ws.append(headers)

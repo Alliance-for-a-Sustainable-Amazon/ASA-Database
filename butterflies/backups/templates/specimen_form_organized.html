@@ -1,10 +1,10 @@
 {% extends 'butterflies/base.html' %}
 {% load butterfly_extras %}
 
-{% block title %}Add Locality{% endblock %}
+{% block title %}Add Specimen (Organized){% endblock %}
 
 {% block content %}
-<h2>Add Locality</h2>
+<h2>Add Single Record (Organized View)</h2>
 
 {% if messages %}
     <div class="messages">
@@ -14,7 +14,9 @@
     </div>
 {% endif %}
 
+
+
 <!-- Include the organized form template -->
-{% include 'butterflies/_form_organized.html' with form=form model_name="Locality" %}
+{% include 'butterflies/_form_organized.html' with form=form model_name="Specimen" %}
 
 {% endblock %}

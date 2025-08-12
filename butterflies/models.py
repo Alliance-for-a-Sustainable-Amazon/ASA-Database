@@ -56,11 +56,99 @@ class Initials(models.Model):
 class Specimen(models.Model):
     class Meta:
         db_table = 'specimenTable'
+        # This ordering array specifies the conceptual field order
+        # Important fields come first, but this doesn't change the database schema
+        # It affects operations like model_to_dict() and form field ordering
+        ordering = [
+            # 1. Record-level Fields
+            'modified', 
+            
+            # 2. Location Fields
+            'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc',
+            'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate',
+            'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
+            'localityDescriptionNotes',
+            
+            # 3. Occurrence Fields
+            'specimenNumber', 'catalogNumber', 'recordedBy', 'sex',
+            'uploaded_iNaturalist', 'behavior', 'occurrenceRemarks', 'disposition',
+            
+            # 4. Event Fields
+            'year', 'month', 'day', 'eventTime', 'eventDate',
+            'habitatNotes', 'samplingProtocol',
+            
+            # 5. Taxon Fields
+            'family', 'subfamily', 'tribe', 'subtribe', 'genus',
+            'specificEpithet', 'infraspecificEpithet',
+            
+            # 6. Identification Fields
+            'identifiedBy', 'dateIdentified', 'identificationReferences', 'identificationRemarks'
+        ]
 
+    # ----------------------------------
+    # 1. Record-level Fields
+    # ----------------------------------
     # Concatenated modification history (append-only, semicolon-separated)
     modified = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    
+    # ----------------------------------
+    # 2. Location Fields
+    # ----------------------------------
+    # Locality is a relation; all other locality info is in Locality table
+    locality = models.ForeignKey(Locality, on_delete=models.SET_NULL, null=True, help_text="Dropdown: localityCode from Locality table.")
+    decimalLatitude = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (XX.XXXXXX).")
+    decimalLongitude = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (XX.XXXXXX).")
+    exact_loc = models.CharField(max_length=5, blank=True, null=True, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text='Dropdown: "TRUE", "FALSE".')
+    coordinateUncertaintyInMeters = models.CharField(max_length=100, blank=True, null=True, help_text="Text.")
+    georeferencedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, related_name='georeferenced_specimens', help_text="Dropdown: initials from Initials table.")
+    georeferencedDate = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    georeferenceProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    minimumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
+    maximumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
+    localityDescriptionNotes = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    
+    # ----------------------------------
+    # 3. Occurrence Fields
+    # ----------------------------------
     specimenNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Manual entry. If duplicate, error.")
     catalogNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Auto-generated: year-localityCode-specimenNumber (nnnn). Do not edit.")
+    recordedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, help_text="Dropdown: initials from Initials table.")
+    sex = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('.', '.')], help_text="Dropdown: male/female/.")
+    uploaded_iNaturalist = models.CharField(max_length=5, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text="Dropdown: TRUE/FALSE.")
+    behavior = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    occurrenceRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    disposition = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    
+    # ----------------------------------
+    # 4. Event Fields
+    # ----------------------------------
+    year = models.CharField(max_length=4, blank=True, null=True, help_text="Dropdown/typeable: 1900-2050.")
+    month = models.CharField(max_length=10, blank=True, null=True, help_text="Dropdown/typeable.")
+    day = models.CharField(max_length=2, blank=True, null=True, help_text="Dropdown/typeable.")
+    eventTime = models.CharField(max_length=50, blank=True, null=True, help_text="Time (XX:XX) military format.")
+    eventDate = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    habitatNotes = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    samplingProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    
+    # ----------------------------------
+    # 5. Taxon Fields
+    # ----------------------------------
+    family = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
+    subfamily = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
+    tribe = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
+    subtribe = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
+    genus = models.CharField(max_length=100, blank=True, null=True, help_text="Text/write in.")
+    specificEpithet = models.CharField(max_length=100, blank=True, null=True, help_text="Text/write in.")
+    infraspecificEpithet = models.CharField(max_length=100, blank=True, null=True, help_text="Text/write in.")
+    
+    # ----------------------------------
+    # 6. Identification Fields
+    # ----------------------------------
+    identifiedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, related_name='identified_specimens', help_text="Dropdown: initials from Initials table.")
+    dateIdentified = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    identificationReferences = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    identificationRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
+    
     def save(self, *args, **kwargs):
         # Auto-generate catalogNumber if not set and required fields are present
         if not self.catalogNumber:
@@ -69,43 +157,7 @@ class Specimen(models.Model):
             specimen_number = self.specimenNumber or ''
             self.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
         super().save(*args, **kwargs)
-    recordedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, help_text="Dropdown: initials from Initials table.")
-    uploaded_iNaturalist = models.CharField(max_length=5, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text="Dropdown: TRUE/FALSE.")
-    sex = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('.', '.')], help_text="Dropdown: male/female/.")
-    behavior = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    disposition = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    occurrenceRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    eventDate = models.DateField(blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
-    eventTime = models.TimeField(blank=True, null=True, help_text="Time (XX:XX) military format.")
-    year = models.CharField(max_length=4, blank=True, null=True, help_text="Dropdown/typeable: 1900-2050.")
-    month = models.CharField(max_length=2, blank=True, null=True, help_text="Dropdown/typeable.")
-    day = models.CharField(max_length=2, blank=True, null=True, help_text="Dropdown/typeable.")
-    habitatNotes = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    samplingProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    # Locality is a relation; all other locality info is in Locality table
-    locality = models.ForeignKey(Locality, on_delete=models.SET_NULL, null=True, help_text="Dropdown: localityCode from Locality table.")
-    localityDescriptionNotes = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    minimumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
-    maximumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
-    decimalLatitude = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (XX.XXXXXX).")
-    decimalLongitude = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (XX.XXXXXX).")
-    exact_loc = models.CharField(max_length=5, blank=True, null=True, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text='Dropdown: "TRUE", "FALSE".')
-    coordinateUncertaintyInMeters = models.CharField(max_length=100, blank=True, null=True, help_text="Text.")
-    georeferencedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, related_name='georeferenced_specimens', help_text="Dropdown: initials from Initials table.")
-    georeferencedDate = models.DateField(blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
-    georeferenceProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    identifiedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, related_name='identified_specimens', help_text="Dropdown: initials from Initials table.")
-    dateIdentified = models.DateField(blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
-    identificationReferences = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    identificationRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
-    family = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
-    subfamily = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
-    tribe = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
-    subtribe = models.CharField(max_length=100, blank=True, null=True, help_text='Text/write in.')
-    genus = models.CharField(max_length=100, blank=True, null=True, help_text="Text/write in.")
-    specificEpithet = models.CharField(max_length=100, blank=True, null=True, help_text="Text/write in.")
-    infraspecificEpithet = models.CharField(max_length=100, blank=True, null=True, help_text="Text/write in.")
-
+        
     @property
     def binomial(self):
         """Generate the binomial name from genus and specificEpithet"""
