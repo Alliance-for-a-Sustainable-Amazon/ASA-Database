@@ -42,4 +42,7 @@ urlpatterns = [
     # Generic detail and delete for any model
     path('detail/<str:model_name>/<str:object_id>/', views.dynamic_detail, name='dynamic_detail'),
     path('delete/<str:model_name>/<str:object_id>/', views.dynamic_delete, name='dynamic_delete'),
+    
+    # Debug bulk delete for specimen table
+    path('specimen/debug-bulk-delete/', views.debug_bulk_delete_specimen, name='debug_bulk_delete_specimen'),
 ]

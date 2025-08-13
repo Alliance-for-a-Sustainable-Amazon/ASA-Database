@@ -14,7 +14,7 @@
         /* Base styling for all inputs */
         input, select, textarea, .searchable-input {
             padding: 6px 8px;
-            border: 1px solid #6b8e23; /* Olive green border */
+            border: 1px solid #888888; /* Gray border */
             border-radius: 4px;
             font-size: 14px;
             min-width: 150px;
@@ -30,8 +30,8 @@
         
         input:focus, select:focus, textarea:focus, .searchable-input:focus {
             outline: none;
-            border-color: #8fbc8f; /* Sea green when focused */
-            box-shadow: 0 0 3px rgba(143, 188, 143, 0.5);
+            border-color: #555555; /* Darker gray when focused */
+            box-shadow: 0 0 3px rgba(85, 85, 85, 0.5);
         }
         
         /* Text field container for textarea fields */
@@ -51,7 +51,7 @@
             display: block !important;
             width: 100% !important;
             min-height: 80px !important;
-            border: 1px solid #6b8e23 !important;
+            border: 1px solid #888888 !important;
             padding: 8px !important;
             box-sizing: border-box !important;
             font-size: 14px !important;
@@ -63,18 +63,18 @@
         .category-section {
             margin-bottom: 2rem;
             padding: 1rem;
-            border: 1px solid #d1e0bf;
+            border: 1px solid #cccccc;
             border-radius: 6px;
-            background-color: #f9fbf7;
+            background-color: #f9f9f9;
         }
         
         .category-title {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #4f6228;
+            color: #555555;
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
-            border-bottom: 1px solid #d1e0bf;
+            border-bottom: 1px solid #cccccc;
         }
         
         /* Field section styling */
@@ -85,15 +85,15 @@
         }
         
         /* .field-section:hover {
-            background-color: #f0f5e8;
+            background-color: #f5f5f5;
         } */
         
         /* History section styling */
         .history-section {
             margin-bottom: 1em;
             padding: 0.5em;
-            background: #f8f8f8;
-            border: 1px solid #ddd;
+            background: #f5f5f5;
+            border: 1px solid #dddddd;
             border-radius: 4px;
         }
         
@@ -135,7 +135,7 @@
             width: 100%;
             max-height: 300px;
             overflow-y: auto;
-            border: 1px solid #ddd;
+            border: 1px solid #dddddd;
             border-radius: 4px;
             background: white;
             z-index: 1000;
@@ -149,12 +149,12 @@
         }
         
         .searchable-option:hover {
-            background-color: #f0f8ff; /* Light blue on hover */
+            background-color: #eeeeee; /* Light gray on hover */
         }
         
         /* Form field error styling */
         .field-error, .error {
-            color: #d32f2f;
+            color: #777777; /* Gray error text for grayscale theme */
             font-size: 12px;
             margin-top: 4px;
         }
@@ -163,7 +163,7 @@
         .category-toggle {
             background: none;
             border: none;
-            color: #4f6228;
+            color: #555555;
             cursor: pointer;
             float: right;
             font-size: 1rem;
@@ -406,15 +406,7 @@
                     </div>
                 </div>
                 
-                {# Extra field not in the numbered list #}
-                <div class="field-grid">
-                    <div>
-                        <label for="{{ form.uploaded_iNaturalist.id_for_label }}">Uploaded to iNaturalist:</label>
-                        {{ form.uploaded_iNaturalist|attr:"data-field-type:boolean,data-label:iNaturalist upload" }}
-                        {% if form.uploaded_iNaturalist.help_text %}<small>{{ form.uploaded_iNaturalist.help_text }}</small>{% endif %}
-                        {% for error in form.uploaded_iNaturalist.errors %}<div class="error">{{ error }}</div>{% endfor %}
-                    </div>
-                </div>
+                {# Extra fields would go here if needed #}
             </div>
         </div>
         
@@ -460,12 +452,7 @@
                     </div>
                 </div>
                 
-                {# Event Date components - needed for backend processing #}
-                <div style="display: none;">
-                    {{ form.event_day|attr:"data-field-type:day,data-label:event day" }}
-                    {{ form.event_month|attr:"data-field-type:month,data-label:event month" }}
-                    {{ form.event_year|attr:"data-field-type:year,data-label:event year" }}
-                </div>
+                {# Event Date components have been removed - now using main date fields directly #}
                 
                 {# 22. habitatNotes field - direct input #}
                 <div class="field-section">
@@ -565,7 +552,7 @@
                     {# 31. identifiedBy field #}
                     <div>
                         <label for="{{ form.identifiedBy.id_for_label }}">31. Identified By:</label>
-                        {{ form.identifiedBy|attr:"data-field-type:person,data-label:identifier" }}
+                        {{ form.identifiedBy|attr:"data-field-type:person,data-label:initials" }}
                         {% if form.identifiedBy.help_text %}<small>{{ form.identifiedBy.help_text }}</small>{% endif %}
                         {% for error in form.identifiedBy.errors %}<div class="error">{{ error }}</div>{% endfor %}
                     </div>
@@ -575,15 +562,15 @@
                         <label>32. Date Identified:</label>
                         <div class="row">
                             <div class="col-4">
-                                {{ form.dateIdentified_day|attr:"data-field-type:day,data-label:date identified day" }}
+                                {{ form.dateIdentified_day|attr:"data-field-type:day,data-label:day" }}
                                 {% for error in form.dateIdentified_day.errors %}<div class="error">{{ error }}</div>{% endfor %}
                             </div>
                             <div class="col-4">
-                                {{ form.dateIdentified_month|attr:"data-field-type:month,data-label:date identified month" }}
+                                {{ form.dateIdentified_month|attr:"data-field-type:month,data-label:month" }}
                                 {% for error in form.dateIdentified_month.errors %}<div class="error">{{ error }}</div>{% endfor %}
                             </div>
                             <div class="col-4">
-                                {{ form.dateIdentified_year|attr:"data-field-type:year,data-label:date identified year" }}
+                                {{ form.dateIdentified_year|attr:"data-field-type:year,data-label:year" }}
                                 {% for error in form.dateIdentified_year.errors %}<div class="error">{{ error }}</div>{% endfor %}
                             </div>
                         </div>
@@ -661,15 +648,15 @@
     /* Base styles for all form elements */
     input, select, .searchable-input {
         padding: 6px;
-        border: 1px solid #6b8e23; /* Olive green border for inputs */
+        border: 1px solid #888888; /* Gray border for inputs */
         border-radius: 4px;
         box-sizing: border-box;
     }
     
     input:focus, select:focus, .searchable-input:focus {
-        border-color: #4682b4; /* Steel blue when focused */
+        border-color: #555555; /* Dark gray when focused */
         outline: none;
-        box-shadow: 0 0 5px rgba(70, 130, 180, 0.5);
+        box-shadow: 0 0 5px rgba(85, 85, 85, 0.5);
     }
     
     /* Searchable input specific styles */
@@ -697,7 +684,7 @@
     
     /* Submit button styling */
     button[type="submit"] {
-        background-color: #6b8e23;
+        background-color: #81b53e;
         color: white;
         padding: 10px 20px;
         border: none;
@@ -708,6 +695,6 @@
     }
     
     button[type="submit"]:hover {
-        background-color: #556b2f;
+        background-color: #739c3e;
     }
 </style>

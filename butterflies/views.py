@@ -397,11 +397,11 @@ def export_report_csv(request):
         'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc', 
         'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate', 
         'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
-        'localityDescriptionNotes', 'country', 'stateProvince', 'county', 'municipality',
+        'country', 'stateProvince', 'county', 'municipality',
         
         # 3. Occurrence Fields
         'specimenNumber', 'catalogNumber', 'recordedBy', 'sex', 
-        'uploaded_iNaturalist', 'behavior', 'occurrenceRemarks', 'disposition',
+        'behavior', 'occurrenceRemarks', 'disposition',
         
         # 4. Event Fields
         'year', 'month', 'day', 'eventTime', 'eventDate', 'habitat',
@@ -429,7 +429,6 @@ def export_report_csv(request):
             specimen.specimenNumber,
             specimen.catalogNumber,
             specimen.recordedBy,
-            specimen.uploaded_iNaturalist,
             specimen.sex,
             specimen.behavior,
             specimen.disposition,
@@ -447,7 +446,6 @@ def export_report_csv(request):
             specimen.locality.province if specimen.locality else '',
             specimen.locality.district if specimen.locality else '',
             str(specimen.locality) if specimen.locality else '',
-            specimen.localityDescriptionNotes,
             specimen.minimumElevationInMeters,
             specimen.maximumElevationInMeters,
             specimen.decimalLatitude,
@@ -496,11 +494,10 @@ def export_report_excel(request):
         'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc', 
         'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate', 
         'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
-        'localityDescriptionNotes', 'country', 'stateProvince', 'county', 'municipality',
+        'country', 'stateProvince', 'county', 'municipality',
         
         # 3. Occurrence Fields
-        'specimenNumber', 'catalogNumber', 'recordedBy', 'sex', 
-        'uploaded_iNaturalist', 'behavior', 'occurrenceRemarks', 'disposition',
+        'specimenNumber', 'catalogNumber', 'recordedBy', 'sex', 'behavior', 'occurrenceRemarks', 'disposition',
         
         # 4. Event Fields
         'year', 'month', 'day', 'eventTime', 'eventDate', 'habitat',
@@ -528,7 +525,6 @@ def export_report_excel(request):
             specimen.specimenNumber,
             specimen.catalogNumber,
             str(specimen.recordedBy) if specimen.recordedBy else '',
-            specimen.uploaded_iNaturalist,
             specimen.sex,
             specimen.behavior,
             specimen.disposition,
@@ -546,7 +542,6 @@ def export_report_excel(request):
             specimen.locality.province if specimen.locality else '',
             specimen.locality.district if specimen.locality else '',
             str(specimen.locality) if specimen.locality else '',
-            specimen.localityDescriptionNotes,
             specimen.minimumElevationInMeters,
             specimen.maximumElevationInMeters,
             specimen.decimalLatitude,
@@ -746,6 +741,36 @@ def import_model(request, model_name):
     return render(request, 'butterflies/import_model.html', context)
 
 # --- List View for All Models ---
+
+def debug_bulk_delete_specimen(request):
+    """
+    Debug feature to bulk delete specimens.
+    Provides a confirmation screen and requires typing "DELETE" to confirm.
+    This is a debug-only feature and should be used with caution.
+    
+    Parameters:
+        request: HTTP request object
+    Returns:
+        Confirmation page or redirect to specimen list after deletion
+    """
+    if request.method == 'POST':
+        confirm_text = request.POST.get('confirm_text', '')
+        if confirm_text == 'DELETE':
+            # Perform the bulk delete
+            count = Specimen.objects.all().count()
+            Specimen.objects.all().delete()
+            messages.success(request, f"Successfully deleted {count} specimen records.")
+            return redirect('dynamic_list', model_name='specimen')
+        else:
+            messages.error(request, "Confirmation text did not match. Deletion canceled.")
+            return redirect('dynamic_list', model_name='specimen')
+    
+    # GET request - show confirmation page
+    count = Specimen.objects.all().count()
+    context = {
+        'count': count,
+    }
+    return render(request, 'butterflies/bulk_delete_confirm.html', context)
 
 def all_list(request):
     """

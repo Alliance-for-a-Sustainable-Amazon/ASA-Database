@@ -1,18 +1,24 @@
-{% extends "butterflies/base.html" %}
+{% extends 'butterflies/base.html' %}
+{% load butterfly_extras %}
 {% load static %}
 
-{% block title %}
-  {{ form.instance.pk|yesno:"Edit,Add" }} Specimen
+{% block title %}Add Specimen{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'butterflies/js/required-fields.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-{% if form.instance.pk %}
-<h2>Edit Specimen: {{ form.instance.catalogNumber }}</h2>
-{% else %}
-<h2>Add New Specimen</h2>
+<h2>Add Single Record</h2>
+
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</div>
+        {% endfor %}
+    </div>
 {% endif %}
-<div id="form-container" class="form-container">
-    {# Include the form layout for specimen model #}
-    {% include 'butterflies/_form.html' with form=form model_name="Specimen" %}
-</div>
+
+{% include 'butterflies/_form_organized.html' with form=form model_name="Specimen" %}
+
 {% endblock %}

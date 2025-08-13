@@ -61,7 +61,7 @@ class InitialsAdmin(DotForNoneModelAdmin):
 @admin.register(Specimen)
 class SpecimenAdmin(DotForNoneModelAdmin):
     search_fields = ['specimenNumber', 'catalogNumber']
-    list_filter = ['uploaded_iNaturalist', 'sex', 'locality', 'recordedBy']
+    list_filter = ['sex', 'locality', 'recordedBy']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

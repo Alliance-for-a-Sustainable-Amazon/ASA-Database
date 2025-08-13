@@ -10,6 +10,15 @@ The ASA-Database implements a generic import/export system that works with any m
 - URL pattern: `/<model_name>/export/csv/` or `/<model_name>/export/excel/`
 - Functions: `export_model_csv()` and `export_model_excel()`
 
+### Debug Bulk Delete (Specimen Only)
+- Special debug feature to delete all specimen records at once
+- URL pattern: `/specimen/debug-bulk-delete/`
+- Function: `debug_bulk_delete_specimen()`
+- Safety features:
+  - Requires confirmation with the text "DELETE"
+  - Only available for specimen model
+  - Double confirmation (JavaScript + form)
+
 ### Report Table Export
 - Export the full report table (specimens with related data) to CSV or Excel
 - URL pattern: `/report/export/csv/` or `/report/export/excel/`
@@ -58,4 +67,15 @@ context = {
   <a href="{% url 'export_model_excel' model_name_internal %}">Export Excel</a>
   <a href="{% url 'import_model' model_name_internal %}">Import Data</a>
 </div>
+```
+
+### Adding Debug Bulk Delete Button (Specimen Only)
+
+```html
+{% if model_name_internal == 'specimen' %}
+  <a href="{% url 'debug_bulk_delete_specimen' %}" style="color: red;" 
+     onclick="return confirm('This is a debug feature. Are you sure?')">
+    Debug Bulk Delete
+  </a>
+{% endif %}
 ```

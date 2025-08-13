@@ -257,32 +257,7 @@ class SpecimenForm(forms.ModelForm):
         label="Maximum Elevation (meters)"
     )
     
-    # LocalityDescriptionNotes mini-fields
-    locality_notes_day = forms.ChoiceField(
-        choices=DAY_CHOICES,
-        required=False,
-        label="Locality Notes Day"
-    )
-    locality_notes_month = forms.ChoiceField(
-        choices=MONTH_CHOICES_NAMED,
-        required=False,
-        label="Locality Notes Month"
-    )
-    locality_notes_year = forms.ChoiceField(
-        choices=YEAR_CHOICES,
-        required=False,
-        label="Locality Notes Year"
-    )
-    locality_notes_initials = forms.ModelChoiceField(
-        queryset=Initials.objects.all(),
-        required=False,
-        label="Locality Notes Initials"
-    )
-    locality_notes_description = forms.CharField(
-        max_length=255,
-        required=False,
-        label="Locality Notes Description"
-    )
+    # No longer using mini-fields for LocalityDescriptionNotes
 
     # ----------------------------------
     # 3. Occurrence Fields
@@ -313,13 +288,6 @@ class SpecimenForm(forms.ModelForm):
         choices=[('', ''), ('male', 'male'), ('female', 'female'), ('.', '.')],
         required=False,
         label="Sex"
-    )
-    
-    # Field not in numbered list but needed for functionality
-    uploaded_iNaturalist = forms.ChoiceField(
-        choices=BOOLEAN_CHOICES,
-        required=False,
-        label="Uploaded to iNaturalist?"
     )
     
     # 15. behavior
@@ -367,22 +335,7 @@ class SpecimenForm(forms.ModelForm):
         help_text="Use 24-hour format (e.g., 14:30 for 2:30 PM)"
     )
     
-    # EventDate mini-fields
-    event_day = forms.ChoiceField(
-        choices=DAY_CHOICES,
-        required=False,
-        label="Event Day"
-    )
-    event_month = forms.ChoiceField(
-        choices=MONTH_CHOICES_NAMED,
-        required=False,
-        label="Event Month"
-    )
-    event_year = forms.ChoiceField(
-        choices=YEAR_CHOICES,
-        required=False,
-        label="Event Year"
-    )
+    # Not using separate EventDate mini-fields anymore - using main date fields instead
     
     # 22. habitatNotes
     habitatNotes = create_textarea_field(
@@ -485,12 +438,10 @@ class SpecimenForm(forms.ModelForm):
     class Meta:
         model = Specimen
         exclude = [
-            'modified', 'disposition', 'localityDescriptionNotes',
+            'modified', 'disposition',  
             'eventDate', 'georeferencedDate', 'dateIdentified', 'month'
             # We exclude 'month' to handle it specially in clean_month and save methods
-            # We no longer exclude these fields as we're using direct input:
-            # 'behavior', 'occurrenceRemarks', 'habitatNotes', 'samplingProtocol',
-            # 'georeferenceProtocol', 'identificationReferences', 'identificationRemarks'
+            # We handle these dates through our custom form fields
         ]
 
     def __init__(self, *args, **kwargs):
@@ -509,9 +460,7 @@ class SpecimenForm(forms.ModelForm):
                 # All day/month/year field components
                 'mod_day', 'mod_month', 'mod_year',
                 'georef_day', 'georef_month', 'georef_year',
-                'locality_notes_day', 'locality_notes_month', 'locality_notes_year',
                 'disp_day', 'disp_month', 'disp_year',
-                'event_day', 'event_month', 'event_year',
                 'year', 'month', 'day',
                 'dateIdentified_day', 'dateIdentified_month', 'dateIdentified_year',
             ],
@@ -547,17 +496,7 @@ class SpecimenForm(forms.ModelForm):
         This allows us to handle interdependent fields correctly
         """
         cleaned_data = super().clean()
-        
-        # Store eventDate as simple text concatenation preserving the original values from dropdowns
-        event_day = cleaned_data.get('event_day')
-        event_month = cleaned_data.get('event_month')
-        event_year = cleaned_data.get('event_year')
-        
-        if event_day and event_month and event_year:
-            # Create a string representation without conversion
-            event_date_str = f"{event_day} {event_month} {event_year}"
-            cleaned_data['_event_date_str'] = event_date_str
-                
+        # No special event date processing needed anymore
         return cleaned_data
 
     def save(self, commit=True):
@@ -591,17 +530,7 @@ class SpecimenForm(forms.ModelForm):
             
         # georeferenceProtocol is now directly handled by the model field
         # No special processing needed as it's a direct text input
-                
-        # Append-only logic for localityDescriptionNotes
-        entry = compile_log_entry(
-            self.cleaned_data, 'locality_notes_day', 'locality_notes_month', 'locality_notes_year',
-            'locality_notes_initials', 'locality_notes_description'
-        )
-        if entry:
-            if instance.localityDescriptionNotes:
-                instance.localityDescriptionNotes += f"; {entry}"
-            else:
-                instance.localityDescriptionNotes = entry
+        # No longer using append-only logic for localityDescriptionNotes
         
         # ----------------------------------
         # 3. Occurrence Fields (12-17)
@@ -629,9 +558,12 @@ class SpecimenForm(forms.ModelForm):
             # Store month exactly as selected from dropdown
             instance.month = month_value
             
-        # Set eventDate directly from the string representation
-        if '_event_date_str' in self.cleaned_data:
-            instance.eventDate = self.cleaned_data['_event_date_str']
+        # Create eventDate from the day, month, year fields
+        day_value = self.cleaned_data.get('day')
+        month_value = self.cleaned_data.get('month')
+        year_value = self.cleaned_data.get('year')
+        if day_value and month_value and year_value:
+            instance.eventDate = f"{day_value} {month_value} {year_value}"
                 
         # habitatNotes and samplingProtocol are now directly handled by the model fields
         # No special processing needed as they're direct text inputs

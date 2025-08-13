@@ -67,11 +67,10 @@ class Specimen(models.Model):
             'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc',
             'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate',
             'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
-            'localityDescriptionNotes',
             
             # 3. Occurrence Fields
             'specimenNumber', 'catalogNumber', 'recordedBy', 'sex',
-            'uploaded_iNaturalist', 'behavior', 'occurrenceRemarks', 'disposition',
+            'behavior', 'occurrenceRemarks', 'disposition',
             
             # 4. Event Fields
             'year', 'month', 'day', 'eventTime', 'eventDate',
@@ -105,7 +104,6 @@ class Specimen(models.Model):
     georeferenceProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     minimumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
     maximumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
-    localityDescriptionNotes = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     
     # ----------------------------------
     # 3. Occurrence Fields
@@ -114,7 +112,6 @@ class Specimen(models.Model):
     catalogNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Auto-generated: year-localityCode-specimenNumber (nnnn). Do not edit.")
     recordedBy = models.ForeignKey(Initials, on_delete=models.SET_NULL, null=True, help_text="Dropdown: initials from Initials table.")
     sex = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('.', '.')], help_text="Dropdown: male/female/.")
-    uploaded_iNaturalist = models.CharField(max_length=5, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text="Dropdown: TRUE/FALSE.")
     behavior = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     occurrenceRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     disposition = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
