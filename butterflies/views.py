@@ -17,7 +17,7 @@ import openpyxl
 import pandas as pd
 # App-specific imports
 from .models import Specimen, Locality, Initials
-from .forms import SpecimenForm, LocalityForm, InitialsForm
+from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
 from .utils import dot_if_none
 
 # --- Utility Functions ---
@@ -61,6 +61,17 @@ def dynamic_list(request, model_name):
     for obj in objects:
         obj.model_name_internal = model._meta.model_name
         obj_list.append(obj)
+    # Check for import errors in session
+    import_errors = None
+    import_complete = request.session.get('import_complete', False)
+    
+    if import_complete:
+        import_errors = request.session.get('import_errors', [])
+        # Clear the session variables after retrieving them
+        request.session['import_complete'] = False
+        if 'import_errors' in request.session:
+            del request.session['import_errors']
+    
     return render(request, 'butterflies/dynamic_list.html', {
         'objects': obj_list,
         'fields': fields,
@@ -68,6 +79,7 @@ def dynamic_list(request, model_name):
         'model_name_internal': model._meta.model_name,
         'request': request,
         'home_url': 'report_table',
+        'import_errors': import_errors,  # Pass import errors to the template
     })
 
 def dynamic_detail(request, model_name, object_id):
@@ -167,7 +179,11 @@ def dynamic_create_edit(request, model_name, object_id=None):
     
     # Use appropriate form class based on model
     if model._meta.model_name == 'specimen':
-        form_class = SpecimenForm
+        # Use SpecimenEditForm for editing, SpecimenForm for creating
+        if object_id:
+            form_class = SpecimenEditForm
+        else:
+            form_class = SpecimenForm
     elif model._meta.model_name == 'locality':
         form_class = LocalityForm
     elif model._meta.model_name == 'initials':
@@ -653,6 +669,23 @@ def import_model(request, model_name):
         
         # Validate columns
         required_fields = [f.name for f in model._meta.fields if f.name != 'id']
+        
+        # Special handling for foreign key fields in specimen model
+        if model_name == 'specimen':
+            # Replace foreign key field names with their expected column names in the import file
+            fk_mapping = {
+                'locality': 'locality',  # Expected column name for locality.localityCode
+                'recordedBy': 'recordedBy',  # Expected column name for recordedBy.initials
+                'georeferencedBy': 'georeferencedBy',  # Expected column name for georeferencedBy.initials
+                'identifiedBy': 'identifiedBy',  # Expected column name for identifiedBy.initials
+            }
+            
+            # Update required_fields list with mapped field names
+            for idx, field in enumerate(required_fields):
+                if field in fk_mapping:
+                    required_fields[idx] = fk_mapping[field]
+        
+        # Check for missing required columns
         missing = [f for f in required_fields if f not in df.columns]
         if missing:
             context['error'] = f'Missing columns: {", ".join(missing)}'
@@ -697,6 +730,9 @@ def import_model(request, model_name):
         fields = [f.name for f in model._meta.fields if f.name != 'id']
         rows = int(request.POST.get('row_count', 0))
         
+        # Debug mode can be enabled via a hidden field in the form
+        debug_mode = request.POST.get('debug_mode') == 'true'
+        
         imported_count = 0
         renamed_count = 0
         skipped_count = 0
@@ -727,16 +763,243 @@ def import_model(request, model_name):
             
             # Create new record
             try:
-                model.objects.create(**data)
+                # Handle foreign keys for Specimen model
+                if model_name == 'specimen':
+                    # Handle locality foreign key
+                    if 'locality' in data and data['locality']:
+                        try:
+                            locality_code = data['locality']
+                            locality = Locality.objects.filter(localityCode=locality_code).first()
+                            if locality:
+                                data['locality'] = locality
+                            else:
+                                # If locality not found, set to None and log
+                                messages.warning(request, f"Locality '{locality_code}' not found for row {i+1}. Setting to None.")
+                                data['locality'] = None
+                        except Exception as e:
+                            messages.warning(request, f"Error processing locality for row {i+1}: {str(e)}")
+                            data['locality'] = None
+                    
+                    # Handle recordedBy foreign key
+                    if 'recordedBy' in data and data['recordedBy']:
+                        try:
+                            initials = data['recordedBy']
+                            recorded_by = Initials.objects.filter(initials=initials).first()
+                            if recorded_by:
+                                data['recordedBy'] = recorded_by
+                            else:
+                                # If initials not found, set to None and log
+                                messages.warning(request, f"Initials '{initials}' not found for recordedBy in row {i+1}. Setting to None.")
+                                data['recordedBy'] = None
+                        except Exception as e:
+                            messages.warning(request, f"Error processing recordedBy for row {i+1}: {str(e)}")
+                            data['recordedBy'] = None
+                    
+                    # Handle georeferencedBy foreign key
+                    if 'georeferencedBy' in data and data['georeferencedBy']:
+                        try:
+                            initials = data['georeferencedBy']
+                            georeferenced_by = Initials.objects.filter(initials=initials).first()
+                            if georeferenced_by:
+                                data['georeferencedBy'] = georeferenced_by
+                            else:
+                                # If initials not found, set to None and log
+                                messages.warning(request, f"Initials '{initials}' not found for georeferencedBy in row {i+1}. Setting to None.")
+                                data['georeferencedBy'] = None
+                        except Exception as e:
+                            messages.warning(request, f"Error processing georeferencedBy for row {i+1}: {str(e)}")
+                            data['georeferencedBy'] = None
+                    
+                    # Handle identifiedBy foreign key
+                    if 'identifiedBy' in data and data['identifiedBy']:
+                        try:
+                            initials = data['identifiedBy']
+                            identified_by = Initials.objects.filter(initials=initials).first()
+                            if identified_by:
+                                data['identifiedBy'] = identified_by
+                            else:
+                                # If initials not found, set to None and log
+                                messages.warning(request, f"Initials '{initials}' not found for identifiedBy in row {i+1}. Setting to None.")
+                                data['identifiedBy'] = None
+                        except Exception as e:
+                            messages.warning(request, f"Error processing identifiedBy for row {i+1}: {str(e)}")
+                            data['identifiedBy'] = None
+                
+                # Handle date fields for Specimen model
+                if model_name == 'specimen':
+                    # Construct eventDate from day, month, year if provided
+                    if 'day' in data and 'month' in data and 'year' in data and all([data['day'], data['month'], data['year']]):
+                        data['eventDate'] = f"{data['day']} {data['month']}, {data['year']}"
+                    
+                    # Construct other date fields similarly
+                    if 'dateIdentified' not in data or not data['dateIdentified']:
+                        # Try to construct from dateIdentified components if present in the import data
+                        date_id_day = data.get('dateIdentified_day')
+                        date_id_month = data.get('dateIdentified_month')
+                        date_id_year = data.get('dateIdentified_year')
+                        if date_id_day and date_id_month and date_id_year:
+                            data['dateIdentified'] = f"{date_id_day} {date_id_month}, {date_id_year}"
+                
+                # Perform validation before trying to create the object
+                validation_errors = []
+                
+                # Validate field lengths
+                for field_name, value in data.items():
+                    if value is not None and hasattr(model, '_meta'):
+                        try:
+                            field = model._meta.get_field(field_name)
+                            if hasattr(field, 'max_length') and field.max_length is not None:
+                                if len(str(value)) > field.max_length:
+                                    validation_errors.append(
+                                        f"The value '{value}' for field '{field_name}' is too long. "
+                                        f"Maximum length is {field.max_length} characters."
+                                    )
+                                    
+                                    # Special handling for exact_loc field
+                                    if field_name == 'exact_loc' and model_name == 'specimen':
+                                        validation_errors.append(
+                                            f"For 'exact_loc', only 'TRUE' or 'FALSE' values are allowed."
+                                        )
+                        except Exception:
+                            # If we can't get field info, skip validation for this field
+                            pass
+                
+                # Additional data validation for specimen model
+                if model_name == 'specimen':
+                    # Validate specimenNumber (required for catalogNumber generation)
+                    if not data.get('specimenNumber'):
+                        validation_errors.append(f"Missing specimenNumber, which is needed for catalogNumber generation")
+                    
+                    # Validate year (required for catalogNumber generation)
+                    if not data.get('year'):
+                        validation_errors.append(f"Missing year, which is needed for catalogNumber generation")
+                        
+                    # Validate locality (required for catalogNumber generation)
+                    if not data.get('locality'):
+                        validation_errors.append(f"Missing locality, which is needed for catalogNumber generation")
+                    
+                    # Validate exact_loc format
+                    if data.get('exact_loc') and data.get('exact_loc') not in ['TRUE', 'FALSE']:
+                        validation_errors.append(
+                            f"The value '{data.get('exact_loc')}' for 'exact_loc' is invalid. "
+                            f"Only 'TRUE' or 'FALSE' are allowed."
+                        )
+                
+                # If there are validation errors, raise an exception to skip this row
+                if validation_errors:
+                    error_message = f"Row {i+1}: " + "; ".join(validation_errors)
+                    messages.error(request, error_message)
+                    import_errors = request.session.get('import_errors', [])
+                    import_errors.append(error_message)
+                    request.session['import_errors'] = import_errors
+                    skipped_count += 1
+                    continue  # Skip to the next row
+                
+                # Create the object with processed data
+                instance = model.objects.create(**data)
+                
+                # For Specimen, ensure catalogNumber is generated
+                if model_name == 'specimen':
+                    if not instance.catalogNumber:
+                        # Get the components needed for catalogNumber generation
+                        year = instance.year or ''
+                        locality_code = instance.locality.localityCode if instance.locality else ''
+                        specimen_number = instance.specimenNumber or ''
+                        
+                        # Generate the catalogNumber
+                        instance.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
+                        instance.save()
+                        
+                        if debug_mode:
+                            messages.info(request, f"Auto-generated catalogNumber '{instance.catalogNumber}' for row {i+1}")
+                
                 imported_count += 1
-            except Exception:
+            except Exception as e:
+                # Make the error message more user-friendly
+                error_message = str(e)
+                user_friendly_message = f"<span style='color: #721c24;'><strong>Error importing row {i+1}:</strong> "
+                
+                # Check for common error types and provide more user-friendly messages
+                if "value too long for type character varying" in error_message:
+                    # Extract the field length from the error message
+                    import re
+                    length_match = re.search(r'character varying\((\d+)\)', error_message)
+                    max_length = length_match.group(1) if length_match else "unknown"
+                    
+                    # Try to determine which field caused the error
+                    field_name = "unknown field"
+                    for field in model._meta.fields:
+                        if hasattr(field, 'max_length') and str(field.max_length) == max_length:
+                            field_name = field.name
+                            break
+                    
+                    user_friendly_message += f"The value for '{field_name}' is too long. Maximum length is {max_length} characters."
+                    
+                    # Add specific guidance for exact_loc field
+                    if field_name == 'exact_loc':
+                        user_friendly_message += " For 'exact_loc', only 'TRUE' or 'FALSE' values are allowed."
+                
+                elif "null value in column" in error_message and "violates not-null constraint" in error_message:
+                    # Extract field name from the error message
+                    field_match = re.search(r'column "([^"]+)"', error_message)
+                    if field_match:
+                        field_name = field_match.group(1)
+                        user_friendly_message += f"The field '{field_name}' cannot be empty. Please provide a value."
+                    else:
+                        user_friendly_message += "A required field is missing. Please ensure all required fields have values."
+                
+                elif "duplicate key value violates unique constraint" in error_message:
+                    user_friendly_message += "This record has a duplicate value for a unique field. Please ensure all unique fields have distinct values."
+                
+                elif "invalid input syntax" in error_message:
+                    user_friendly_message += "The data format is incorrect. Please check the data types of your fields."
+                
+                else:
+                    # For other errors, just use the original message
+                    user_friendly_message += error_message
+                
+                # Complete the error message formatting
+                user_friendly_message += "</span>"
+                
+                # Log the error
+                messages.error(request, user_friendly_message)
+                
+                # Store errors in session to display them on redirect
+                import_errors = request.session.get('import_errors', [])
+                import_errors.append(user_friendly_message)
+                request.session['import_errors'] = import_errors
+                
+                # If in debug mode, also include the original technical error
+                if debug_mode:
+                    debug_message = f"Technical details for row {i+1}: {error_message}"
+                    import_errors.append(debug_message)
+                
                 skipped_count += 1
                 
+        # Prepare summary message
         if renamed_count > 0:
             messages.success(request, f'Successfully imported {imported_count} records ({renamed_count} with modified unique keys, {skipped_count} skipped due to errors).')
         else:
             messages.success(request, f'Successfully imported {imported_count} records ({skipped_count} skipped due to errors).')
-        return redirect('dynamic_list', model_name=model_name)
+        
+        # If there were errors during import, make sure they're preserved for display on the redirect
+        import_errors = request.session.get('import_errors', [])
+        if import_errors:
+            # Add a warning message that will be displayed on the list page
+            messages.warning(request, f'There were {len(import_errors)} errors during import. See details below.')
+            
+            # Keep the error messages in session for display
+            request.session['import_complete'] = True
+            
+            # Redirect to the list page for this model
+            return redirect('dynamic_list', model_name=model_name)
+        else:
+            # Clear any previous import errors since this import was successful
+            if 'import_errors' in request.session:
+                del request.session['import_errors']
+            
+            # Redirect to the list page for this model
+            return redirect('dynamic_list', model_name=model_name)
     
     return render(request, 'butterflies/import_model.html', context)
 

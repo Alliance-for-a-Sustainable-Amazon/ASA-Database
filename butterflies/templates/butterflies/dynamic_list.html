@@ -15,6 +15,18 @@
   {% endif %}
 </div>
 
+{% if import_errors %}
+<div class="import-errors" style="margin-bottom: 20px; padding: 15px; border: 1px solid #f8d7da; background-color: #ffeef0; border-radius: 5px;">
+  <h4 style="color: #721c24; margin-top: 0; font-weight: bold;">Import Errors</h4>
+  <p style="color: #721c24;">The following errors occurred during import:</p>
+  <ul style="margin-bottom: 0; color: #721c24;">
+    {% for error in import_errors %}
+      <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% include "butterflies/_table.html" with objects=objects fields=fields request=request %}
 <a href="{% url 'dynamic_create' model_name_internal %}">Add New {{ model_name }}</a>
 <a href="{% url 'report_table' %}">Back to Report Table</a>

@@ -9,7 +9,18 @@
 {% endblock %}
 
 {% block content %}
+{% if form.instance.pk %}
+<h2>Edit Specimen Record</h2>
+<div class="info-box" style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+    <p><strong>Important:</strong> When editing this specimen:</p>
+    <ul>
+        <li>If you change any fields <strong>except</strong> those in the Taxon (5) or Identification (6) groups, you <strong>must</strong> add a new Modified entry.</li>
+        <li>If you change any Taxon fields (5), you <strong>must</strong> update the Identification information (6).</li>
+    </ul>
+</div>
+{% else %}
 <h2>Add Single Record</h2>
+{% endif %}
 
 {% if messages %}
     <div class="messages">
@@ -19,6 +30,6 @@
     </div>
 {% endif %}
 
-{% include 'butterflies/_form_organized.html' with form=form model_name="Specimen" %}
+{% include 'butterflies/_form.html' with form=form model_name="Specimen" %}
 
 {% endblock %}

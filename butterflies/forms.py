@@ -102,7 +102,7 @@ def compile_date_components(cleaned_data, day_field, month_field, year_field, fo
         # Simple concatenation for ISO-like format
         return f"{year}-{month}-{day}"
     else:  # human format
-        return f"{day} {month} {year}"
+        return f"{day} {month}, {year}"
 
 def compile_log_entry(cleaned_data, day_field, month_field, year_field, 
                       initials_field, description_field):
@@ -526,7 +526,7 @@ class SpecimenForm(forms.ModelForm):
         
         if georef_day and georef_month and georef_year:
             # Store as simple text string
-            instance.georeferencedDate = f"{georef_day} {georef_month} {georef_year}"
+            instance.georeferencedDate = f"{georef_day} {georef_month}, {georef_year}"
             
         # georeferenceProtocol is now directly handled by the model field
         # No special processing needed as it's a direct text input
@@ -563,7 +563,7 @@ class SpecimenForm(forms.ModelForm):
         month_value = self.cleaned_data.get('month')
         year_value = self.cleaned_data.get('year')
         if day_value and month_value and year_value:
-            instance.eventDate = f"{day_value} {month_value} {year_value}"
+            instance.eventDate = f"{day_value} {month_value}, {year_value}"
                 
         # habitatNotes and samplingProtocol are now directly handled by the model fields
         # No special processing needed as they're direct text inputs
@@ -594,3 +594,83 @@ class SpecimenForm(forms.ModelForm):
             instance.save()
             self.save_m2m()
         return instance
+
+
+class SpecimenEditForm(SpecimenForm):
+    """
+    Form for editing existing Specimen records with special validation rules:
+    1. By default, no fields are required
+    2. If editing any field except in the 5. Taxon group and 6. Identification group, a new Modified entry is required
+    3. If editing any 5. Taxon field, the 6. Identification group fields are required
+    """
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Make all fields non-required by default for editing
+        for field_name, field in self.fields.items():
+            field.required = False
+            
+        # Store the original field values to detect changes during validation
+        if self.instance and self.instance.pk:
+            self.initial_data = {
+                field_name: getattr(self.instance, field_name, None) 
+                for field_name in self.fields if hasattr(self.instance, field_name)
+            }
+            
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Skip validation if this is a new instance (not editing)
+        if not self.instance or not self.instance.pk:
+            return cleaned_data
+            
+        # Define field groups
+        taxon_fields = [
+            'family', 'subfamily', 'tribe', 'subtribe', 
+            'genus', 'specificEpithet', 'infraspecificEpithet'
+        ]
+        
+        identification_fields = [
+            'identifiedBy', 'dateIdentified_day', 'dateIdentified_month', 
+            'dateIdentified_year', 'identificationReferences', 'identificationRemarks'
+        ]
+        
+        # Check for changes in different field groups
+        has_taxon_changes = any(
+            field in cleaned_data and cleaned_data[field] != self.initial_data.get(field)
+            for field in taxon_fields if field in cleaned_data
+        )
+        
+        has_other_changes = any(
+            field in cleaned_data and field not in taxon_fields and 
+            field not in identification_fields and field != 'catalogNumber' and
+            cleaned_data[field] != self.initial_data.get(field)
+            for field in cleaned_data if hasattr(self.instance, field)
+        )
+        
+        # Rule B: If editing any field except Taxon and Identification groups, require Modified entry
+        if has_other_changes:
+            mod_day = cleaned_data.get('mod_day')
+            mod_month = cleaned_data.get('mod_month')
+            mod_year = cleaned_data.get('mod_year')
+            mod_initials = cleaned_data.get('mod_initials')
+            mod_description = cleaned_data.get('mod_description')
+            
+            if not (mod_day and mod_month and mod_year and mod_initials and mod_description):
+                self.add_error(None, "When editing fields outside the Taxon and Identification groups, "
+                                    "you must add a new Modified entry with all fields (day, month, year, "
+                                    "initials, and description).")
+        
+        # Rule C: If editing any Taxon field, require Identification fields
+        if has_taxon_changes:
+            identified_by = cleaned_data.get('identifiedBy')
+            date_id_day = cleaned_data.get('dateIdentified_day')
+            date_id_month = cleaned_data.get('dateIdentified_month')
+            date_id_year = cleaned_data.get('dateIdentified_year')
+            
+            if not (identified_by and date_id_day and date_id_month and date_id_year):
+                self.add_error(None, "When editing Taxon fields, you must provide Identification information "
+                                    "(Identified By and Date Identified).")
+        
+        return cleaned_data

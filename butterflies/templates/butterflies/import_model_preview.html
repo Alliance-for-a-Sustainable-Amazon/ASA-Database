@@ -12,8 +12,22 @@
     </ul>
 </div>
 {% else %}
-<p>Review the data before confirming import. You can edit any values before confirming.</p>
-<p><em>Note: No unique field was found for this model, so duplicate detection is not available.</em></p>
+<p style="color: #444444;">Review the data before confirming import. You can edit any values before confirming.</p>
+<p style="color: #666666; font-style: italic;">Note: No unique field was found for this model, so duplicate detection is not available.</p>
+{% endif %}
+
+{% if model_name_internal == 'specimen' %}
+<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #dddddd; background-color: #f5f5f5; border-radius: 4px;">
+    <h4 style="margin-top: 0; color: #555555; font-weight: bold;">Important Field Guidelines for Specimens</h4>
+    <ul style="margin-bottom: 0; color: #444444;">
+        <li><strong>exact_loc</strong>: Must be exactly "TRUE" or "FALSE" (case-sensitive, no quotes)</li>
+        <li><strong>sex</strong>: Must be "male", "female", or "." (case-sensitive)</li>
+        <li><strong>specimenNumber</strong>: Required for catalog number generation</li>
+        <li><strong>year</strong>: Required for catalog number generation</li>
+        <li><strong>locality</strong>: Must match an existing locality code</li>
+        <li><strong>recordedBy</strong>, <strong>georeferencedBy</strong>, <strong>identifiedBy</strong>: Must match existing initials</li>
+    </ul>
+</div>
 {% endif %}
 
 <form method="post">
@@ -26,7 +40,22 @@
             <tr>
                 <th>Status</th>
                 {% for field in fields %}
-                <th>{{ field }}{% if field == unique_field %} <small>(unique key)</small>{% endif %}</th>
+                <th>
+                    {{ field }}{% if field == unique_field %} <small style="color:#555555; font-style: italic;">(unique key)</small>{% endif %}
+                    {% if model_name_internal == 'specimen' %}
+                        {% if field == 'exact_loc' %}
+                            <br><small style="color:#555555; font-style: italic;">Must be "TRUE" or "FALSE"</small>
+                        {% elif field == 'sex' %}
+                            <br><small style="color:#555555; font-style: italic;">Must be "male", "female", or "."</small>
+                        {% elif field == 'specimenNumber' %}
+                            <br><small style="color:#555555; font-style: italic;">Required for catalogNumber</small>
+                        {% elif field == 'year' %}
+                            <br><small style="color:#555555; font-style: italic;">Required for catalogNumber</small>
+                        {% elif field == 'locality' or field == 'recordedBy' or field == 'georeferencedBy' or field == 'identifiedBy' %}
+                            <br><small style="color:#555555; font-style: italic;">Must match existing record</small>
+                        {% endif %}
+                    {% endif %}
+                </th>
                 {% endfor %}
             </tr>
         </thead>
@@ -60,8 +89,10 @@
     </table>
     
     <div style="margin-top: 15px;">
-        <button type="submit">Confirm Import</button>
-        <a href="{% url 'import_model' model_name_internal %}" style="margin-left: 10px;">Cancel</a>
+        <div>
+            <button type="submit">Confirm Import</button>
+            <a href="{% url 'import_model' model_name_internal %}" style="margin-left: 10px;">Cancel</a>
+        </div>
     </div>
 </form>
 
