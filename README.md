@@ -325,11 +325,11 @@ ASA-Database/
 ### Key Files
 
 - **models.py**: Defines the database structure
-- **forms.py**: Creates form classes for data entry
+- **forms.py**: Creates form classes for data entry with organized layout
 - **views.py**: Handles HTTP requests and responses
 - **admin.py**: Configures the admin interface
-- **forms_organized.py**: Enhanced form layouts
-- **views_organized.py**: Enhanced view functionality
+- **urls.py**: Defines URL routing patterns
+- **utils.py**: Provides utility functions for the application
 
 ## Detailed Feature Documentation
 

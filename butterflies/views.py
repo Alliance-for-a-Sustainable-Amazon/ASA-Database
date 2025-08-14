@@ -661,9 +661,26 @@ def import_model(request, model_name):
             elif ext in ('xls', 'xlsx'):
                 df = pd.read_excel(file)
             else:
+                messages.error(request, 'Unsupported file type. Please upload a CSV or Excel file.')
                 context['error'] = 'Unsupported file type. Please upload a CSV or Excel file.'
                 return render(request, 'butterflies/import_model.html', context)
+                
+            # Check if dataframe is empty
+            if df.empty:
+                messages.error(request, 'The uploaded file contains no data.')
+                context['error'] = 'The uploaded file contains no data.'
+                return render(request, 'butterflies/import_model.html', context)
+                
+        except pd.errors.EmptyDataError:
+            messages.error(request, 'The uploaded file is empty.')
+            context['error'] = 'The uploaded file is empty.'
+            return render(request, 'butterflies/import_model.html', context)
+        except pd.errors.ParserError:
+            messages.error(request, 'Error parsing the file. Please check the file format.')
+            context['error'] = 'Error parsing the file. Please check the file format.'
+            return render(request, 'butterflies/import_model.html', context)
         except Exception as e:
+            messages.error(request, f'Error reading file: {str(e)}')
             context['error'] = f'Error reading file: {str(e)}'
             return render(request, 'butterflies/import_model.html', context)
         
