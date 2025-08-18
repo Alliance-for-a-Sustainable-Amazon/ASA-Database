@@ -34,10 +34,6 @@ python manage.py collectstatic --noinput || echo "Static collection failed but c
 echo "Running database migrations"
 python manage.py migrate || echo "Migrations failed but continuing"
 
-# Try the specific migration
-echo "Running specific migration for uploaded_iNaturalist"
-python manage.py migrate butterflies 0019_remove_uploaded_inaturalist || echo "Specific migration failed but continuing"
-
 # Start with very explicit path
 echo "===== STARTING APPLICATION ====="
 echo "Starting Gunicorn with explicit application import"
