@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Set environment variables
+echo "Setting environment variables..."
+export DJANGO_SETTINGS_MODULE=research_data_app.settings_azure
+
 # Collect static files
 echo "Collecting static files..."
 python manage.py collectstatic --noinput

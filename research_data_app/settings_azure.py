@@ -22,12 +22,18 @@ ALLOWED_HOSTS = [
     '.azurewebsites.net',
     'localhost',
     '127.0.0.1',
+    '169.254.129.4',  # Azure internal IP address
 ]
 
 # Add any custom domains here
 custom_host = os.environ.get('WEBSITE_HOSTNAME')
 if custom_host:
     ALLOWED_HOSTS.append(custom_host)
+
+# Add any additional hosts from environment variables
+additional_hosts = os.environ.get('ADDITIONAL_ALLOWED_HOSTS', '')
+if additional_hosts:
+    ALLOWED_HOSTS.extend([host.strip() for host in additional_hosts.split(',')])
 
 # Enforce HTTPS
 SECURE_SSL_REDIRECT = True
