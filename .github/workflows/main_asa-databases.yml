@@ -32,7 +32,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
         
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+      - name: Run tests
+        run: python manage.py test
+        
+      - name: Make startup script executable
+        run: chmod +x startup.sh
+        
+      - name: Prepare for deployment
+        run: |
+          python manage.py collectstatic --noinput
+          # Migrations will run from startup.sh during deployment
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
