@@ -1,0 +1,49 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+.env
+.venv
+venv/
+ENV/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+.history/
+
+# Azure
+.azure/appsettings.json
+
+# Project specific
+staticfiles/
+# But keep the directory itself
+!staticfiles/.gitkeep

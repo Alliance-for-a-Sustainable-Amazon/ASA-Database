@@ -3,3 +3,11 @@ psycopg2-binary
 Django>=4.0
 openpyxl
 pandas
+
+# Azure App Service requirements
+whitenoise==6.6.0
+gunicorn==21.2.0
+python-dotenv==1.0.0
+
+# Azure database connector (optional)
+django-environ==0.11.2
