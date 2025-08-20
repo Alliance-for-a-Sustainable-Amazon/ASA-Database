@@ -28,8 +28,11 @@
             {% endif %}
         {% endfor %}
         <td>
-            <a href="{% url 'dynamic_edit' obj.model_name_internal obj.pk %}">Edit</a> |
-            <a href="{% url 'dynamic_delete' obj.model_name_internal obj.pk %}">Delete</a>
+            <a href="{% url 'dynamic_edit' obj.model_name_internal obj.pk %}">Edit</a>
+            {% load auth_tags %}
+            {% if user.is_superuser or user|has_group:'Admin' %}
+            | <a href="{% url 'dynamic_delete' obj.model_name_internal obj.pk %}">Delete</a>
+            {% endif %}
         </td>
     </tr>
     {% empty %}

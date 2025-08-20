@@ -17,6 +17,9 @@
     </form>
     <a href="{% url 'dynamic_detail' object.model_name_internal object.pk %}">Cancel</a>
 {% else %}
-    <a href="{% url 'dynamic_delete' object.model_name_internal object.pk %}">Delete</a>
+    {% load auth_tags %}
+    {% if user.is_superuser or user|has_group:'Admin' %}
+        <a href="{% url 'dynamic_delete' object.model_name_internal object.pk %}">Delete</a>
+    {% endif %}
 {% endif %}
 <a href="{% url 'report_table' %}">Back to Report Table</a>

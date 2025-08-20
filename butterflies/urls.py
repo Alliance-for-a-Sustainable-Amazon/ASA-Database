@@ -4,6 +4,7 @@
 
 from django.urls import path
 from . import views
+from . import views_user_management
 
 urlpatterns = [
     # Dashboard and main views
@@ -33,4 +34,13 @@ urlpatterns = [
     
     # Debug and utility routes
     path('specimen/debug-bulk-delete/', views.debug_bulk_delete_specimen, name='debug_bulk_delete_specimen'),
+    
+    # Authentication routes
+    path('accounts/logout/', views.custom_logout, name='custom_logout'),
+    
+    # User management routes
+    path('users/', views_user_management.UserListView.as_view(), name='user_list'),
+    path('users/add/', views_user_management.UserCreateView.as_view(), name='user_create'),
+    path('users/<int:pk>/edit/', views_user_management.UserUpdateView.as_view(), name='user_edit'),
+    path('users/<int:pk>/delete/', views_user_management.UserDeleteView.as_view(), name='user_delete'),
 ]

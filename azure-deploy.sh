@@ -34,6 +34,18 @@ python manage.py collectstatic --noinput || echo "Static collection failed but c
 echo "Running database migrations"
 python manage.py migrate || echo "Migrations failed but continuing"
 
+# Set up user groups
+echo "Setting up user groups and permissions"
+python manage.py setup_groups || echo "Group setup failed but continuing"
+
+# Create default admin user if environment variables are set
+if [ -n "$DJANGO_ADMIN_PASSWORD" ]; then
+    echo "Creating default admin user"
+    python manage.py create_default_admin || echo "Admin creation failed but continuing"
+else
+    echo "Skipping admin creation - DJANGO_ADMIN_PASSWORD not set"
+fi
+
 # Start with very explicit path
 echo "===== STARTING APPLICATION ====="
 echo "Starting Gunicorn with explicit application import"

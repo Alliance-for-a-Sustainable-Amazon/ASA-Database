@@ -1,0 +1,41 @@
+{% extends "butterflies/base.html" %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+    <h2>Login</h2>
+    
+    {% if form.errors %}
+    <div style="background-color: #ffecec; border: 1px solid #f5aca6; border-radius: 3px; padding: 10px; margin-bottom: 20px;">
+        <p>Your username and password didn't match. Please try again.</p>
+    </div>
+    {% endif %}
+    
+    {% if next %}
+        {% if user.is_authenticated %}
+        <div style="background-color: #fff3cd; border: 1px solid #ffecb5; border-radius: 3px; padding: 10px; margin-bottom: 20px;">
+            <p>Your account doesn't have access to this page. To proceed, please login with an account that has access.</p>
+        </div>
+        {% else %}
+        <div style="background-color: #e2f0fb; border: 1px solid #b9def0; border-radius: 3px; padding: 10px; margin-bottom: 20px;">
+            <p>Please login to access this page.</p>
+        </div>
+        {% endif %}
+    {% endif %}
+    
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <div style="margin-bottom: 15px;">
+            <label for="id_username" style="display: block; margin-bottom: 5px; font-weight: bold;">Username:</label>
+            {{ form.username }}
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label for="id_password" style="display: block; margin-bottom: 5px; font-weight: bold;">Password:</label>
+            {{ form.password }}
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Login</button>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+    </form>
+</div>
+{% endblock %}

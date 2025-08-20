@@ -4,125 +4,80 @@
 
 ASA-Database is a comprehensive Django web application designed for the Alliance for a Sustainable Amazon (ASA) to manage their butterfly specimen collections. This application follows Darwin Core standards for biodiversity data, enabling researchers and field workers to record, track, and manage detailed information about butterfly specimens collected during field research.
 
-## Table of Contents
+## Documentation
 
-1. [System Requirements](#system-requirements)
-2. [Installation and Setup](#installation-and-setup)
-   - [Docker Setup](#docker-setup)
-   - [Local Development Setup](#local-development-setup)
-3. [Database Structure](#database-structure)
-   - [Key Models](#key-models)
-   - [Relationships](#relationships)
-4. [Core Functionality](#core-functionality)
-   - [Specimen Management](#specimen-management)
-   - [Locality Management](#locality-management)
-   - [People Management (Initials)](#people-management-initials)
-   - [Import/Export](#importexport)
-5. [User Interface](#user-interface)
-   - [Main Dashboard](#main-dashboard)
-   - [Form Structure](#form-structure)
-   - [Search and Filtering](#search-and-filtering)
-   - [Organized Form Layout](#organized-form-layout)
-6. [Data Categories](#data-categories)
-   - [Record-level Information](#record-level-information)
-   - [Location Information](#location-information)
-   - [Occurrence Information](#occurrence-information)
-   - [Event Information](#event-information)
-   - [Taxon Information](#taxon-information)
-   - [Identification Information](#identification-information)
-7. [Admin Interface](#admin-interface)
-8. [Reports and Data Export](#reports-and-data-export)
-9. [API Documentation](#api-documentation)
-10. [Troubleshooting](#troubleshooting)
-11. [Development Notes](#development-notes)
-12. [Future Enhancements](#future-enhancements)
-13. [Contributing](#contributing)
-14. [License](#license)
+**Comprehensive documentation** is available in [ASA_DATABASE_DOCUMENTATION.md](ASA_DATABASE_DOCUMENTATION.md)
 
----
-
-## System Requirements
-
-* Python 3.10+
-* Django 4.x
-* SQLite3 (development) / PostgreSQL (production)
-* Docker and Docker Compose (optional)
-
----
-
-## Installation and Setup
+## Quick Start
 
 ### Docker Setup
 
 For easy deployment, the application can be run using Docker:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Alliance-for-a-Sustainable-Amazon/ASA-Database.git
-   cd ASA-Database
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/Alliance-for-a-Sustainable-Amazon/ASA-Database.git
+cd ASA-Database
 
-2. Build and start the containers:
-   ```bash
-   docker-compose up -d
-   ```
+# Build and start the containers
+docker-compose up -d
 
-3. Access the application at `http://localhost:8000`
+# Run migrations and create user groups
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py setup_groups
+
+# Create an admin user
+docker-compose exec web python manage.py createsuperuser
+```
+
+Access the application at `http://localhost:8000`
 
 ### Local Development Setup
 
 For local development without Docker:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Alliance-for-a-Sustainable-Amazon/ASA-Database.git
-   cd ASA-Database
-   ```
-
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run migrations:
-   ```bash
-   python manage.py migrate
-   ```
-
-5. Create a superuser:
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-6. Start the development server:
-   ```bash
-   python manage.py runserver
-   ```
-
-7. Access the application at `http://localhost:8000`
-
-For SQLite-based local development, use:
 ```bash
-cd client
-bash run_local_sqlite.sh
+# Clone the repository
+git clone https://github.com/Alliance-for-a-Sustainable-Amazon/ASA-Database.git
+cd ASA-Database
+
+# Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations and create user groups
+python manage.py migrate
+python manage.py setup_groups
+
+# Create an admin user
+python manage.py createsuperuser
+
+# Start the development server
+python manage.py runserver
 ```
 
----
+Access the application at `http://localhost:8000`
 
-## Database Structure
+### Azure Deployment
 
-### Key Models
+For Azure deployment instructions, refer to the [comprehensive documentation](ASA_DATABASE_DOCUMENTATION.md#azure-deployment).
 
-The application is built around these primary models:
+## Key Features
 
-1. **Specimen**: The core model that stores all information about butterfly specimens.
-2. **Locality**: Geographic locations where specimens were collected.
+- **Natural Key System**: Uses human-readable natural keys for identification
+- **Role-Based Access**: Distinguishes between Admin and Researcher roles
+- **Data Import/Export**: Supports CSV and Excel for both import and export
+- **Organized Data Collection**: Forms organized by Darwin Core standards
+- **Azure Cloud Deployment**: Configured for Microsoft Azure App Services
+
+## License
+
+This project is licensed under the terms of the MIT license.
+
+
 3. **Initials**: Researchers and collectors who work with the specimens.
 
 ### Relationships
@@ -172,57 +127,7 @@ The system supports importing and exporting data:
 
 ---
 
-## User Interface
 
-### Main Dashboard
-
-The main interface provides:
-
-- A tabular view of specimens with key information
-- Navigation to all major functions
-- Quick access to create new entries
-
-### Form Structure
-
-The application uses structured forms that:
-
-- Group related fields together
-- Provide clear labeling and help text
-- Validate input to ensure data quality
-- Support different field types (dropdowns, text areas, date fields)
-
-### Search and Filtering
-
-Users can locate specific records by:
-
-- Filtering by various criteria
-- Searching across multiple fields
-- Sorting results by different columns
-
-### Organized Form Layout
-
-The forms are organized into logical categories following Darwin Core standards:
-
-- Clean section-based layout
-- Collapsible sections for easy navigation
-- Consistent formatting and field presentation
-- Grayscale color scheme for professional appearance
-
----
-
-## Data Categories
-
-The application organizes specimen data into six major categories following Darwin Core standards:
-
-### Record-level Information
-
-- Modification history
-- Record metadata
-
-### Location Information
-
-- Locality reference
-- Geographic coordinates
 - Coordinate uncertainty
 - Elevation data
 - Georeferencing information
@@ -273,142 +178,3 @@ The Django admin interface provides advanced management capabilities:
 
 Generate reports and export data:
 
-- **CSV exports** of specimen data
-- **Filtered reports** based on various criteria
-- **Tabular reports** for viewing in the browser
-
----
-
-## API Documentation
-
-The application includes API endpoints for programmatic access:
-
-- RESTful endpoints for accessing specimen data
-- Authentication requirements
-- Usage examples
-
----
-
-## Troubleshooting
-
-Common issues and their solutions:
-
-- **Database connection issues**: Check your database settings in settings.py
-- **Missing dependencies**: Run `pip install -r requirements.txt` to ensure all packages are installed
-- **Migration errors**: Try resetting migrations with `python manage.py migrate --fake-initial`
-- **Form validation errors**: Check the data format against the field requirements
-
----
-
-## Development Notes
-
-### Project Structure
-
-```
-ASA-Database/
-├── butterflies/              # Main application
-│   ├── admin.py              # Admin interface configuration
-│   ├── forms.py              # Form definitions
-│   ├── models.py             # Database models
-│   ├── views.py              # View functions
-│   ├── urls.py               # URL routing
-│   ├── templates/            # HTML templates
-│   │   └── butterflies/      # App-specific templates
-│   └── static/               # Static files (CSS, JS)
-│       └── butterflies/      # App-specific static files
-├── research_data_app/        # Project settings
-├── client/                   # Client-side utilities
-├── host/                     # Host deployment utilities
-└── manage.py                 # Django management script
-```
-
-### Key Files
-
-- **models.py**: Defines the database structure
-- **forms.py**: Creates form classes for data entry with organized layout
-- **views.py**: Handles HTTP requests and responses
-- **admin.py**: Configures the admin interface
-- **urls.py**: Defines URL routing patterns
-- **utils.py**: Provides utility functions for the application
-
-## Detailed Feature Documentation
-
-### Specimen Records
-
-#### Creating a New Specimen
-
-1. Navigate to "New Specimen" in the navigation bar
-2. Complete the form with the following information:
-   - **Record-level**: Modification details
-   - **Location**: Locality, coordinates, and elevation
-   - **Occurrence**: Specimen number, collector, sex, and disposition
-   - **Event**: Collection date, time, and habitat information
-   - **Taxon**: Taxonomic classification
-   - **Identification**: Identifier and identification details
-3. Click "Save" to create the record
-
-#### Editing a Specimen
-
-1. Locate the specimen in the report table
-2. Click on the specimen number to open the edit form
-3. Make the necessary changes
-4. Enter modification details (date, initials, description)
-5. Click "Save" to update the record
-
-#### Specimen Disposition Tracking
-
-The system tracks specimen disposition through an append-only history field:
-
-1. Enter the date, initials, and description of the disposition change
-2. The history is maintained as a chronological record
-3. Each entry follows the format: `DD-MMM-YYYY, initials, description`
-
-### Locality Management
-
-#### Creating a New Locality
-
-1. Navigate to "New Locality" in the navigation bar
-2. Enter the locality code and description
-3. Provide geographical context information
-4. Click "Save" to create the locality
-
-#### Georeferencing
-
-Localities can be georeferenced with:
-
-- Decimal latitude and longitude
-- Coordinate uncertainty in meters
-- Georeference protocol documentation
-- Georeferencer information and date
-
-### Data Import and Export Process
-
-#### Exporting Data
-
-1. Access the data export page
-2. Select the desired export format (CSV)
-3. Choose filters to limit the exported data (optional)
-4. Click "Export" to download the data file
-
-#### Importing Data
-
-1. Prepare a properly formatted CSV file
-2. Access the data import page
-3. Upload the CSV file
-4. Map the CSV columns to database fields
-5. Confirm and execute the import
-
-### Field-Specific Features
-
-#### Append-Only Fields
-
-Several fields maintain a history of changes in an append-only format:
-
-- Modified history
-- Disposition
-- Behavior
-- Occurrence remarks
-- Habitat notes
-- Locality description notes
-
-Each entry follows the format: `DD-MMM-YYYY, initials, description` with entries separated by semicolons.

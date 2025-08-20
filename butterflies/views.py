@@ -11,6 +11,8 @@ from django.forms import modelform_factory
 from django.contrib import messages
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 import csv
 import io
 import openpyxl
@@ -19,6 +21,7 @@ import pandas as pd
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
 from .utils import dot_if_none
+from .auth_utils import admin_required
 
 # --- Utility Functions ---
 def model_list():
@@ -28,10 +31,12 @@ def model_list():
     return list(apps.get_app_config('butterflies').get_models())
 
 # --- Generic CRUD Views ---
+@login_required
 def dynamic_list(request, model_name):
     """
     Generic dynamic list view for any model.
     Displays all objects for the specified model with filtering capabilities.
+    Requires user authentication.
     
     Parameters:
         request: HTTP request object
@@ -117,10 +122,12 @@ def dynamic_detail(request, model_name, object_id):
         'model_name': model._meta.verbose_name.title(),
     })
 
+@admin_required
 def dynamic_delete(request, model_name, object_id):
     """
     Generic delete view for any model.
     Shows confirmation page before deleting an object.
+    Requires admin privileges.
     
     Parameters:
         request: HTTP request object
@@ -157,10 +164,12 @@ def dynamic_delete(request, model_name, object_id):
         'delete_confirm': True,
     })
 
+@login_required
 def dynamic_create_edit(request, model_name, object_id=None):
     """
     Generic create/edit view for any model using the organized form approach.
     Uses the organized form template for Specimen model.
+    Requires user authentication.
     
     Parameters:
         request: HTTP request object
@@ -176,6 +185,12 @@ def dynamic_create_edit(request, model_name, object_id=None):
             break
     if not model:
         raise Http404("Model not found")
+    
+    # Check if restricted model (locality or initials) and user has admin permissions
+    if model._meta.model_name in ['locality', 'initials']:
+        # Check if user is admin or superuser
+        if not (request.user.is_superuser or request.user.groups.filter(name='Admin').exists()):
+            return render(request, 'butterflies/auth/access_denied.html')
     
     # Use appropriate form class based on model
     if model._meta.model_name == 'specimen':
@@ -227,15 +242,17 @@ def dynamic_create_edit(request, model_name, object_id=None):
 
 # --- Model-Specific Create Views ---
 
+@login_required
 def create_specimen(request):
     """
-    Create a new Specimen object using the organized form layout.
-    Handles both form display and processing.
+    Create a new specimen record.
+    Uses a dedicated form for specimen creation.
+    Requires user authentication.
     
     Parameters:
         request: HTTP request object
     Returns:
-        Rendered organized form template with success message on submission
+        Rendered form template or redirect on success
     """
     form = SpecimenForm()
     if request.method == 'POST':
@@ -246,15 +263,17 @@ def create_specimen(request):
             form = SpecimenForm()
     return render(request, 'butterflies/specimen_form.html', {'form': form})
 
+@admin_required
 def create_locality(request):
     """
-    Create a new Locality object.
-    Handles both form display and processing.
+    Create a new locality record.
+    Uses a form based on the Locality model.
+    Requires admin privileges.
     
     Parameters:
         request: HTTP request object
     Returns:
-        Rendered form template with success message on submission
+        Rendered form template or redirect on success
     """
     form = LocalityForm()
     if request.method == 'POST':
@@ -265,10 +284,12 @@ def create_locality(request):
             form = LocalityForm()
     return render(request, 'butterflies/locality_form.html', {'form': form})
 
+@admin_required
 def create_initials(request):
     """
     Create a new Initials object.
     Handles both form display and processing.
+    Requires admin privileges.
     
     Parameters:
         request: HTTP request object
@@ -288,15 +309,17 @@ def create_initials(request):
 
 # --- Report Views ---
 
+@login_required
 def report_table(request):
     """
-    Display all specimens with related data in a report table.
-    Includes links for export functionality.
+    Shows a paginated table of specimens with filtering options.
+    This is the main dashboard view.
+    Requires user authentication.
     
     Parameters:
         request: HTTP request object
     Returns:
-        Rendered template with specimens and export URLs
+        Rendered template with filtered specimen list
     """
     specimens = Specimen.objects.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy').all()
     from django.urls import reverse
@@ -608,9 +631,11 @@ def export_report_excel(request):
 # --- Import Views ---
 
 @csrf_exempt
+@admin_required
 def import_model(request, model_name):
     """
     Generic function to import data for any model from CSV or Excel file.
+    Requires admin privileges.
     
     Parameters:
         request: HTTP request object
@@ -1022,11 +1047,13 @@ def import_model(request, model_name):
 
 # --- List View for All Models ---
 
+@admin_required
 def debug_bulk_delete_specimen(request):
     """
     Debug feature to bulk delete specimens.
     Provides a confirmation screen and requires typing "DELETE" to confirm.
     This is a debug-only feature and should be used with caution.
+    Requires admin privileges.
     
     Parameters:
         request: HTTP request object
@@ -1119,4 +1146,16 @@ def showdetails(request, template, model=None):
         object.fields = dict((field.name, field.value_to_string(object))
                             for field in object._meta.fields)
     
-    return render(template, {'objects': objects})
+# --- Authentication Views ---
+def custom_logout(request):
+    """
+    Custom logout view that supports both GET and POST requests.
+    Logs out the user and redirects to the logged_out template.
+    
+    Parameters:
+        request: HTTP request object
+    Returns:
+        Rendered logged_out template
+    """
+    logout(request)
+    return render(request, 'butterflies/auth/logged_out.html')

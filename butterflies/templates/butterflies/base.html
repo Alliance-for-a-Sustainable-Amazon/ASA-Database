@@ -61,10 +61,35 @@
     </div>
     
     <!-- Navigation -->
-    <nav>
-        <a href="{% url 'report_table' %}">Home</a> |
-        <a href="{% url 'dynamic_create' 'specimen' %}">New Specimen</a> |
-        <a href="{% url 'dynamic_create' 'locality' %}">New Locality</a>
+    {% load auth_tags %}
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+        <div>
+            <a href="{% url 'report_table' %}">Home</a> |
+            <a href="{% url 'dynamic_create' 'specimen' %}">New Specimen</a>
+            {% if user.is_superuser or user|has_group:'Admin' %}
+             | <a href="{% url 'dynamic_create' 'locality' %}">New Locality</a> |
+               <a href="{% url 'dynamic_create' 'initials' %}">New Initials</a>
+            {% endif %}
+        </div>
+        <div>
+            {% if user.is_authenticated %}
+                <span style="margin-right: 10px;">
+                    Logged in as <strong>{{ user.username }}</strong>
+                    {% if user.is_superuser %}
+                        <span style="color: #0066cc; font-weight: bold;">[Superuser]</span> |
+                        <a href="{% url 'user_list' %}">Manage Users</a> |
+                    {% elif user|has_group:'Admin' %}
+                        <span style="color: #0066cc; font-weight: bold;">[Admin]</span> |
+                        <a href="{% url 'user_list' %}">Manage Users</a> |
+                    {% else %}
+                        <span style="color: #339933;">[Researcher]</span>
+                    {% endif %}
+                </span>
+                <a href="{% url 'custom_logout' %}">Log out</a>
+            {% else %}
+                <a href="{% url 'login' %}">Log in</a>
+            {% endif %}
+        </div>
     </nav>
     
     <script>

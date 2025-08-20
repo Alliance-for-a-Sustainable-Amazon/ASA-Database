@@ -1,0 +1,97 @@
+{% extends "butterflies/base.html" %}
+
+{% block title %}
+{% if form.instance.pk %}Edit User{% else %}Add User{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{% if form.instance.pk %}Edit User{% else %}Add User{% endif %}</h2>
+    
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Username:</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <div class="error">
+                {{ form.username.errors }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email:</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="error">
+                {{ form.email.errors }}
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if not form.instance.pk %}
+        <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}">Password:</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+            <div class="error">
+                {{ form.password1.errors }}
+            </div>
+            {% endif %}
+            <small>{{ form.password1.help_text }}</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}">Confirm Password:</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+            <div class="error">
+                {{ form.password2.errors }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="{{ form.role.id_for_label }}">Role:</label>
+            {{ form.role }}
+            {% if form.role.errors %}
+            <div class="error">
+                {{ form.role.errors }}
+            </div>
+            {% endif %}
+            <small>{{ form.role.help_text }}</small>
+        </div>
+        
+        {% if form.instance.pk %}
+        <div class="form-group">
+            <label for="{{ form.is_active.id_for_label }}">Active:</label>
+            {{ form.is_active }}
+            {% if form.is_active.errors %}
+            <div class="error">
+                {{ form.is_active.errors }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="{{ form.is_staff.id_for_label }}">Admin Panel Access:</label>
+            {{ form.is_staff }}
+            {% if form.is_staff.errors %}
+            <div class="error">
+                {{ form.is_staff.errors }}
+            </div>
+            {% endif %}
+            <small>{{ form.is_staff.help_text }}</small>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

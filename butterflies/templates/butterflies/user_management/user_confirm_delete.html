@@ -1,0 +1,20 @@
+{% extends "butterflies/base.html" %}
+
+{% block title %}Delete User{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Delete User</h2>
+    
+    <div class="alert alert-danger">
+        <p>Are you sure you want to delete the user "{{ object.username }}"?</p>
+        <p><strong>This action cannot be undone.</strong></p>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+        <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

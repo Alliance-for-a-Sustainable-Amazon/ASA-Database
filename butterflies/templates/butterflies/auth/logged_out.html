@@ -1,0 +1,9 @@
+{% extends "butterflies/base.html" %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+    <h2>Logged Out</h2>
+    <p>You have been successfully logged out.</p>
+    <p><a href="{% url 'login' %}" style="color: #007bff; text-decoration: none;">Log in again</a></p>
+</div>
+{% endblock %}
