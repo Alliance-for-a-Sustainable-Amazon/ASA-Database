@@ -25,6 +25,7 @@ ALLOWED_HOSTS = [
     '169.254.129.4',  # Azure internal IP address
     '169.254.131.4',  # Another Azure internal IP address
     '169.254.131.2',  # Additional Azure internal IP seen in logs
+    '169.254.0.0/16', # Allow all Azure internal IPs in this range
     '0.0.0.0',        # Generic bind address
 ]
 
