@@ -8,20 +8,9 @@ export DJANGO_SETTINGS_MODULE=research_data_app.settings_azure
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# TEMPORARY: Reset and rebuild the database from scratch
-# WARNING: This will delete all data in the database
-echo "PERFORMING FULL DATABASE RESET..."
-echo "Dropping all tables..."
-python manage.py flush --no-input || echo "Flush failed but continuing"
-
-echo "Resetting migrations..."
-python manage.py migrate butterflies zero --fake || echo "Migration reset failed but continuing"
-
-echo "Applying all migrations from scratch..."
-python manage.py migrate || echo "Migrations failed but continuing"
-
-echo "Database reset completed!"
-# REMOVE THIS BLOCK AFTER ONE SUCCESSFUL RUN
+# Apply database migrations
+echo "Applying database migrations..."
+python manage.py migrate
 
 # Set up user groups
 echo "Setting up user groups and permissions..."
