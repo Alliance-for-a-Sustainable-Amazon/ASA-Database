@@ -8,9 +8,19 @@ export DJANGO_SETTINGS_MODULE=research_data_app.settings_azure
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Apply database migrations
+# Apply database migrations with special fix for first run
 echo "Applying database migrations..."
-python manage.py migrate
+
+# First, apply only the initial migrations (to create basic tables)
+echo "Applying initial Django migrations..."
+python manage.py migrate auth
+python manage.py migrate admin
+python manage.py migrate contenttypes
+python manage.py migrate sessions
+
+# Then apply the app migrations with --fake-initial to skip dependency checks
+echo "Applying butterflies migrations with --fake-initial..."
+python manage.py migrate butterflies --fake-initial
 
 # Set up user groups
 echo "Setting up user groups and permissions..."
