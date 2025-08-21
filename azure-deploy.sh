@@ -30,13 +30,12 @@ pip install -r requirements.txt
 echo "Collecting static files"
 python manage.py collectstatic --noinput || echo "Static collection failed but continuing"
 
-# Try to run migrations
-echo "Running database migrations"
-python manage.py migrate || echo "Migrations failed but continuing"
+# Don't run migrations here - let startup.sh handle it with proper sequencing
+echo "Database migrations will be handled by startup.sh"
 
-# Set up user groups
-echo "Setting up user groups and permissions"
-python manage.py setup_groups || echo "Group setup failed but continuing"
+# Make startup.sh executable
+echo "Making startup.sh executable"
+chmod +x startup.sh || echo "Failed to make startup.sh executable, but continuing"
 
 # Create default admin user if environment variables are set
 if [ -n "$DJANGO_ADMIN_PASSWORD" ]; then

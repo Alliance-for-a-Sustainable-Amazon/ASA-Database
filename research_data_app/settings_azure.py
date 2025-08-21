@@ -24,12 +24,19 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '169.254.129.4',  # Azure internal IP address
     '169.254.131.4',  # Another Azure internal IP address
+    '169.254.131.2',  # Additional Azure internal IP seen in logs
+    '0.0.0.0',        # Generic bind address
 ]
 
 # Add any custom domains here
 custom_host = os.environ.get('WEBSITE_HOSTNAME')
 if custom_host:
     ALLOWED_HOSTS.append(custom_host)
+    
+# Special handling for ALLOWED_HOSTS from environment variable
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
+if allowed_hosts_env:
+    ALLOWED_HOSTS.extend([host.strip() for host in allowed_hosts_env.split(',')])
 
 # Add any additional hosts from environment variables
 additional_hosts = os.environ.get('ADDITIONAL_ALLOWED_HOSTS', '')
