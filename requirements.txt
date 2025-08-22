@@ -3,6 +3,7 @@ psycopg2-binary
 Django>=4.0
 openpyxl
 pandas
+requests
 
 # Azure App Service requirements
 whitenoise==6.6.0

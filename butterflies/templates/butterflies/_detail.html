@@ -9,6 +9,27 @@
     </tr>
     {% endfor %}
 </table>
+{% if image_urls %}
+<h3>Specimen Images</h3>
+<div style="display: flex; gap: 2em; margin-bottom: 1em;">
+    <div>
+        <strong>Dorsal:</strong><br>
+        {% if image_urls.dorsal != 'no data' %}
+            <img src="{{ image_urls.dorsal }}" alt="Dorsal image" style="max-width:300px; max-height:300px; border:1px solid #ccc;">
+        {% else %}
+            <span style="display:inline-block; margin-top:1em; border:1px dashed #ccc; padding:1em; background:#f9f9f9; font-family:inherit; font-size:inherit; color:inherit;">No data</span>
+        {% endif %}
+    </div>
+    <div>
+        <strong>Ventral:</strong><br>
+        {% if image_urls.ventral != 'no data' %}
+            <img src="{{ image_urls.ventral }}" alt="Ventral image" style="max-width:300px; max-height:300px; border:1px solid #ccc;">
+        {% else %}
+            <span style="display:inline-block; margin-top:1em; border:1px dashed #ccc; padding:1em; background:#f9f9f9; font-family:inherit; font-size:inherit; color:inherit;">No data</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 <a href="{% url 'dynamic_edit' object.model_name_internal object.pk %}">Edit</a>
 {% if delete_confirm %}
     <form method="post" style="display:inline;">

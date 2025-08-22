@@ -129,6 +129,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     # Add any additional static file directories here
 ]
+    
+# Azure container for specimen images
+LEPIDOPTERA_ADULTS_IMAGES_URL = 'https://asadatabasestorage.blob.core.windows.net/lepidoptera-adults-images/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -21,6 +21,7 @@ import pandas as pd
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
 from .utils import dot_if_none
+from butterflies.utils.image_utils import get_specimen_image_urls
 from .auth_utils import admin_required
 
 # --- Utility Functions ---
@@ -116,10 +117,15 @@ def dynamic_detail(request, model_name, object_id):
         if field.name != 'id'
     ]
     obj.model_name_internal = model._meta.model_name
+    # If specimen, add image URLs
+    image_urls = None
+    if model._meta.model_name == 'specimen':
+        image_urls = get_specimen_image_urls(obj.catalogNumber)
     return render(request, 'butterflies/_detail.html', {
         'object': obj,
         'fields': fields,
         'model_name': model._meta.verbose_name.title(),
+        'image_urls': image_urls,
     })
 
 @admin_required
