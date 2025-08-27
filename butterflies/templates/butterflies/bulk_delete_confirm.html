@@ -1,25 +1,24 @@
+{% load i18n %}
 {% extends "butterflies/base.html" %}
 
-{% block title %}Confirm Bulk Delete{% endblock %}
+{% block title %}{% trans "Confirm Bulk Delete" %}{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>Debug Bulk Delete Confirmation</h1>
+    <h1>{% trans "Debug Bulk Delete Confirmation" %}</h1>
     
-    <div class="alert alert-danger">
-        <strong>Warning!</strong> You are about to permanently delete {{ count }} specimen records. This action cannot be undone.
-    </div>
+        <div class="alert alert-danger">{% trans "Warning! You are about to permanently delete {{ count }} specimen records. This action cannot be undone." %}</div>
     
     <form method="post">
         {% csrf_token %}
         <div class="form-group">
-            <label for="confirmText">To confirm, type "DELETE" in the box below:</label>
+            <label for="confirmText">{% trans "To confirm, type 'DELETE' in the box below:" %}</label>
             <input type="text" class="form-control" id="confirmText" name="confirm_text" required>
         </div>
         
         <div class="mt-3">
-            <button type="submit" class="btn btn-danger">Confirm Deletion</button>
-            <a href="{% url 'dynamic_list' 'specimen' %}" class="btn btn-secondary ml-2">Cancel</a>
+            <button type="submit" class="btn btn-danger">{% trans "Confirm Deletion" %}</button>
+            <a href="{% url 'dynamic_list' 'specimen' %}" class="btn btn-secondary ml-2">{% trans "Cancel" %}</a>
         </div>
     </form>
 </div>

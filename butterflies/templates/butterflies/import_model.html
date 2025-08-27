@@ -1,12 +1,13 @@
 {# Template for importing data to any model #}
+{% load i18n %}
 {% load butterfly_extras %}
-<h2>Import {{ model_name_plural }}</h2>
+<h2>{% blocktrans %}Import {{ model_name_plural }}{% endblocktrans %}</h2>
 
 {% if error %}
 <div style="color: red; margin-bottom: 15px;">{{ error }}</div>
 {% endif %}
 
-<p>Upload a CSV or Excel file with the following columns:</p>
+<p>{% trans "Upload a CSV or Excel file with the following columns:" %}</p>
 
 <ul>
 {% for field in model_fields %}
@@ -17,14 +18,14 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div>
-        <label for="file">Select file:</label>
+        <label for="file">{% trans "Select file:" %}</label>
         <input type="file" name="file" id="file" required accept=".csv,.xls,.xlsx">
     </div>
     <div style="margin-top: 10px;">
-        <button type="submit">Upload</button>
+        <button type="submit">{% trans "Upload" %}</button>
     </div>
 </form>
 
 <div style="margin-top: 20px;">
-    <a href="{% url 'dynamic_list' model_name_internal %}">Back to {{ model_name }} List</a>
+    <a href="{% url 'dynamic_list' model_name_internal %}">{% blocktrans %}Back to {{ model_name }} List{% endblocktrans %}</a>
 </div>

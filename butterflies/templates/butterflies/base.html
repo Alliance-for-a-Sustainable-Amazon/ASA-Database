@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Adult Specimens{% endblock %}</title>
+    <title>{% block title %}{% trans "Adult Specimens" %}{% endblock %}</title>
     <!-- Load static files -->
     {% load static %}
     <link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
@@ -16,6 +17,12 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
+        }
+        .language-switcher {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
         }
         
         /* Style for standard dropdowns */
@@ -53,6 +60,15 @@
             font-size: 14px;
         } */
     </style>
+    <!-- Language Switcher -->
+    <div class="language-switcher">
+        <form action="{% url 'set_language' %}" method="post">{% csrf_token %}
+            <select name="language" onchange="this.form.submit()">
+                <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+                <option value="es" {% if LANGUAGE_CODE == 'es' %}selected{% endif %}>Español</option>
+            </select>
+        </form>
+    </div>
 </head>
 <body>
     <h1>{% block header %}Adult Specimens{% endblock %}</h1>

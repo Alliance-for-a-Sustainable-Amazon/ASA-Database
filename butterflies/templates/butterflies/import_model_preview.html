@@ -1,31 +1,32 @@
 {# Preview template for data import #}
+{% load i18n %}
 {% load butterfly_extras %}
-<h2>Preview {{ model_name_plural }} Import</h2>
+<h2>{% blocktrans %}Preview {{ model_name_plural }} Import{% endblocktrans %}</h2>
 
 {% if has_unique_field %}
 <div style="margin-bottom: 15px;">
-    <p>Review the data before confirming import. <strong>Important:</strong></p>
+    <p>{% trans "Review the data before confirming import." %} <strong>{% trans "Important:" %}</strong></p>
     <ul>
-        <li>Duplicate records (with the same "{{ unique_field }}") are highlighted in <span style="background-color: #ffeeee; padding: 2px 5px;">pink</span>.</li>
-        <li>For duplicates, we'll automatically modify the "{{ unique_field }}" by adding a numbered suffix (e.g., "ABC123-2").</li>
-        <li>You can edit any values before confirming the import.</li>
+        <li>{% blocktrans %}Duplicate records (with the same "{{ unique_field }}") are highlighted in <span style="background-color: #ffeeee; padding: 2px 5px;">pink</span>.{% endblocktrans %}</li>
+        <li>{% blocktrans %}For duplicates, we'll automatically modify the "{{ unique_field }}" by adding a numbered suffix (e.g., "ABC123-2").{% endblocktrans %}</li>
+        <li>{% trans "You can edit any values before confirming the import." %}</li>
     </ul>
 </div>
 {% else %}
-<p style="color: #444444;">Review the data before confirming import. You can edit any values before confirming.</p>
-<p style="color: #666666; font-style: italic;">Note: No unique field was found for this model, so duplicate detection is not available.</p>
+<p style="color: #444444;">{% trans "Review the data before confirming import. You can edit any values before confirming." %}</p>
+<p style="color: #666666; font-style: italic;">{% trans "Note: No unique field was found for this model, so duplicate detection is not available." %}</p>
 {% endif %}
 
 {% if model_name_internal == 'specimen' %}
 <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #dddddd; background-color: #f5f5f5; border-radius: 4px;">
-    <h4 style="margin-top: 0; color: #555555; font-weight: bold;">Important Field Guidelines for Specimens</h4>
+    <h4 style="margin-top: 0; color: #555555; font-weight: bold;">{% trans "Important Field Guidelines for Specimens" %}</h4>
     <ul style="margin-bottom: 0; color: #444444;">
-        <li><strong>exact_loc</strong>: Must be exactly "TRUE" or "FALSE" (case-sensitive, no quotes)</li>
-        <li><strong>sex</strong>: Must be "male", "female", or "." (case-sensitive)</li>
-        <li><strong>specimenNumber</strong>: Required for catalog number generation</li>
-        <li><strong>year</strong>: Required for catalog number generation</li>
-        <li><strong>locality</strong>: Must match an existing locality code</li>
-        <li><strong>recordedBy</strong>, <strong>georeferencedBy</strong>, <strong>identifiedBy</strong>: Must match existing initials</li>
+        <li><strong>exact_loc</strong>: {% trans "Must be exactly 'TRUE' or 'FALSE' (case-sensitive, no quotes)" %}</li>
+        <li><strong>sex</strong>: {% trans "Must be 'male', 'female', or '.' (case-sensitive)" %}</li>
+        <li><strong>specimenNumber</strong>: {% trans "Required for catalog number generation" %}</li>
+        <li><strong>year</strong>: {% trans "Required for catalog number generation" %}</li>
+        <li><strong>locality</strong>: {% trans "Must match an existing locality code" %}</li>
+        <li><strong>recordedBy</strong>, <strong>georeferencedBy</strong>, <strong>identifiedBy</strong>: {% trans "Must match existing initials" %}</li>
     </ul>
 </div>
 {% endif %}

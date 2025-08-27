@@ -1,10 +1,10 @@
 {% extends 'butterflies/base.html' %}
 {% load butterfly_extras %}
 
-{% block title %}Add Initials{% endblock %}
+{% block title %}{% trans "Add Initials" %}{% endblock %}
 
 {% block content %}
-<h2>Add Initials</h2>
+<h2>{% trans "Add Initials" %}</h2>
 
 {% if messages %}
     <div class="messages">

@@ -22,4 +22,5 @@ urlpatterns = [
     path('accounts/login/', auth_views.LoginView.as_view(template_name='butterflies/auth/login.html'), name='login'),
     # path('', RedirectView.as_view(url='/butterflies/', permanent=False)),
     path('', include('butterflies.urls')),
+    path('i18n/', include('django.conf.urls.i18n')),
 ]

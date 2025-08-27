@@ -1,18 +1,20 @@
 {% extends "butterflies/base.html" %}
 
+{% load i18n %}
+
 {% block title %}
-{% if form.instance.pk %}Edit User{% else %}Add User{% endif %}
+{% if form.instance.pk %}{% trans "Edit User" %}{% else %}{% trans "Add User" %}{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2>{% if form.instance.pk %}Edit User{% else %}Add User{% endif %}</h2>
+    <h2>{% if form.instance.pk %}{% trans "Edit User" %}{% else %}{% trans "Add User" %}{% endif %}</h2>
     
     <form method="post" novalidate>
         {% csrf_token %}
         
         <div class="form-group">
-            <label for="{{ form.username.id_for_label }}">Username:</label>
+            <label for="{{ form.username.id_for_label }}">{% trans "Username:" %}</label>
             {{ form.username }}
             {% if form.username.errors %}
             <div class="error">
@@ -22,7 +24,7 @@
         </div>
         
         <div class="form-group">
-            <label for="{{ form.email.id_for_label }}">Email:</label>
+            <label for="{{ form.email.id_for_label }}">{% trans "Email:" %}</label>
             {{ form.email }}
             {% if form.email.errors %}
             <div class="error">
@@ -33,14 +35,13 @@
         
         {% if not form.instance.pk %}
         <div class="form-group">
-            <label for="{{ form.password1.id_for_label }}">Password:</label>
+            <label for="{{ form.password1.id_for_label }}">{% trans "Password:" %}</label>
             {{ form.password1 }}
             {% if form.password1.errors %}
             <div class="error">
                 {{ form.password1.errors }}
             </div>
             {% endif %}
-            <small>{{ form.password1.help_text }}</small>
         </div>
         
         <div class="form-group">

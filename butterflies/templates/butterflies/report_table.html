@@ -1,20 +1,21 @@
-{# report_table.html - Verbose report table for specimens and related fields #}
+{% extends "butterflies/base.html" %}
+{% load i18n %}
 {% load static %}
-<link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
-
 {% load butterfly_extras butterfly_display %}
+{% block content %}
+<link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
 <div style="margin-bottom: 1em; display: flex; align-items: center;">
   <div>
-    <h3 style="margin: 0 0 5px 0;">Export Full Report Table</h3>
-    <a href="{{ export_csv_url }}" class="btn btn-primary" style="margin-right: 10px;">CSV Format</a>
-    <a href="{{ export_excel_url }}" class="btn btn-primary">Excel Format</a>
+    <h3 style="margin: 0 0 5px 0;">{% trans "Export Full Report Table" %}</h3>
+    <a href="{{ export_csv_url }}" class="btn btn-primary" style="margin-right: 10px;">{% trans "CSV Format" %}</a>
+    <a href="{{ export_excel_url }}" class="btn btn-primary">{% trans "Excel Format" %}</a>
   </div>
   <div style="margin-left: 20px; color: #666; max-width: 400px;">
-    <p style="margin: 0;">These exports include all data shown in the table below, including related fields.</p>
-    <p style="margin: 5px 0 0 0;">For individual table management, use the links at the bottom of the page.</p>
+    <p style="margin: 0;">{% trans "These exports include all data shown in the table below, including related fields." %}</p>
+    <p style="margin: 5px 0 0 0;">{% trans "For individual table management, use the links at the bottom of the page." %}</p>
   </div>
 </div>
-<h2>Specimen Report Table</h2>
+<h2>{% trans "Specimen Report Table" %}</h2>
 <table border="1" cellpadding="4" cellspacing="0" style="font-size: 0.95em;">
     <thead>
         <tr>
@@ -122,3 +123,4 @@
         <li><a href="{% url 'dynamic_list' 'initials' %}">Initials Table</a></li>
     </ul>
 </div>
+{% endblock %}

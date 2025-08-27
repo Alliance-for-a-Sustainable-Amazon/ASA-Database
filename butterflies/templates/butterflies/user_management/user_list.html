@@ -1,27 +1,28 @@
 {% extends "butterflies/base.html" %}
+{% load i18n %}
 {% load auth_tags %}
 
-{% block title %}User Management{% endblock %}
+{% block title %}{% trans "User Management" %}{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2>User Management</h2>
+    <h2>{% trans "User Management" %}</h2>
     
     <div class="actions" style="margin-bottom: 20px;">
         {% if is_admin %}
-        <a href="{% url 'user_create' %}" class="btn btn-primary">Add User</a>
+        <a href="{% url 'user_create' %}" class="btn btn-primary">{% trans "Add User" %}</a>
         {% endif %}
     </div>
     
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Admin Panel</th>
-                <th>Actions</th>
+                <th>{% trans "Username" %}</th>
+                <th>{% trans "Email" %}</th>
+                <th>{% trans "Role" %}</th>
+                <th>{% trans "Status" %}</th>
+                <th>{% trans "Admin Panel" %}</th>
+                <th>{% trans "Actions" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -33,7 +34,7 @@
                     {% for group in user.groups.all %}
                     {{ group.name }}
                     {% empty %}
-                    <span class="text-muted">No role</span>
+                    <span class="text-muted">{% trans "No role" %}</span>
                     {% endfor %}
                 </td>
                 <td>

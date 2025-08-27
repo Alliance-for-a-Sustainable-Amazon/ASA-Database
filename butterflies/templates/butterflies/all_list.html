@@ -1,19 +1,20 @@
+{% load i18n %}
 {% extends "butterflies/base.html" %}
 {% load butterfly_extras %}
-{% block title %}All Collections{% endblock %}
-{% block header %}Butterfly & Trap Collections{% endblock %}
+{% block title %}{% trans "All Collections" %}{% endblock %}
+{% block header %}{% trans "Butterfly & Trap Collections" %}{% endblock %}
 {% block content %}
 
 {% for table in model_tables %}
     <h2>{{ table.model_name }}</h2>
-    <a href="{% url 'dynamic_create' table.model_name_internal %}">Add New {{ table.model_name }}</a>
+    <a href="{% url 'dynamic_create' table.model_name_internal %}">{% blocktrans %}Add New {{ table.model_name }}{% endblocktrans %}</a>
     {% include "butterflies/_table.html" with objects=table.objects fields=table.fields request=request %}
 {% endfor %}
 
 <br><br>
 
 {% for table in model_tables %}
-    <a href="{% url 'dynamic_list' table.model_name_internal %}">View {{ table.model_name }} List Only</a><br>
+    <a href="{% url 'dynamic_list' table.model_name_internal %}">{% blocktrans %}View {{ table.model_name }} List Only{% endblocktrans %}</a><br>
 {% endfor %}
 
 {% endblock %}

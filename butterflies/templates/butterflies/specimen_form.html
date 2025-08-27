@@ -1,9 +1,10 @@
 {% extends 'butterflies/base.html' %}
+{% load i18n %}
 {% load butterfly_extras %}
 {% load static %}
 <link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
 
-{% block title %}Add Specimen{% endblock %}
+{% block title %}{% trans "Add Specimen" %}{% endblock %}
 
 {% block extra_head %}
 <script src="{% static 'butterflies/js/required-fields.js' %}"></script>
@@ -11,16 +12,19 @@
 
 {% block content %}
 {% if form.instance.pk %}
-<h2>Edit Specimen Record</h2>
+<h2>{% trans "Edit Specimen Record" %}</h2>
 <div class="info-box" style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
-    <p><strong>Important:</strong> When editing this specimen:</p>
+    <p><strong>{% trans "Important:" %}</strong> {% trans "When editing this specimen:" %}</p>
     <ul>
-        <li>If you change any fields <strong>except</strong> those in the Taxon (5) or Identification (6) groups, you <strong>must</strong> add a new Modified entry.</li>
-        <li>If you change any Taxon fields (5), you <strong>must</strong> update the Identification information (6).</li>
+        <li>{% trans "If you change any fields except those in the Taxon (5) or Identification (6) groups, you must add a new Modified entry." %}</li>
+        <li>{% trans "If you change any Taxon fields (5), you must update the Identification information (6)." %}</li>
     </ul>
 </div>
 {% else %}
-<h2>Add Single Record</h2>
+<h2>{% trans "Add Single Record" %}</h2>
+<div class="info-box" style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+    <p style="margin:0; color:#555; font-size:1em;"><strong>{% trans "Note:" %}</strong> {% trans "All fields are required unless hidden or disabled." %}</p>
+</div>
 {% endif %}
 
 {% if messages %}

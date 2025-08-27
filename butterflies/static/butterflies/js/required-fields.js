@@ -15,16 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('Applying required field validation to specimen form');
   
-  // Add a legend at the top of the form
-  const legendDiv = document.createElement('div');
-  legendDiv.className = 'required-fields-legend';
-  legendDiv.style.marginBottom = '15px';
-  legendDiv.style.padding = '10px';
-  legendDiv.style.backgroundColor = '#f8f9fa';
-  legendDiv.style.border = '1px solid #ddd';
-  legendDiv.style.borderRadius = '5px';
-  legendDiv.innerHTML = '<p><strong>Note:</strong> All fields are required unless hidden or disabled.</p>';
-  
   // Insert at the beginning of the form
   if (form.firstChild) {
     form.insertBefore(legendDiv, form.firstChild);
