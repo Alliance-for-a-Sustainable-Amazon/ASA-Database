@@ -18,6 +18,9 @@ import io
 import openpyxl
 import pandas as pd
 # App-specific imports
+from django.core.management import call_command
+from django.contrib.auth.decorators import user_passes_test
+import io
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
 from .utils import dot_if_none
@@ -25,6 +28,19 @@ from butterflies.utils.image_utils import get_specimen_image_urls
 from .auth_utils import admin_required
 
 # --- Utility Functions ---
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Admin').exists())
+def trigger_backup(request):
+    if request.method == 'POST':
+        out = io.StringIO()
+        try:
+            call_command('full_backup_to_gdrive', stdout=out)
+            messages.success(request, 'Backup completed successfully.')
+        except Exception as e:
+            messages.error(request, f'Backup failed: {e}')
+        return redirect('report_table')
+    else:
+        return HttpResponse('Invalid request method.', status=405)
 def model_list():
     """
     Return all models in the butterflies app.

@@ -1,3 +1,8 @@
+# Ignore environment and credential files
+.env
+.env.*
+credentials/
+*.json
 # Django
 *.log
 *.pot

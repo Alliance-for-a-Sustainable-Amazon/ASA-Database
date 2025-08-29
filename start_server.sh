@@ -8,6 +8,15 @@ else
     echo "Please start your PostgreSQL server manually."
 fi
 
+
+# Load environment variables from .env.local if present
+if [ -f .env.local ]; then
+    echo "Loading environment variables from .env.local..."
+    set -a
+    source .env.local
+    set +a
+fi
+
 # Activate Python virtual environment
 source .venv/bin/activate
 

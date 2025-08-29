@@ -9,6 +9,8 @@ from . import views_user_management
 urlpatterns = [
     # Dashboard and main views
     path('', views.report_table, name='report_table'),
+    # Backup trigger for admin UI
+    path('trigger-backup/', views.trigger_backup, name='trigger_backup'),
     
     # Model-specific creation routes
     path('specimen/add/', views.create_specimen, name='create_specimen'),
