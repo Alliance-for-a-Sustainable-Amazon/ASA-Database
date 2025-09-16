@@ -838,6 +838,497 @@ def export_report_excel(request):
 
 # --- Import Views ---
 
+# Helper function to validate and construct eventDate from components
+def validate_and_construct_event_date(day, month, year, debug_mode=False):
+    """
+    Validates day, month, year components and attempts to construct a valid date.
+    
+    Returns:
+        tuple: (date_obj, error_message, is_valid)
+            - date_obj: datetime.date or None if invalid
+            - error_message: String with error details or None if valid
+            - is_valid: Boolean indicating if the date is valid
+    """
+    date_obj = None
+    date_error = None
+    
+    # If not all components are provided, we can't validate
+    if not (day and month and year):
+        missing = []
+        if not day: missing.append('day')
+        if not month: missing.append('month')
+        if not year: missing.append('year')
+        components_str = ', '.join(missing)
+        return None, f"Missing date components: {components_str}", False
+    
+    try:
+        # Try numeric month parsing first
+        if month.isdigit() and 1 <= int(month) <= 12:
+            try:
+                date_obj = datetime.date(int(year), int(month), int(day))
+            except ValueError as e:
+                date_error = f"Invalid date: {e}"
+        else:
+            # Try abbreviated and full month names
+            temp_date_str = f"{year}-{month}-{day}"
+            for fmt in ["%Y-%b-%d", "%Y-%B-%d"]:
+                try:
+                    date_obj = datetime.datetime.strptime(temp_date_str, fmt).date()
+                    break
+                except ValueError:
+                    continue
+        
+        # If direct parsing failed, try string parsing as fallback
+        if not date_obj:
+            date_str = f"{day} {month}, {year}"
+            try:
+                parsed_date = parse_date_value(date_str)
+                if parsed_date:
+                    date_obj = parsed_date
+            except Exception as e:
+                if not date_error:
+                    date_error = f"Could not parse date from components: {e}"
+        
+        # Return the results
+        if date_obj:
+            return date_obj, None, True
+        else:
+            error = date_error or "Could not construct a valid date from day, month, and year"
+            return None, error, False
+            
+    except Exception as e:
+        return None, f"Error validating date components: {str(e)}", False
+        
+# Helper function for processing date fields in a unified way
+def process_date_fields_unified(row_data, request=None, row_index=None, context=None, debug_mode=False):
+    """
+    Process all date fields in a row, converting string dates to date objects.
+    Can be used both for preview and import phases.
+    
+    Args:
+        row_data (dict): The row data containing date fields
+        request (HttpRequest): Optional request object for adding messages (import mode)
+        row_index (int): Optional index of the current row for error messages (import mode)
+        context (dict): Optional preview context for adding warnings/errors (preview mode)
+        debug_mode (bool): Whether to enable additional debug messages
+        
+    Returns:
+        dict: Dictionary of parse results by field (field_name -> date_obj) 
+              or None if used in preview mode
+    """
+    # Define date fields to process
+    date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
+    results = {}
+    
+    # Process each date field
+    for field in date_fields:
+        if field in row_data and row_data[field]:
+            # Skip eventDate special handling for now - will be processed separately
+            if field == 'eventDate':
+                continue
+                
+            # Use our helper function to parse date fields
+            date_obj, error_msg, is_valid = parse_date_field(row_data[field], debug_mode)
+            
+            if is_valid and date_obj:
+                # Store the date object
+                row_data[field] = date_obj
+                results[field] = date_obj
+                
+                # Add info message in different modes
+                if debug_mode:
+                    if request:  # Import mode
+                        messages.info(request, f"Converted date for {field} from '{row_data[field]}' to '{date_obj}'")
+                    elif context:  # Preview mode
+                        formatted = format_date_value(date_obj)
+                        context['warnings'].append(
+                            f"Date '{row_data[field]}' will be stored as '{date_obj}' and displayed as '{formatted}'"
+                        )
+            else:
+                # Handle invalid date
+                row_data[field] = None
+                results[field] = None
+                
+                if debug_mode:
+                    if request:  # Import mode
+                        messages.warning(request, f"{error_msg} for {field}, set to None")
+                    elif context:  # Preview mode
+                        context['errors'].append(f"{error_msg} for {field}")
+                        context['error_fields'].add(field)
+    
+    # Handle eventDate separately using the unified process_event_date function
+    success, skip_row, event_date_obj = process_event_date(row_data, context, request, row_index, debug_mode)
+    if event_date_obj:
+        results['eventDate'] = event_date_obj
+    
+    return results if not context else None
+    
+# Helper function for processing foreign keys during import
+def process_foreign_keys(row_data, row_index, request, debug_mode=False):
+    """
+    Process foreign key relationships for a specimen row.
+    
+    Args:
+        row_data (dict): The row data containing foreign key fields
+        row_index (int): The index of the current row for error messages
+        request (HttpRequest): The request object for adding messages
+        debug_mode (bool): Whether to enable additional debug messages
+    """
+    # Define foreign key fields and their related models
+    fk_fields = {
+        'locality': (Locality, 'localityCode'),
+        'recordedBy': (Initials, 'initials'),
+        'georeferencedBy': (Initials, 'initials'),
+        'identifiedBy': (Initials, 'initials')
+    }
+    
+    # Process each foreign key field
+    for fk_field, (related_model, lookup_field) in fk_fields.items():
+        if fk_field in row_data and row_data[fk_field]:
+            lookup_value = row_data[fk_field]
+            related_obj = related_model.objects.filter(**{lookup_field: lookup_value}).first()
+            if related_obj:
+                row_data[fk_field] = related_obj
+            else:
+                row_data[fk_field] = None
+                messages.warning(
+                    request, 
+                    f"{related_model.__name__} '{lookup_value}' not found for {fk_field} in row {row_index+1}."
+                )
+
+
+# Helper function to parse a date field
+def parse_date_field(date_value, debug_mode=False):
+    """
+    Attempts to parse a date string into a datetime.date object.
+    
+    Returns:
+        tuple: (date_obj, error_message, is_valid)
+            - date_obj: datetime.date or None if invalid
+            - error_message: String with error details or None if valid
+            - is_valid: Boolean indicating if the date is valid
+    """
+    if not date_value or date_value == '.':
+        return None, None, True  # Empty or placeholder, not an error
+        
+    try:
+        # Try direct parsing with dateutil
+        try:
+            date_obj = date_parser.parse(str(date_value)).date()
+            return date_obj, None, True
+        except:
+            # If direct parsing fails, try our standard format
+            try:
+                date_obj = parse_date_value(date_value)
+                if date_obj:
+                    return date_obj, None, True
+            except:
+                pass
+                
+        # If we get here, both parsing attempts failed
+        return None, f"Could not parse date '{date_value}'", False
+    except Exception as e:
+        return None, f"Invalid date format '{date_value}': {str(e)}", False
+        
+
+# (The process_date_fields function has been replaced by process_date_fields_unified)
+
+
+# Helper function to build the cache of valid foreign key values for specimen validation
+def build_fk_validation_cache():
+    """
+    Builds a cache of valid foreign key values for specimen validation.
+    
+    Returns:
+        tuple: (fk_fields_validation, valid_values_cache)
+            - fk_fields_validation: Dictionary mapping foreign key fields to their related models and fields
+            - valid_values_cache: Dictionary mapping foreign key fields to sets of valid values
+    """
+    fk_fields_validation = {
+        'locality': (Locality, 'localityCode', 'Locality'),
+        'recordedBy': (Initials, 'initials', 'Initials'),
+        'georeferencedBy': (Initials, 'initials', 'Initials'),
+        'identifiedBy': (Initials, 'initials', 'Initials')
+    }
+    
+    # Build a cache of valid values
+    valid_values_cache = {}
+    for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
+        valid_values_cache[fk_field] = set(
+            related_model.objects.values_list(lookup_field, flat=True)
+        )
+    
+    return fk_fields_validation, valid_values_cache
+    
+# Helper function for managing import errors
+def handle_import_error(request, error_msg, row_index):
+    """
+    Add an import error to the session for display later.
+    
+    Args:
+        request (HttpRequest): The request object
+        error_msg (str): The error message
+        row_index (int): The index of the row with the error
+    """
+    user_message = f"Error in row {row_index+1}: {error_msg}"
+    messages.error(request, user_message)
+    import_errors = request.session.get('import_errors', [])
+    import_errors.append(user_message)
+    request.session['import_errors'] = import_errors
+
+# Helper function for validating specimen data - unified approach for preview and import
+def validate_specimen_data(row_data, preview_item=None, common_errors=None, debug_mode=False):
+    """
+    Performs common validation for specimen data.
+    
+    Parameters:
+        row_data: Dictionary containing the specimen data
+        preview_item: Optional dictionary with preview metadata to update
+                     If None, only returns errors without modifying preview_item
+        common_errors: Dictionary of pre-identified common errors (optional)
+        debug_mode: Boolean indicating whether to show detailed debug information
+    
+    Returns:
+        Dictionary of errors by field (if preview_item is None)
+        Otherwise, updates preview_item in place and returns None
+    """
+    # Use for collecting errors if preview_item is None
+    collected_errors = {}
+    collected_warnings = []
+    collected_error_fields = set()
+    
+    # Get the foreign key fields validation info
+    fk_fields_validation, valid_values_cache = build_fk_validation_cache()
+    
+    # Validate foreign key fields
+    for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
+        if fk_field in row_data and row_data[fk_field]:
+            lookup_value = row_data[fk_field]
+            key = f"{fk_field}_invalid"
+            
+            # Check if this value is invalid using the common_errors or validation cache
+            is_invalid = False
+            
+            # Use common_errors if available (faster than DB check)
+            if common_errors and key in common_errors and lookup_value in common_errors[key]:
+                is_invalid = True
+                
+            # Also check validation cache
+            elif lookup_value not in valid_values_cache[fk_field]:
+                is_invalid = True
+            
+            if is_invalid:
+                error_msg = f"Invalid {display_name}: '{lookup_value}' does not exist in the database"
+                if preview_item:
+                    preview_item['errors'].append(error_msg)
+                    preview_item['error_fields'].add(fk_field)
+                else:
+                    collected_errors[fk_field] = error_msg
+                    collected_error_fields.add(fk_field)
+    
+    # Validate sex field
+    if 'sex' in row_data and row_data['sex']:
+        sex_invalid = False
+        
+        # First check common errors if available
+        if common_errors and 'sex_values' in common_errors and row_data['sex'] in common_errors['sex_values']:
+            sex_invalid = True
+        # Always validate directly too
+        elif row_data['sex'] not in ['male', 'female', '.']:
+            sex_invalid = True
+            
+        if sex_invalid:
+            error_msg = f"Invalid sex: '{row_data['sex']}'. Must be 'male', 'female', or '.'"
+            if preview_item:
+                preview_item['errors'].append(error_msg)
+                preview_item['error_fields'].add('sex')
+            else:
+                collected_errors['sex'] = error_msg
+                collected_error_fields.add('sex')
+    
+    # Validate dates
+    date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
+    for date_field in date_fields:
+        if date_field in row_data and row_data[date_field]:
+            original_value = row_data[date_field]
+            # Skip the "." placeholder, as it will be filled from components
+            if original_value == '.':
+                continue
+            
+            # Use our helper function to validate the date
+            date_obj, error_msg, is_valid = parse_date_field(original_value, debug_mode)
+            
+            if is_valid and date_obj:
+                # Only show conversion information in debug mode
+                if debug_mode:
+                    formatted = format_date_value(date_obj)
+                    warning_msg = f"Date '{original_value}' will be stored as '{date_obj}' and displayed as '{formatted}'"
+                    if preview_item:
+                        preview_item['warnings'].append(warning_msg)
+                    else:
+                        collected_warnings.append(warning_msg)
+            elif not is_valid:
+                # Only show parsing failures as errors, not warnings
+                error_msg = f"{error_msg} for {date_field}"
+                if preview_item:
+                    preview_item['errors'].append(error_msg)
+                    preview_item['error_fields'].add(date_field)
+                else:
+                    collected_errors[date_field] = error_msg
+                    collected_error_fields.add(date_field)
+    
+    # Check catalogNumber components
+    if not row_data.get('catalogNumber'):
+        missing_components = []
+        
+        if not row_data.get('specimenNumber'):
+            missing_components.append('specimenNumber')
+        
+        if not row_data.get('year'):
+            missing_components.append('year')
+        
+        if 'locality' not in row_data or not row_data['locality']:
+            missing_components.append('locality')
+        
+        if missing_components:
+            components_str = ', '.join(missing_components)
+            error_msg = f"Missing required field(s): {components_str}. These are needed to generate catalogNumber."
+            
+            if preview_item:
+                preview_item['errors'].append(error_msg)
+                for field in missing_components:
+                    preview_item['error_fields'].add(field)
+            else:
+                for field in missing_components:
+                    collected_errors[field] = "Required for catalogNumber"
+                    collected_error_fields.add(field)
+    
+    # Check boolean fields
+    if 'exact_loc' in row_data and row_data['exact_loc']:
+        value = str(row_data['exact_loc']).upper()
+        if value not in ['TRUE', 'FALSE']:
+            warning_msg = f"Value '{row_data['exact_loc']}' for exact_loc will be converted to TRUE/FALSE"
+            if preview_item:
+                preview_item['warnings'].append(warning_msg)
+            else:
+                collected_warnings.append(warning_msg)
+                
+    # Return collected errors if no preview_item was provided
+    if not preview_item:
+        return {
+            'errors': collected_errors,
+            'warnings': collected_warnings,
+            'error_fields': collected_error_fields
+        }
+    
+    return None
+
+# Helper function for processing eventDate from components - unified for preview and import
+def process_event_date(row_data, context=None, request=None, row_index=None, debug_mode=False):
+    """
+    Validates and processes eventDate from day, month, year components.
+    Can be used both for preview display and for actual import.
+    
+    Parameters:
+        row_data: Dictionary containing row data with day, month, year components
+        context: Optional dictionary for preview metadata (warnings/errors)
+        request: Optional HttpRequest object for import errors
+        row_index: Optional row index for error messages during import
+        debug_mode: Boolean indicating whether to show detailed debug information
+        
+    Returns:
+        tuple: (success, skip_row, date_obj)
+            - success: Boolean indicating if the date was successfully processed
+            - skip_row: Boolean indicating if the row should be skipped (import only)
+            - date_obj: The date object if successfully created, None otherwise
+    """
+    # Only process if eventDate is missing or "."
+    if not row_data.get('eventDate') or row_data.get('eventDate') == '.':
+        day = row_data.get('day')
+        month = row_data.get('month')
+        year = row_data.get('year')
+        
+        # Use our existing function to validate and construct the date
+        date_obj, error_msg, is_valid = validate_and_construct_event_date(day, month, year, debug_mode)
+        
+        # At least one component exists but validation failed
+        if (day or month or year) and not is_valid:
+            # Handle validation failure differently for preview vs import
+            if context:  # Preview mode
+                context['errors'].append(error_msg)
+                
+                # Mark relevant fields as having errors
+                if not day: context['error_fields'].add('day')
+                if not month: context['error_fields'].add('month')
+                if not year: context['error_fields'].add('year')
+                context['error_fields'].add('eventDate')
+                
+                return False, False, None
+            elif request:  # Import mode
+                handle_import_error(request, error_msg, row_index)
+                
+                # If in debug mode, continue with None value rather than failing
+                if debug_mode:
+                    messages.warning(request, f"Row {row_index+1}: Using NULL for eventDate due to parsing error")
+                    row_data['eventDate'] = None
+                    return True, False, None
+                else:
+                    return False, True, None
+            else:
+                # Basic mode just returns the status
+                return False, False, None
+        
+        # All components exist and validation succeeded
+        elif is_valid and date_obj:
+            # Handle success differently for preview vs import
+            if context:  # Preview mode
+                # Success! We'll add an informational message
+                context['warnings'].append(
+                    f"Will generate eventDate from components: {day} {month} {year} → {date_obj}"
+                )
+                # Update the preview data to show the generated eventDate
+                row_data['eventDate'] = str(date_obj)
+                context['data']['eventDate'] = str(date_obj)
+                
+                return True, False, date_obj
+            else:  # Import mode or basic mode
+                row_data['eventDate'] = date_obj
+                
+                # Add debug message if in import mode
+                if request and debug_mode:
+                    messages.info(request, f"Generated eventDate '{format_date_value(date_obj)}' from components: {day} {month} {year}")
+                
+                return True, False, date_obj
+        
+        # Have some but not all components
+        elif (day or month or year) and not (day and month and year):
+            error_msg = f"Incomplete date components: day={day or 'missing'}, month={month or 'missing'}, year={year or 'missing'}"
+            
+            if context:  # Preview mode
+                context['errors'].append(error_msg)
+                # Mark fields as having errors
+                if not day: context['error_fields'].add('day')
+                if not month: context['error_fields'].add('month')
+                if not year: context['error_fields'].add('year')
+                context['error_fields'].add('eventDate')
+                
+                return False, False, None
+            elif request:  # Import mode
+                handle_import_error(request, error_msg, row_index)
+                
+                # If in debug mode, continue with None value rather than failing
+                if debug_mode:
+                    messages.warning(request, f"Row {row_index+1}: Using NULL for eventDate due to incomplete components")
+                    row_data['eventDate'] = None
+                    return True, False, None
+                else:
+                    return False, True, None
+            else:
+                # Basic mode just returns the status
+                return False, False, None
+            
+    return True, False, None
+
 @csrf_exempt
 @admin_required
 def import_model(request, model_name):
@@ -855,6 +1346,8 @@ def import_model(request, model_name):
     Returns:
         Rendered template for import form, preview, or redirect
     """
+    # Using the helper functions defined outside this function
+
     # Find the model
     model = None
     for m in model_list():
@@ -873,18 +1366,23 @@ def import_model(request, model_name):
         'model_fields': [f.name for f in model._meta.fields if f.name != 'id'],
     }
     
-    # Find unique field for duplicate detection
+    # For Specimen model, we only check catalogNumber for uniqueness
+    # For other models, find unique field for duplicate detection
     unique_field = None
-    for field in model._meta.fields:
-        if field.unique and field.name != 'id':
-            unique_field = field.name
-            break
-    
-    # Check unique_together constraints if no unique field found
-    if not unique_field:
-        unique_together = getattr(model._meta, 'unique_together', [])
-        if unique_together and isinstance(unique_together[0], (list, tuple)) and len(unique_together[0]) > 0:
-            unique_field = unique_together[0][0]
+    if model_name == 'specimen':
+        unique_field = 'catalogNumber'  # Specifically use catalogNumber for specimens
+    else:
+        # For other models, use the first unique field found (excluding id)
+        for field in model._meta.fields:
+            if field.unique and field.name != 'id':
+                unique_field = field.name
+                break
+            
+        # Check unique_together constraints if no unique field found
+        if not unique_field:
+            unique_together = getattr(model._meta, 'unique_together', [])
+            if unique_together and isinstance(unique_together[0], (list, tuple)) and len(unique_together[0]) > 0:
+                unique_field = unique_together[0][0]
     
     # Add unique field info to context
     context['has_unique_field'] = bool(unique_field)
@@ -967,6 +1465,9 @@ def import_model(request, model_name):
             return render(request, 'butterflies/import_model.html', context)
         
         # Step 3: Prepare data for preview
+        # Get debug mode parameter (show detailed conversion info)
+        debug_mode = request.POST.get('debug_mode') == 'true'
+        
         # First, convert all rows to clean dicts for processing
         all_rows_data = []
         for idx, row in df.iterrows():
@@ -986,22 +1487,10 @@ def import_model(request, model_name):
         # Pre-validate to identify common error patterns
         common_errors = {}
         if model_name == 'specimen':
-            # Check foreign key fields across all rows
-            fk_fields_validation = {
-                'locality': (Locality, 'localityCode', 'Locality'),
-                'recordedBy': (Initials, 'initials', 'Initials'),
-                'georeferencedBy': (Initials, 'initials', 'Initials'),
-                'identifiedBy': (Initials, 'initials', 'Initials')
-            }
+            # Get foreign key validation info
+            fk_fields_validation, valid_values_cache = build_fk_validation_cache()
             
-            # Build a cache of valid values
-            valid_values_cache = {}
-            for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
-                valid_values_cache[fk_field] = set(
-                    related_model.objects.values_list(lookup_field, flat=True)
-                )
-            
-            # Track invalid sex values
+            # Track invalid sex values and foreign keys
             for row_data in all_rows_data:
                 if 'sex' in row_data and row_data['sex']:
                     if row_data['sex'] not in ['male', 'female', '.']:
@@ -1018,6 +1507,8 @@ def import_model(request, model_name):
                                 common_errors[key] = set()
                             common_errors[key].add(row_data[fk_field])
                             
+        # We'll use the parse_date_field helper function defined outside this function
+
         # Now process each row for preview with consistent error detection
         preview_data = []
         for row_data in all_rows_data:
@@ -1028,13 +1519,10 @@ def import_model(request, model_name):
             
             if unique_field and unique_field in row_data and row_data[unique_field]:
                 unique_value = row_data[unique_field]
+                # Check for duplicates and mark as error
                 if model.objects.filter(**{unique_field: unique_value}).exists():
                     is_duplicate = True
-                    # Generate suggested unique value with suffix
-                    counter = 2
-                    while model.objects.filter(**{unique_field: f"{unique_value}-{counter}"}).exists():
-                        counter += 1
-                    suggested_key = f"{unique_value}-{counter}"
+                    # We'll add error to the preview item after it's created
             
             # Create preview item
             preview_item = {
@@ -1046,101 +1534,22 @@ def import_model(request, model_name):
                 'error_fields': set()  # Track fields with errors for highlighting
             }
             
-            # Check for potential format issues
-            if model_name == 'specimen':
-                # Check date fields with improved validation
-                date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
-                for date_field in date_fields:
-                    if date_field in row_data and row_data[date_field]:
-                        original_value = row_data[date_field]
-                        try:
-                            # Try parsing the date
-                            date_obj = None
-                            try:
-                                date_obj = date_parser.parse(str(original_value)).date()
-                                # # Show how the date will look when formatted for display
-                                # formatted = format_date_value(date_obj)
-                                # preview_item['warnings'].append(
-                                #     f"Date '{original_value}' will be stored as '{date_obj}' and displayed as '{formatted}'"
-                                # )
-                            except:
-                                preview_item['warnings'].append(
-                                    f"Could not parse date '{original_value}' for {date_field}"
-                                )
-                        except Exception as e:
-                            preview_item['warnings'].append(
-                                f"Invalid date format '{original_value}' for {date_field}: {str(e)}"
-                            )
-                
-                # Check boolean fields
-                if 'exact_loc' in row_data and row_data['exact_loc']:
-                    value = str(row_data['exact_loc']).upper()
-                    if value not in ['TRUE', 'FALSE']:
-                        preview_item['warnings'].append(
-                            f"Value '{row_data['exact_loc']}' for exact_loc will be converted to TRUE/FALSE"
-                        )
-                
-                # Perform strict validation checks for fields that must be valid
-                if model_name == 'specimen':
-                    # Validate foreign key fields using our pre-cached data
-                    fk_fields_validation = {
-                        'locality': (Locality, 'localityCode', 'Locality'),
-                        'recordedBy': (Initials, 'initials', 'Initials'),
-                        'georeferencedBy': (Initials, 'initials', 'Initials'),
-                        'identifiedBy': (Initials, 'initials', 'Initials')
-                    }
-                    
-                    for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
-                        if fk_field in row_data and row_data[fk_field]:
-                            lookup_value = row_data[fk_field]
-                            key = f"{fk_field}_invalid"
-                            
-                            # Check if this value is in our pre-identified invalid values
-                            if key in common_errors and lookup_value in common_errors[key]:
-                                error_msg = f"Invalid {display_name}: '{lookup_value}' does not exist in the database"
-                                preview_item['errors'].append(error_msg)
-                                preview_item['error_fields'].add(fk_field)
-                            else:
-                                # Double-check in the database in case we missed something
-                                if not related_model.objects.filter(**{lookup_field: lookup_value}).exists():
-                                    error_msg = f"Invalid {display_name}: '{lookup_value}' does not exist in the database"
-                                    preview_item['errors'].append(error_msg)
-                                    preview_item['error_fields'].add(fk_field)
-                    
-                    # Validate sex field using pre-identified invalid values
-                    if 'sex' in row_data and row_data['sex']:
-                        if 'sex_values' in common_errors and row_data['sex'] in common_errors['sex_values']:
-                            error_msg = f"Invalid sex: '{row_data['sex']}'. Must be 'male', 'female', or '.'"
-                            preview_item['errors'].append(error_msg)
-                            preview_item['error_fields'].add('sex')
-                        elif row_data['sex'] not in ['male', 'female', '.']:
-                            # Double-check in case we missed something in pre-validation
-                            error_msg = f"Invalid sex: '{row_data['sex']}'. Must be 'male', 'female', or '.'"
-                            preview_item['errors'].append(error_msg)
-                            preview_item['error_fields'].add('sex')
-                    
-                    # Check required fields for catalogNumber generation
-                    # (Only flag as error if catalogNumber is not provided but components are missing)
-                    if not row_data.get('catalogNumber'):
-                        missing_components = []
-                        
-                        if not row_data.get('specimenNumber'):
-                            missing_components.append('specimenNumber')
-                        
-                        if not row_data.get('year'):
-                            missing_components.append('year')
-                        
-                        if 'locality' not in row_data or not row_data['locality']:
-                            missing_components.append('locality')
-                        
-                        if missing_components:
-                            components_str = ', '.join(missing_components)
-                            error_msg = f"Missing required field(s): {components_str}. These are needed to generate catalogNumber."
-                            preview_item['errors'].append(error_msg)
-                            for field in missing_components:
-                                preview_item['error_fields'].add(field)
+            # Add duplicate error message if duplicate was found
+            if is_duplicate and unique_field:
+                unique_value = row_data[unique_field]
+                field_label = unique_field.capitalize()
+                error_msg = f"Duplicate {field_label}: '{unique_value}' already exists in the database"
+                preview_item['errors'].append(error_msg)
+                preview_item['error_fields'].add(unique_field)
             
-            preview_data.append(preview_item)
+                # Check for potential format issues
+            if model_name == 'specimen':
+                # Use our unified helper functions for validation
+                validate_specimen_data(row_data, preview_item, common_errors, debug_mode)
+                
+                # Process dates using our unified helper
+                process_date_fields_unified(row_data, None, None, preview_item, debug_mode)
+                preview_data.append(preview_item)
         
         # Add preview data to context
         context['preview'] = preview_data
@@ -1169,6 +1578,7 @@ def import_model(request, model_name):
         # Get model fields and row count
         fields = [f.name for f in model._meta.fields if f.name != 'id']
         rows = int(request.POST.get('row_count', 0))
+        debug_mode = request.POST.get('debug_mode') == 'true'
         
         # Reconstruct rows from form data
         all_rows_data = []
@@ -1184,20 +1594,8 @@ def import_model(request, model_name):
         # Pre-validate to identify common error patterns
         common_errors = {}
         if model_name == 'specimen':
-            # Check foreign key fields across all rows
-            fk_fields_validation = {
-                'locality': (Locality, 'localityCode', 'Locality'),
-                'recordedBy': (Initials, 'initials', 'Initials'),
-                'georeferencedBy': (Initials, 'initials', 'Initials'),
-                'identifiedBy': (Initials, 'initials', 'Initials')
-            }
-            
-            # Build a cache of valid values
-            valid_values_cache = {}
-            for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
-                valid_values_cache[fk_field] = set(
-                    related_model.objects.values_list(lookup_field, flat=True)
-                )
+            # Get foreign key validation info
+            fk_fields_validation, valid_values_cache = build_fk_validation_cache()
             
             # Track invalid values
             for row_data in all_rows_data:
@@ -1225,13 +1623,10 @@ def import_model(request, model_name):
             
             if unique_field and unique_field in row_data and row_data[unique_field]:
                 unique_value = row_data[unique_field]
+                # Check for duplicates and mark as error
                 if model.objects.filter(**{unique_field: unique_value}).exists():
                     is_duplicate = True
-                    # Generate suggested unique value with suffix
-                    counter = 2
-                    while model.objects.filter(**{unique_field: f"{unique_value}-{counter}"}).exists():
-                        counter += 1
-                    suggested_key = f"{unique_value}-{counter}"
+                    # We'll add error to the preview item after it's created
             
             # Create preview item
             preview_item = {
@@ -1243,54 +1638,21 @@ def import_model(request, model_name):
                 'error_fields': set()  # Track fields with errors for highlighting
             }
             
+            # Add duplicate error message if duplicate was found
+            if is_duplicate and unique_field:
+                unique_value = row_data[unique_field]
+                field_label = unique_field.capitalize()
+                error_msg = f"Duplicate {field_label}: '{unique_value}' already exists in the database"
+                preview_item['errors'].append(error_msg)
+                preview_item['error_fields'].add(unique_field)
+            
             # Perform the same validation as in the file upload case
-            # Add validation code here - same as in the file upload case
             if model_name == 'specimen':
-                # Validate foreign key fields using our pre-cached data
-                fk_fields_validation = {
-                    'locality': (Locality, 'localityCode', 'Locality'),
-                    'recordedBy': (Initials, 'initials', 'Initials'),
-                    'georeferencedBy': (Initials, 'initials', 'Initials'),
-                    'identifiedBy': (Initials, 'initials', 'Initials')
-                }
+                # Use our unified helper functions for validation
+                validate_specimen_data(row_data, preview_item, common_errors, debug_mode)
                 
-                for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
-                    if fk_field in row_data and row_data[fk_field]:
-                        lookup_value = row_data[fk_field]
-                        key = f"{fk_field}_invalid"
-                        
-                        # Check if this value is in our pre-identified invalid values
-                        if key in common_errors and lookup_value in common_errors[key]:
-                            error_msg = f"Invalid {display_name}: '{lookup_value}' does not exist in the database"
-                            preview_item['errors'].append(error_msg)
-                            preview_item['error_fields'].add(fk_field)
-                
-                # Validate sex field
-                if 'sex' in row_data and row_data['sex']:
-                    if 'sex_values' in common_errors and row_data['sex'] in common_errors['sex_values']:
-                        error_msg = f"Invalid sex: '{row_data['sex']}'. Must be 'male', 'female', or '.'"
-                        preview_item['errors'].append(error_msg)
-                        preview_item['error_fields'].add('sex')
-                
-                # Check required fields for catalogNumber generation
-                if not row_data.get('catalogNumber'):
-                    missing_components = []
-                    
-                    if not row_data.get('specimenNumber'):
-                        missing_components.append('specimenNumber')
-                    
-                    if not row_data.get('year'):
-                        missing_components.append('year')
-                    
-                    if 'locality' not in row_data or not row_data['locality']:
-                        missing_components.append('locality')
-                    
-                    if missing_components:
-                        components_str = ', '.join(missing_components)
-                        error_msg = f"Missing required field(s): {components_str}. These are needed to generate catalogNumber."
-                        preview_item['errors'].append(error_msg)
-                        for field in missing_components:
-                            preview_item['error_fields'].add(field)
+                # Process dates using our unified helper
+                process_date_fields_unified(row_data, None, None, preview_item, debug_mode)
             
             preview_data.append(preview_item)
         
@@ -1340,7 +1702,6 @@ def import_model(request, model_name):
         
         # Initialize counters
         imported_count = 0
-        renamed_count = 0
         skipped_count = 0
         
         # Clear previous import errors
@@ -1360,126 +1721,26 @@ def import_model(request, model_name):
             
             # Step 5: Process and convert data before creating objects
             try:
-                # Handle duplicate values in unique fields
-                if unique_field and row_data.get(unique_field):
-                    original_value = row_data[unique_field]
-                    if original_value and model.objects.filter(**{unique_field: original_value}).exists():
-                        # Add suffix to make value unique
-                        counter = 2
-                        while model.objects.filter(**{unique_field: f"{original_value}-{counter}"}).exists():
-                            counter += 1
-                        
-                        # Update with new unique value
-                        row_data[unique_field] = f"{original_value}-{counter}"
-                        renamed_count += 1
-                        messages.info(request, f'Renamed duplicate "{original_value}" to "{row_data[unique_field]}"')
+                # Note: We don't need to check for duplicates here again, since:
+                # 1. The preview validation already caught any duplicates
+                # 2. We checked request.session['has_errors'] above and prevented import if errors exist
+                # 3. The user had to fix all errors before the import button was enabled
                 
                 # Model-specific conversions
                 if model_name == 'specimen':
-                    # Process foreign key fields
-                    fk_fields = {
-                        'locality': (Locality, 'localityCode'),
-                        'recordedBy': (Initials, 'initials'),
-                        'georeferencedBy': (Initials, 'initials'),
-                        'identifiedBy': (Initials, 'initials')
-                    }
+                    # Process foreign key fields using our helper function
+                    process_foreign_keys(row_data, i, request, debug_mode)
                     
-                    for fk_field, (related_model, lookup_field) in fk_fields.items():
-                        if fk_field in row_data and row_data[fk_field]:
-                            lookup_value = row_data[fk_field]
-                            related_obj = related_model.objects.filter(**{lookup_field: lookup_value}).first()
-                            if related_obj:
-                                row_data[fk_field] = related_obj
-                            else:
-                                row_data[fk_field] = None
-                                messages.warning(
-                                    request, 
-                                    f"{related_model.__name__} '{lookup_value}' not found for {fk_field} in row {i+1}."
-                                )
+                    # Process all date fields using our unified helper
+                    process_date_fields_unified(row_data, request, i, None, debug_mode)
                     
-                    # Convert date fields from string to date objects
-                    date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
-                    for field in date_fields:
-                        if field in row_data and row_data[field]:
-                            try:
-                                # Parse string date to Python date object
-                                date_value = None
-                                
-                                # Try direct parsing with dateutil
-                                try:
-                                    date_value = date_parser.parse(str(row_data[field])).date()
-                                except:
-                                    # If direct parsing fails, try our standard format
-                                    try:
-                                        date_value = parse_date_value(row_data[field])
-                                    except:
-                                        date_value = None
-                                
-                                if date_value:
-                                    row_data[field] = date_value
-                                    if debug_mode:
-                                        messages.info(request, f"Converted date for {field} from '{row_data[field]}' to '{date_value}'")
-                                else:
-                                    row_data[field] = None
-                                    if debug_mode:
-                                        messages.warning(request, f"Could not parse date '{row_data[field]}' for {field}, set to None")
-                            except Exception as e:
-                                # If parsing fails, log warning and set to None
-                                row_data[field] = None
-                                if debug_mode:
-                                    messages.warning(request, f"Error parsing date for {field}: {str(e)}")
-                    
-                    # Construct eventDate from components if missing
-                    if not row_data.get('eventDate'):
-                        day = row_data.get('day')
-                        month = row_data.get('month')
-                        year = row_data.get('year')
-                        if day and month and year:
-                            # First try to create a valid date to check if components make sense
-                            try:
-                                # Try to create a datetime object to validate the date
-                                temp_date_str = f"{year}-{month}-{day}"
-                                date_obj = None
-                                
-                                # Try parsing with various month formats
-                                try:
-                                    # If month is a number (1-12)
-                                    if month.isdigit() and 1 <= int(month) <= 12:
-                                        date_obj = datetime.date(int(year), int(month), int(day))
-                                    else:
-                                        # Try abbreviated and full month names
-                                        for fmt in ["%Y-%b-%d", "%Y-%B-%d"]:
-                                            try:
-                                                date_obj = datetime.datetime.strptime(temp_date_str, fmt).date()
-                                                break
-                                            except ValueError:
-                                                continue
-                                except:
-                                    pass
-                                
-                                if date_obj:
-                                    # Store as date object
-                                    row_data['eventDate'] = date_obj
-                                    if debug_mode:
-                                        messages.info(request, f"Generated eventDate '{format_date_value(date_obj)}' from components: {day} {month} {year}")
-                                else:
-                                    # Fallback to parsing a string
-                                    date_str = f"{day} {month}, {year}"
-                                    parsed_date = parse_date_value(date_str)
-                                    if parsed_date:
-                                        row_data['eventDate'] = parsed_date
-                                    else:
-                                        row_data['eventDate'] = None
-                                    if debug_mode:
-                                        messages.warning(request, f"Using string parsing for eventDate: '{date_str}' -> {parsed_date}")
-                            except Exception as e:
-                                # Log error and set to None
-                                row_data['eventDate'] = None
-                                if debug_mode:
-                                    messages.warning(request, f"Error validating date components: {str(e)}. Using: '{row_data['eventDate']}'")
-                        elif debug_mode and (day or month or year):
-                            # Warn about incomplete date components
-                            messages.warning(request, f"Incomplete date components for row {i+1}: day={day}, month={month}, year={year}")
+                    # Check if event date processing caused a skip flag
+                    # The check is already done inside process_date_fields_unified, 
+                    # but we need to handle the skip logic here
+                    success, should_skip, _ = process_event_date(row_data, None, request, i, debug_mode)
+                    if not success and should_skip:
+                        skipped_count += 1
+                        raise ValueError("Error processing eventDate, row skipped")
                     
                     # Handle exact_loc boolean field
                     if 'exact_loc' in row_data and row_data['exact_loc']:
@@ -1567,18 +1828,11 @@ def import_model(request, model_name):
         
         # Prepare summary message
         if imported_count > 0:
-            if renamed_count > 0:
-                messages.success(
-                    request, 
-                    f'Successfully imported {imported_count} records '
-                    f'({renamed_count} with modified unique keys, {skipped_count} skipped due to errors).'
-                )
-            else:
-                messages.success(
-                    request, 
-                    f'Successfully imported {imported_count} records '
-                    f'({skipped_count} skipped due to errors).'
-                )
+            messages.success(
+                request, 
+                f'Successfully imported {imported_count} records '
+                f'({skipped_count} skipped due to errors).'
+            )
         else:
             messages.error(request, 'No records were imported successfully.')
         

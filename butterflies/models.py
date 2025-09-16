@@ -108,7 +108,7 @@ class Specimen(models.Model):
     # ----------------------------------
     # 3. Occurrence Fields
     # ----------------------------------
-    specimenNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Manual entry. If duplicate, error.")
+    specimenNumber = models.CharField(max_length=100, blank=True, null=True, default=None, help_text="Manual entry. Can have duplicates across different locations.")
     catalogNumber = models.CharField(max_length=100, primary_key=True, help_text="Auto-generated: year-localityCode-specimenNumber (nnnn). Primary key for specimen.")
     recordedBy = models.ForeignKey(Initials, to_field='initials', on_delete=models.SET_NULL, null=True, help_text="Dropdown: initials from Initials table.")
     sex = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('.', '.')], help_text="Dropdown: male/female/.")
