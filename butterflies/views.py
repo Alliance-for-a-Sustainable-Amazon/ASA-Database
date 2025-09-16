@@ -17,6 +17,10 @@ import csv
 import io
 import openpyxl
 import pandas as pd
+import re
+import datetime
+from dateutil import parser as date_parser
+from operator import itemgetter
 # App-specific imports
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
@@ -24,12 +28,64 @@ from .utils import dot_if_none
 from butterflies.utils.image_utils import get_specimen_image_urls
 from .auth_utils import admin_required
 
+
 # --- Utility Functions ---
 def model_list():
     """
     Return all models in the butterflies app.
     """
     return list(apps.get_app_config('butterflies').get_models())
+
+def format_date_value(value):
+    """
+    Convert various date formats to the required string format: DD Month, YYYY.
+    Handles datetime objects, strings, and pandas Timestamp objects.
+    
+    Parameters:
+        value: A date value in any format (datetime, string, Timestamp, etc.)
+    Returns:
+        String in format "DD Month, YYYY" or None if conversion fails
+    """
+    if pd.isna(value) or value is None or value == '':
+        return None
+    
+    try:
+        # Function to format date consistently across platforms
+        def format_date(dt):
+            # Use %d and strip leading zero instead of %-d which doesn't work on Windows
+            day = dt.strftime("%d").lstrip("0")
+            if day == "": day = "1"  # Handle case where day is "01"
+            month = dt.strftime("%B")
+            year = dt.strftime("%Y")
+            return f"{day} {month}, {year}"
+        
+        # If value is already a datetime object
+        if isinstance(value, (datetime.datetime, datetime.date)):
+            return format_date(value)
+        
+        # If value is a pandas Timestamp
+        elif hasattr(value, 'to_pydatetime'):
+            return format_date(value.to_pydatetime())
+            
+        # If value is a string, try to parse it
+        elif isinstance(value, str):
+            # First check if it's already in the correct format
+            date_pattern = r"^\d{1,2} [A-Za-z]+\.?,? \d{4}$"
+            if re.match(date_pattern, value):
+                return value
+                
+            # Try to parse with dateutil
+            try:
+                dt = date_parser.parse(value)
+                return format_date(dt)
+            except:
+                pass
+                
+    except Exception as e:
+        print(f"Date conversion error: {str(e)}")
+        
+    # If all conversions fail, return the original value if it's a string
+    return str(value) if value is not None else None
 
 # --- Generic CRUD Views ---
 @login_required
@@ -318,17 +374,60 @@ def create_initials(request):
 @login_required
 def report_table(request):
     """
-    Shows a paginated table of specimens with filtering options.
+    Shows a table of the 20 most recent specimens based on eventDate and eventTime.
     This is the main dashboard view.
     Requires user authentication.
     
     Parameters:
         request: HTTP request object
     Returns:
-        Rendered template with filtered specimen list
+        Rendered template with the 20 most recent specimens
     """
-    specimens = Specimen.objects.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy').all()
-    from django.urls import reverse
+    
+    # Get all specimens with related objects
+    all_specimens = Specimen.objects.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy').all()
+    
+    # Prepare list for sorting
+    specimens_with_dates = []
+    for specimen in all_specimens:
+        # Default to minimum date if missing date information
+        parsed_date = datetime.datetime.min
+        
+        # Try to parse eventDate (format: "Jan. 12, 2025" or similar)
+        if specimen.eventDate:
+            try:
+                # Handle variations in date format
+                date_str = specimen.eventDate.replace('.', '')  # Remove periods from month abbreviations
+                # Try different date formats
+                for fmt in ["%b %d, %Y", "%d-%b-%Y", "%d %b %Y", "%d %B %Y", "%B %d, %Y"]:
+                    try:
+                        parsed_date = datetime.datetime.strptime(date_str, fmt)
+                        break
+                    except ValueError:
+                        continue
+            except (ValueError, AttributeError):
+                # Keep default if parsing fails
+                pass
+                
+        # Add time if available (format: "14:37")
+        if specimen.eventTime and isinstance(parsed_date, datetime.datetime):
+            try:
+                # Extract hours and minutes
+                match = re.match(r'(\d{1,2}):(\d{2})', specimen.eventTime)
+                if match:
+                    hours, minutes = map(int, match.groups())
+                    parsed_date = parsed_date.replace(hour=hours, minute=minutes)
+            except (ValueError, AttributeError):
+                # Keep date without time if parsing fails
+                pass
+                
+        # Add to list for sorting
+        specimens_with_dates.append((specimen, parsed_date))
+    
+    # Sort by datetime (most recent first) and take top 20
+    specimens_with_dates.sort(key=itemgetter(1), reverse=True)
+    specimens = [item[0] for item in specimens_with_dates[:20]]
+    
     return render(request, 'butterflies/report_table.html', {
         'specimens': specimens,
         'export_csv_url': reverse('export_report_csv'),
@@ -641,7 +740,11 @@ def export_report_excel(request):
 def import_model(request, model_name):
     """
     Generic function to import data for any model from CSV or Excel file.
-    Requires admin privileges.
+    This simplified version focuses on:
+    1. Reading all values as text without restrictions
+    2. Converting data to proper formats before import
+    3. Showing a clear preview with potential issues
+    4. Handling imports with better error messages
     
     Parameters:
         request: HTTP request object
@@ -649,6 +752,7 @@ def import_model(request, model_name):
     Returns:
         Rendered template for import form, preview, or redirect
     """
+    # Find the model
     model = None
     for m in model_list():
         if m._meta.model_name == model_name:
@@ -658,7 +762,7 @@ def import_model(request, model_name):
     if not model:
         raise Http404("Model not found")
     
-    # Get model information safely without exposing _meta in templates
+    # Prepare context with model information
     context = {
         'model_name': model._meta.verbose_name,
         'model_name_plural': model._meta.verbose_name_plural,
@@ -672,383 +776,356 @@ def import_model(request, model_name):
         if field.unique and field.name != 'id':
             unique_field = field.name
             break
-            
-    # If no unique field is found, check if there are any unique_together constraints
+    
+    # Check unique_together constraints if no unique field found
     if not unique_field:
         unique_together = getattr(model._meta, 'unique_together', [])
-        if unique_together:
-            # For simplicity, we'll just use the first field of the first unique_together constraint
-            # A more comprehensive solution would handle multiple fields
-            if isinstance(unique_together[0], (list, tuple)) and len(unique_together[0]) > 0:
-                unique_field = unique_together[0][0]
-            
+        if unique_together and isinstance(unique_together[0], (list, tuple)) and len(unique_together[0]) > 0:
+            unique_field = unique_together[0][0]
+    
+    # Add unique field info to context
+    context['has_unique_field'] = bool(unique_field)
+    context['unique_field'] = unique_field
+    
+    # Step 1: Handle file upload and parse into DataFrame
     if request.method == 'POST' and request.FILES.get('file'):
         file = request.FILES['file']
-        ext = file.name.split('.')[-1].lower()
+        file_ext = file.name.split('.')[-1].lower()
         
         try:
-            if ext == 'csv':
-                df = pd.read_csv(file)
-            elif ext in ('xls', 'xlsx'):
-                df = pd.read_excel(file)
+            # Read file contents - all values as strings initially
+            if file_ext == 'csv':
+                # Use dtype=str to read everything as text
+                df = pd.read_csv(file, dtype=str, keep_default_na=False)
+            elif file_ext in ('xls', 'xlsx'):
+                # Use dtype=str and convert_float=False to prevent numeric conversion
+                df = pd.read_excel(file, dtype=str, convert_float=False)
             else:
                 messages.error(request, 'Unsupported file type. Please upload a CSV or Excel file.')
                 context['error'] = 'Unsupported file type. Please upload a CSV or Excel file.'
                 return render(request, 'butterflies/import_model.html', context)
-                
-            # Check if dataframe is empty
+            
+            # Basic cleanup - strip whitespace from all string values
+            for col in df.columns:
+                df[col] = df[col].astype(str).str.strip()
+            
+            # Replace empty strings with None
+            df = df.replace(['', 'nan', 'None', 'NaN', 'null', 'NULL'], None)
+            
+            # Remove completely empty rows
+            df = df.dropna(how='all')
+            
+            # Check if dataframe is empty after cleaning
             if df.empty:
-                messages.error(request, 'The uploaded file contains no data.')
-                context['error'] = 'The uploaded file contains no data.'
+                messages.error(request, 'The uploaded file contains no usable data after cleaning.')
+                context['error'] = 'The uploaded file contains no usable data after cleaning.'
                 return render(request, 'butterflies/import_model.html', context)
                 
-        except pd.errors.EmptyDataError:
-            messages.error(request, 'The uploaded file is empty.')
-            context['error'] = 'The uploaded file is empty.'
-            return render(request, 'butterflies/import_model.html', context)
-        except pd.errors.ParserError:
-            messages.error(request, 'Error parsing the file. Please check the file format.')
-            context['error'] = 'Error parsing the file. Please check the file format.'
-            return render(request, 'butterflies/import_model.html', context)
         except Exception as e:
-            messages.error(request, f'Error reading file: {str(e)}')
-            context['error'] = f'Error reading file: {str(e)}'
+            messages.error(request, f'Error processing file: {str(e)}')
+            context['error'] = f'Error processing file: {str(e)}'
             return render(request, 'butterflies/import_model.html', context)
         
-        # Validate columns
-        required_fields = [f.name for f in model._meta.fields if f.name != 'id']
+        # Step 2: Check columns and prepare data for preview
+        # Get expected field names
+        expected_fields = [f.name for f in model._meta.fields if f.name != 'id']
         
-        # Special handling for foreign key fields in specimen model
+        # Map any foreign key fields to their expected column names for import
         if model_name == 'specimen':
-            # Replace foreign key field names with their expected column names in the import file
-            fk_mapping = {
-                'locality': 'locality',  # Expected column name for locality.localityCode
-                'recordedBy': 'recordedBy',  # Expected column name for recordedBy.initials
-                'georeferencedBy': 'georeferencedBy',  # Expected column name for georeferencedBy.initials
-                'identifiedBy': 'identifiedBy',  # Expected column name for identifiedBy.initials
+            fk_fields = {
+                'locality': 'locality',        # Locality.localityCode
+                'recordedBy': 'recordedBy',     # Initials.initials
+                'georeferencedBy': 'georeferencedBy', # Initials.initials
+                'identifiedBy': 'identifiedBy',   # Initials.initials
             }
-            
-            # Update required_fields list with mapped field names
-            for idx, field in enumerate(required_fields):
-                if field in fk_mapping:
-                    required_fields[idx] = fk_mapping[field]
+        else:
+            fk_fields = {}
         
-        # Check for missing required columns
-        missing = [f for f in required_fields if f not in df.columns]
-        if missing:
-            context['error'] = f'Missing columns: {", ".join(missing)}'
+        # Check for missing columns
+        available_columns = list(df.columns)
+        missing_columns = []
+        
+        for field in expected_fields:
+            # Check if field is in DataFrame columns or has a mapped name
+            if field not in available_columns and field not in fk_fields.keys():
+                missing_columns.append(field)
+        
+        if missing_columns:
+            context['error'] = f'Missing columns: {", ".join(missing_columns)}'
+            context['available_columns'] = available_columns
+            context['expected_columns'] = expected_fields
             return render(request, 'butterflies/import_model.html', context)
         
-        # Check for duplicates and prepare preview
-        preview = []
-        for _, row in df.iterrows():
+        # Step 3: Prepare data for preview
+        # Process each row for preview
+        preview_data = []
+        for idx, row in df.iterrows():
+            # Convert row to clean dict (None instead of NaN)
+            row_data = {}
+            for field in expected_fields:
+                # For foreign keys, use the mapped column name if available
+                if field in fk_fields:
+                    col_name = fk_fields[field]
+                    if col_name in row:
+                        row_data[field] = row[col_name]
+                # For regular fields, use the field name directly
+                elif field in row:
+                    row_data[field] = row[field]
+            
+            # Check for duplicates if we have a unique field
             is_duplicate = False
             suggested_key = None
             
-            if unique_field and unique_field in row:
-                unique_value = row[unique_field]
-                if unique_value and model.objects.filter(**{unique_field: unique_value}).exists():
+            if unique_field and unique_field in row_data and row_data[unique_field]:
+                unique_value = row_data[unique_field]
+                if model.objects.filter(**{unique_field: unique_value}).exists():
                     is_duplicate = True
-                    # Find available suffix (-2, -3, etc.)
+                    # Generate suggested unique value with suffix
                     counter = 2
                     while model.objects.filter(**{unique_field: f"{unique_value}-{counter}"}).exists():
                         counter += 1
                     suggested_key = f"{unique_value}-{counter}"
             
-            preview.append({
-                'data': row.to_dict(),
+            # Create preview item
+            preview_item = {
+                'data': row_data,
                 'duplicate': is_duplicate,
-                'suggested_key': suggested_key
-            })
-        
-        context['preview'] = preview
-        context['fields'] = required_fields
-        context['unique_field'] = unique_field
-        # Pass the unique field information to the template
-        if unique_field:
-            context['has_unique_field'] = True
-            context['unique_field'] = unique_field
-        else:
-            context['has_unique_field'] = False
+                'suggested_key': suggested_key,
+                'warnings': [],  # Store any format warnings here
+            }
             
+            # Check for potential format issues
+            if model_name == 'specimen':
+                # Check date fields
+                date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
+                for date_field in date_fields:
+                    if date_field in row_data and row_data[date_field]:
+                        try:
+                            # Try parsing the date to see if it's valid
+                            formatted = format_date_value(row_data[date_field])
+                            if not formatted:
+                                preview_item['warnings'].append(
+                                    f"Date format for {date_field} might need adjustment"
+                                )
+                        except:
+                            preview_item['warnings'].append(
+                                f"Invalid date format for {date_field}"
+                            )
+                
+                # Check boolean fields
+                if 'exact_loc' in row_data and row_data['exact_loc']:
+                    value = str(row_data['exact_loc']).upper()
+                    if value not in ['TRUE', 'FALSE']:
+                        preview_item['warnings'].append(
+                            f"Value '{row_data['exact_loc']}' for exact_loc will be converted to TRUE/FALSE"
+                        )
+            
+            preview_data.append(preview_item)
+        
+        # Add preview data to context
+        context['preview'] = preview_data
+        context['fields'] = expected_fields
+        
+        # Render preview template
         return render(request, 'butterflies/import_model_preview.html', context)
     
+    # Step 4: Handle import confirmation
     elif request.method == 'POST' and request.POST.get('confirm'):
-        # Process imported data
+        # Get model fields and row count
         fields = [f.name for f in model._meta.fields if f.name != 'id']
         rows = int(request.POST.get('row_count', 0))
-        
-        # Debug mode can be enabled via a hidden field in the form
         debug_mode = request.POST.get('debug_mode') == 'true'
         
+        # Initialize counters
         imported_count = 0
         renamed_count = 0
         skipped_count = 0
         
+        # Clear previous import errors
+        if 'import_errors' in request.session:
+            del request.session['import_errors']
+        request.session['import_errors'] = []
+        
+        # Process each row from form data
         for i in range(rows):
-            data = {f: request.POST.get(f'row_{i}_{f}', '') for f in fields}
+            # Extract data for this row from POST data
+            row_data = {f: request.POST.get(f'row_{i}_{f}', '') for f in fields}
             
-            # Convert empty strings to None
-            for k, v in data.items():
-                if v == '':
-                    data[k] = None
+            # Clean data: convert empty strings to None
+            for field, value in row_data.items():
+                if value == '':
+                    row_data[field] = None
             
-            # Handle duplicates by adding suffix
-            if unique_field and data.get(unique_field):
-                original_value = data[unique_field]
-                if original_value and model.objects.filter(**{unique_field: original_value}).exists():
-                    # Find available suffix (-2, -3, etc.)
-                    counter = 2
-                    while model.objects.filter(**{unique_field: f"{original_value}-{counter}"}).exists():
-                        counter += 1
-                    
-                    # Apply the suffix
-                    data[unique_field] = f"{original_value}-{counter}"
-                    renamed_count += 1
-                    
-                    # Log a message about the renamed key
-                    messages.info(request, f'Renamed duplicate "{original_value}" to "{data[unique_field]}"')
-            
-            # Create new record
+            # Step 5: Process and convert data before creating objects
             try:
-                # Handle foreign keys for Specimen model
-                if model_name == 'specimen':
-                    # Handle locality foreign key
-                    if 'locality' in data and data['locality']:
-                        try:
-                            locality_code = data['locality']
-                            locality = Locality.objects.filter(localityCode=locality_code).first()
-                            if locality:
-                                data['locality'] = locality
-                            else:
-                                # If locality not found, set to None and log
-                                messages.warning(request, f"Locality '{locality_code}' not found for row {i+1}. Setting to None.")
-                                data['locality'] = None
-                        except Exception as e:
-                            messages.warning(request, f"Error processing locality for row {i+1}: {str(e)}")
-                            data['locality'] = None
-                    
-                    # Handle recordedBy foreign key
-                    if 'recordedBy' in data and data['recordedBy']:
-                        try:
-                            initials = data['recordedBy']
-                            recorded_by = Initials.objects.filter(initials=initials).first()
-                            if recorded_by:
-                                data['recordedBy'] = recorded_by
-                            else:
-                                # If initials not found, set to None and log
-                                messages.warning(request, f"Initials '{initials}' not found for recordedBy in row {i+1}. Setting to None.")
-                                data['recordedBy'] = None
-                        except Exception as e:
-                            messages.warning(request, f"Error processing recordedBy for row {i+1}: {str(e)}")
-                            data['recordedBy'] = None
-                    
-                    # Handle georeferencedBy foreign key
-                    if 'georeferencedBy' in data and data['georeferencedBy']:
-                        try:
-                            initials = data['georeferencedBy']
-                            georeferenced_by = Initials.objects.filter(initials=initials).first()
-                            if georeferenced_by:
-                                data['georeferencedBy'] = georeferenced_by
-                            else:
-                                # If initials not found, set to None and log
-                                messages.warning(request, f"Initials '{initials}' not found for georeferencedBy in row {i+1}. Setting to None.")
-                                data['georeferencedBy'] = None
-                        except Exception as e:
-                            messages.warning(request, f"Error processing georeferencedBy for row {i+1}: {str(e)}")
-                            data['georeferencedBy'] = None
-                    
-                    # Handle identifiedBy foreign key
-                    if 'identifiedBy' in data and data['identifiedBy']:
-                        try:
-                            initials = data['identifiedBy']
-                            identified_by = Initials.objects.filter(initials=initials).first()
-                            if identified_by:
-                                data['identifiedBy'] = identified_by
-                            else:
-                                # If initials not found, set to None and log
-                                messages.warning(request, f"Initials '{initials}' not found for identifiedBy in row {i+1}. Setting to None.")
-                                data['identifiedBy'] = None
-                        except Exception as e:
-                            messages.warning(request, f"Error processing identifiedBy for row {i+1}: {str(e)}")
-                            data['identifiedBy'] = None
-                
-                # Handle date fields for Specimen model
-                if model_name == 'specimen':
-                    # Construct eventDate from day, month, year if provided
-                    if 'day' in data and 'month' in data and 'year' in data and all([data['day'], data['month'], data['year']]):
-                        data['eventDate'] = f"{data['day']} {data['month']}, {data['year']}"
-                    
-                    # Construct other date fields similarly
-                    if 'dateIdentified' not in data or not data['dateIdentified']:
-                        # Try to construct from dateIdentified components if present in the import data
-                        date_id_day = data.get('dateIdentified_day')
-                        date_id_month = data.get('dateIdentified_month')
-                        date_id_year = data.get('dateIdentified_year')
-                        if date_id_day and date_id_month and date_id_year:
-                            data['dateIdentified'] = f"{date_id_day} {date_id_month}, {date_id_year}"
-                
-                # Perform validation before trying to create the object
-                validation_errors = []
-                
-                # Validate field lengths
-                for field_name, value in data.items():
-                    if value is not None and hasattr(model, '_meta'):
-                        try:
-                            field = model._meta.get_field(field_name)
-                            if hasattr(field, 'max_length') and field.max_length is not None:
-                                if len(str(value)) > field.max_length:
-                                    validation_errors.append(
-                                        f"The value '{value}' for field '{field_name}' is too long. "
-                                        f"Maximum length is {field.max_length} characters."
-                                    )
-                                    
-                                    # Special handling for exact_loc field
-                                    if field_name == 'exact_loc' and model_name == 'specimen':
-                                        validation_errors.append(
-                                            f"For 'exact_loc', only 'TRUE' or 'FALSE' values are allowed."
-                                        )
-                        except Exception:
-                            # If we can't get field info, skip validation for this field
-                            pass
-                
-                # Additional data validation for specimen model
-                if model_name == 'specimen':
-                    # Validate specimenNumber (required for catalogNumber generation)
-                    if not data.get('specimenNumber'):
-                        validation_errors.append(f"Missing specimenNumber, which is needed for catalogNumber generation")
-                    
-                    # Validate year (required for catalogNumber generation)
-                    if not data.get('year'):
-                        validation_errors.append(f"Missing year, which is needed for catalogNumber generation")
+                # Handle duplicate values in unique fields
+                if unique_field and row_data.get(unique_field):
+                    original_value = row_data[unique_field]
+                    if original_value and model.objects.filter(**{unique_field: original_value}).exists():
+                        # Add suffix to make value unique
+                        counter = 2
+                        while model.objects.filter(**{unique_field: f"{original_value}-{counter}"}).exists():
+                            counter += 1
                         
-                    # Validate locality (required for catalogNumber generation)
-                    if not data.get('locality'):
-                        validation_errors.append(f"Missing locality, which is needed for catalogNumber generation")
-                    
-                    # Validate exact_loc format
-                    if data.get('exact_loc') and data.get('exact_loc') not in ['TRUE', 'FALSE']:
-                        validation_errors.append(
-                            f"The value '{data.get('exact_loc')}' for 'exact_loc' is invalid. "
-                            f"Only 'TRUE' or 'FALSE' are allowed."
-                        )
+                        # Update with new unique value
+                        row_data[unique_field] = f"{original_value}-{counter}"
+                        renamed_count += 1
+                        messages.info(request, f'Renamed duplicate "{original_value}" to "{row_data[unique_field]}"')
                 
-                # If there are validation errors, raise an exception to skip this row
-                if validation_errors:
-                    error_message = f"Row {i+1}: " + "; ".join(validation_errors)
-                    messages.error(request, error_message)
-                    import_errors = request.session.get('import_errors', [])
-                    import_errors.append(error_message)
-                    request.session['import_errors'] = import_errors
-                    skipped_count += 1
-                    continue  # Skip to the next row
+                # Model-specific conversions
+                if model_name == 'specimen':
+                    # Process foreign key fields
+                    fk_fields = {
+                        'locality': (Locality, 'localityCode'),
+                        'recordedBy': (Initials, 'initials'),
+                        'georeferencedBy': (Initials, 'initials'),
+                        'identifiedBy': (Initials, 'initials')
+                    }
+                    
+                    for fk_field, (related_model, lookup_field) in fk_fields.items():
+                        if fk_field in row_data and row_data[fk_field]:
+                            lookup_value = row_data[fk_field]
+                            related_obj = related_model.objects.filter(**{lookup_field: lookup_value}).first()
+                            if related_obj:
+                                row_data[fk_field] = related_obj
+                            else:
+                                row_data[fk_field] = None
+                                messages.warning(
+                                    request, 
+                                    f"{related_model.__name__} '{lookup_value}' not found for {fk_field} in row {i+1}."
+                                )
+                    
+                    # Convert date fields to proper format
+                    date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
+                    for field in date_fields:
+                        if field in row_data and row_data[field]:
+                            try:
+                                formatted_date = format_date_value(row_data[field])
+                                if formatted_date:
+                                    row_data[field] = formatted_date
+                            except:
+                                # If formatting fails, keep original value
+                                pass
+                    
+                    # Construct eventDate from components if missing
+                    if not row_data.get('eventDate'):
+                        day = row_data.get('day')
+                        month = row_data.get('month')
+                        year = row_data.get('year')
+                        if day and month and year:
+                            row_data['eventDate'] = f"{day} {month}, {year}"
+                    
+                    # Handle exact_loc boolean field
+                    if 'exact_loc' in row_data and row_data['exact_loc']:
+                        # Normalize to TRUE/FALSE strings
+                        value = str(row_data['exact_loc']).upper()
+                        if value in ['TRUE', 'T', 'YES', 'Y', '1']:
+                            row_data['exact_loc'] = 'TRUE'
+                        else:
+                            row_data['exact_loc'] = 'FALSE'
+                    
+                    # Convert numeric fields to integers
+                    int_fields = ['specimenNumber', 'year', 'month', 'day']
+                    for field in int_fields:
+                        if field in row_data and row_data[field]:
+                            try:
+                                # Convert to int, handling potential decimal points
+                                if '.' in str(row_data[field]):
+                                    row_data[field] = str(int(float(row_data[field])))
+                                # Ensure it's a string representation of an integer
+                                int(row_data[field])  # Just to validate
+                            except (ValueError, TypeError):
+                                # If not a valid number, keep as is
+                                pass
                 
                 # Create the object with processed data
-                instance = model.objects.create(**data)
+                instance = model.objects.create(**row_data)
                 
-                # For Specimen, ensure catalogNumber is generated
+                # Post-creation processing
                 if model_name == 'specimen':
+                    # Generate catalogNumber if missing
                     if not instance.catalogNumber:
-                        # Get the components needed for catalogNumber generation
                         year = instance.year or ''
                         locality_code = instance.locality.localityCode if instance.locality else ''
                         specimen_number = instance.specimenNumber or ''
                         
-                        # Generate the catalogNumber
-                        instance.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
-                        instance.save()
-                        
-                        if debug_mode:
-                            messages.info(request, f"Auto-generated catalogNumber '{instance.catalogNumber}' for row {i+1}")
+                        # Only generate if we have all components
+                        if year and locality_code and specimen_number:
+                            instance.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
+                            instance.save()
+                            
+                            if debug_mode:
+                                messages.info(request, f"Auto-generated catalogNumber '{instance.catalogNumber}' for row {i+1}")
                 
                 imported_count += 1
+                
             except Exception as e:
-                # Make the error message more user-friendly
+                # Handle import error
                 error_message = str(e)
-                user_friendly_message = f"<span style='color: #721c24;'><strong>Error importing row {i+1}:</strong> "
                 
-                # Check for common error types and provide more user-friendly messages
-                if "value too long for type character varying" in error_message:
-                    # Extract the field length from the error message
-                    import re
-                    length_match = re.search(r'character varying\((\d+)\)', error_message)
-                    max_length = length_match.group(1) if length_match else "unknown"
-                    
-                    # Try to determine which field caused the error
-                    field_name = "unknown field"
-                    for field in model._meta.fields:
-                        if hasattr(field, 'max_length') and str(field.max_length) == max_length:
-                            field_name = field.name
-                            break
-                    
-                    user_friendly_message += f"The value for '{field_name}' is too long. Maximum length is {max_length} characters."
-                    
-                    # Add specific guidance for exact_loc field
-                    if field_name == 'exact_loc':
-                        user_friendly_message += " For 'exact_loc', only 'TRUE' or 'FALSE' values are allowed."
+                # Create a user-friendly error message
+                user_message = f"Error in row {i+1}: "
                 
-                elif "null value in column" in error_message and "violates not-null constraint" in error_message:
-                    # Extract field name from the error message
+                # Handle common error types
+                if "violates not-null constraint" in error_message:
                     field_match = re.search(r'column "([^"]+)"', error_message)
-                    if field_match:
-                        field_name = field_match.group(1)
-                        user_friendly_message += f"The field '{field_name}' cannot be empty. Please provide a value."
-                    else:
-                        user_friendly_message += "A required field is missing. Please ensure all required fields have values."
+                    field_name = field_match.group(1) if field_match else "unknown field"
+                    user_message += f"The field '{field_name}' cannot be empty"
                 
+                elif "value too long for type" in error_message:
+                    field_match = re.search(r'column "([^"]+)"', error_message)
+                    field_name = field_match.group(1) if field_match else "unknown field"
+                    user_message += f"The value for '{field_name}' is too long"
+                    
                 elif "duplicate key value violates unique constraint" in error_message:
-                    user_friendly_message += "This record has a duplicate value for a unique field. Please ensure all unique fields have distinct values."
-                
-                elif "invalid input syntax" in error_message:
-                    user_friendly_message += "The data format is incorrect. Please check the data types of your fields."
-                
+                    user_message += "This record has a duplicate value for a unique field"
+                    
                 else:
-                    # For other errors, just use the original message
-                    user_friendly_message += error_message
-                
-                # Complete the error message formatting
-                user_friendly_message += "</span>"
+                    # Default to simplified error message
+                    user_message += f"Could not import - {error_message}"
                 
                 # Log the error
-                messages.error(request, user_friendly_message)
+                messages.error(request, user_message)
                 
-                # Store errors in session to display them on redirect
+                # Store in session for display after redirect
                 import_errors = request.session.get('import_errors', [])
-                import_errors.append(user_friendly_message)
+                import_errors.append(user_message)
                 request.session['import_errors'] = import_errors
                 
-                # If in debug mode, also include the original technical error
+                # Add technical details in debug mode
                 if debug_mode:
                     debug_message = f"Technical details for row {i+1}: {error_message}"
                     import_errors.append(debug_message)
                 
                 skipped_count += 1
-                
-        # Prepare summary message
-        if renamed_count > 0:
-            messages.success(request, f'Successfully imported {imported_count} records ({renamed_count} with modified unique keys, {skipped_count} skipped due to errors).')
-        else:
-            messages.success(request, f'Successfully imported {imported_count} records ({skipped_count} skipped due to errors).')
         
-        # If there were errors during import, make sure they're preserved for display on the redirect
+        # Prepare summary message
+        if imported_count > 0:
+            if renamed_count > 0:
+                messages.success(
+                    request, 
+                    f'Successfully imported {imported_count} records '
+                    f'({renamed_count} with modified unique keys, {skipped_count} skipped due to errors).'
+                )
+            else:
+                messages.success(
+                    request, 
+                    f'Successfully imported {imported_count} records '
+                    f'({skipped_count} skipped due to errors).'
+                )
+        else:
+            messages.error(request, 'No records were imported successfully.')
+        
+        # Handle import errors
         import_errors = request.session.get('import_errors', [])
         if import_errors:
-            # Add a warning message that will be displayed on the list page
             messages.warning(request, f'There were {len(import_errors)} errors during import. See details below.')
-            
-            # Keep the error messages in session for display
             request.session['import_complete'] = True
-            
-            # Redirect to the list page for this model
-            return redirect('dynamic_list', model_name=model_name)
-        else:
-            # Clear any previous import errors since this import was successful
-            if 'import_errors' in request.session:
-                del request.session['import_errors']
-            
-            # Redirect to the list page for this model
-            return redirect('dynamic_list', model_name=model_name)
+        
+        # Redirect to the list view
+        return redirect('dynamic_list', model_name=model_name)
     
+    # Render initial import form
     return render(request, 'butterflies/import_model.html', context)
 
 # --- List View for All Models ---

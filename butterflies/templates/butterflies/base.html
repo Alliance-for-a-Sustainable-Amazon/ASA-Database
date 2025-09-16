@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% trans "Adult Specimens" %}{% endblock %}</title>
+    <title>{% block title %}{% trans "ASA Lepidoptera Adults" %}{% endblock %}</title>
     <!-- Load static files -->
     {% load static %}
     <link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
@@ -49,16 +49,10 @@
             border-color: #8c43e6;
             box-shadow: 0 0 5px rgba(140, 67, 230, 0.5);
         }
-        
-        /* Form info display */
-        /* .form-info {
-            background-color: #f0f0f0;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        } */
+        .title-link {
+            text-decoration: none;
+            color: inherit;
+        }
     </style>
     <!-- Language Switcher -->
     <div class="language-switcher">
@@ -71,8 +65,7 @@
     </div>
 </head>
 <body>
-    <h1>{% block header %}Adult Specimens{% endblock %}</h1>
-    
+    <h1><a href="{% url 'report_table' %}" class="title-link">{% block header %}{% trans "[ASA LOGO]" %}{% endblock %}</a></h1>
     <div>
         {% block content %}{% endblock %}
     </div>
