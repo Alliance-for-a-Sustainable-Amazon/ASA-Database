@@ -45,51 +45,59 @@ def model_list():
 
 def parse_date_value(value):
     """
-    Parse a date string in the standard format or any supported format into a datetime object.
-    This is the complement to format_date_value() - use this when you need a datetime object
+    Parse a value into a date object.
+    This is the complement to format_date_value() - use this when you need a date object
     for calculations, sorting, or comparisons.
     
     Parameters:
-        value: String date representation, ideally in "DD Month, YYYY" format
+        value: Date value in any format (string, date, datetime)
     Returns:
-        datetime object or None if parsing fails
+        date object or None if parsing fails
     """
     if not value:
         return None
         
     try:
-        # If already a datetime, return it
-        if isinstance(value, (datetime.datetime, datetime.date)):
-            return value if isinstance(value, datetime.datetime) else datetime.datetime.combine(value, datetime.time.min)
+        # If already a datetime, convert to date
+        if isinstance(value, datetime.datetime):
+            return value.date()
+        
+        # If it's already a date object, return it
+        elif isinstance(value, datetime.date):
+            return value
             
-        # Try direct parsing of standard format first
+        # Try direct parsing of standard format first (for string values from user input)
         standard_pattern = r"^\d{1,2} [A-Za-z]+,? \d{4}$"
-        if re.match(standard_pattern, str(value)):
+        if isinstance(value, str) and re.match(standard_pattern, value):
             # Try a few variations of our standard format
             for fmt in ["%d %B, %Y", "%d %B %Y"]:
                 try:
-                    return datetime.datetime.strptime(str(value), fmt)
+                    return datetime.datetime.strptime(value, fmt).date()
                 except:
                     continue
                     
-        # Use dateutil's flexible parser as a fallback
-        return date_parser.parse(str(value))
+        # Use dateutil's flexible parser as a fallback for strings
+        if isinstance(value, str):
+            return date_parser.parse(value).date()
+        
+        # If we get here with a non-string, non-date value, try to convert
+        return datetime.datetime.fromisoformat(str(value)).date()
             
     except Exception as e:
         import logging
-        logging.warning(f"Date parsing error for '{value}': {str(e)}")
+        logging.warning(f"Date parsing error for '{value}' ({type(value)}): {str(e)}")
         return None
 
 def format_date_value(value):
     """
-    Convert various date formats to the standardized string format: DD Month, YYYY.
-    Handles datetime objects, strings, and pandas Timestamp objects.
+    Format a date value to the standardized string format: DD Month, YYYY.
+    Handles datetime objects, date objects, strings, and pandas Timestamp objects.
     
     This is the central date formatting function for the entire application.
-    All dates should pass through this function for standardization.
+    All dates should pass through this function for standardization when displaying.
     
     Parameters:
-        value: A date value in any format (datetime, string, Timestamp, etc.)
+        value: A date value in any format (datetime, date, string, Timestamp, etc.)
     Returns:
         String in format "DD Month, YYYY" or None if conversion fails
     """
@@ -106,7 +114,7 @@ def format_date_value(value):
             year = dt.strftime("%Y")   # 4-digit year
             return f"{day} {month}, {year}"
         
-        # If value is already a datetime object
+        # If value is already a datetime or date object
         if isinstance(value, (datetime.datetime, datetime.date)):
             return format_date(value)
         
@@ -228,10 +236,17 @@ def dynamic_list(request, model_name):
     
     if import_complete:
         import_errors = request.session.get('import_errors', [])
+        # Add a summary message if there are errors
+        if import_errors and len(import_errors) > 0:
+            messages.warning(request, f'There were {len(import_errors)} errors during import. See details below.')
+        
         # Clear the session variables after retrieving them
         request.session['import_complete'] = False
         if 'import_errors' in request.session:
             del request.session['import_errors']
+        
+        # Make sure changes are saved to session
+        request.session.modified = True
     
     return render(request, 'butterflies/dynamic_list.html', {
         'objects': obj_list,
@@ -492,13 +507,10 @@ def report_table(request):
         # Default to minimum date if missing date information
         parsed_date = datetime.datetime.min
         
-        # Try to parse eventDate using our standardized approach
+        # Convert eventDate (now a DateField) to datetime for sorting
         if specimen.eventDate:
-            # Use our centralized date parsing function for consistency
-            parsed_date_obj = parse_date_value(specimen.eventDate)
-            if parsed_date_obj:
-                parsed_date = parsed_date_obj
-            # If parsing failed, keep the default minimum date
+            # Convert the date to a datetime object
+            parsed_date = datetime.datetime.combine(specimen.eventDate, datetime.time.min)
                 
         # Add time if available (format: "14:37")
         if specimen.eventTime and isinstance(parsed_date, datetime.datetime):
@@ -878,6 +890,10 @@ def import_model(request, model_name):
     context['has_unique_field'] = bool(unique_field)
     context['unique_field'] = unique_field
     
+    # Reset any previous import session data
+    if 'has_errors' in request.session:
+        del request.session['has_errors']
+    
     # Step 1: Handle file upload and parse into DataFrame
     if request.method == 'POST' and request.FILES.get('file'):
         file = request.FILES['file']
@@ -951,8 +967,8 @@ def import_model(request, model_name):
             return render(request, 'butterflies/import_model.html', context)
         
         # Step 3: Prepare data for preview
-        # Process each row for preview
-        preview_data = []
+        # First, convert all rows to clean dicts for processing
+        all_rows_data = []
         for idx, row in df.iterrows():
             # Convert row to clean dict (None instead of NaN)
             row_data = {}
@@ -965,6 +981,46 @@ def import_model(request, model_name):
                 # For regular fields, use the field name directly
                 elif field in row:
                     row_data[field] = row[field]
+            all_rows_data.append(row_data)
+            
+        # Pre-validate to identify common error patterns
+        common_errors = {}
+        if model_name == 'specimen':
+            # Check foreign key fields across all rows
+            fk_fields_validation = {
+                'locality': (Locality, 'localityCode', 'Locality'),
+                'recordedBy': (Initials, 'initials', 'Initials'),
+                'georeferencedBy': (Initials, 'initials', 'Initials'),
+                'identifiedBy': (Initials, 'initials', 'Initials')
+            }
+            
+            # Build a cache of valid values
+            valid_values_cache = {}
+            for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
+                valid_values_cache[fk_field] = set(
+                    related_model.objects.values_list(lookup_field, flat=True)
+                )
+            
+            # Track invalid sex values
+            for row_data in all_rows_data:
+                if 'sex' in row_data and row_data['sex']:
+                    if row_data['sex'] not in ['male', 'female', '.']:
+                        if 'sex_values' not in common_errors:
+                            common_errors['sex_values'] = set()
+                        common_errors['sex_values'].add(row_data['sex'])
+                        
+                # Track invalid foreign keys
+                for fk_field in fk_fields_validation:
+                    if fk_field in row_data and row_data[fk_field]:
+                        if row_data[fk_field] not in valid_values_cache[fk_field]:
+                            key = f"{fk_field}_invalid"
+                            if key not in common_errors:
+                                common_errors[key] = set()
+                            common_errors[key].add(row_data[fk_field])
+                            
+        # Now process each row for preview with consistent error detection
+        preview_data = []
+        for row_data in all_rows_data:
             
             # Check for duplicates if we have a unique field
             is_duplicate = False
@@ -986,6 +1042,8 @@ def import_model(request, model_name):
                 'duplicate': is_duplicate,
                 'suggested_key': suggested_key,
                 'warnings': [],  # Store any format warnings here
+                'errors': [],    # Store validation errors here that must be fixed
+                'error_fields': set()  # Track fields with errors for highlighting
             }
             
             # Check for potential format issues
@@ -996,15 +1054,16 @@ def import_model(request, model_name):
                     if date_field in row_data and row_data[date_field]:
                         original_value = row_data[date_field]
                         try:
-                            # Try parsing the date using our standardized function
-                            formatted = format_date_value(original_value)
-                            if formatted:
-                                if formatted != original_value:
-                                    # Warn user that we'll convert the format
-                                    preview_item['warnings'].append(
-                                        f"Date '{original_value}' will be standardized to '{formatted}'"
-                                    )
-                            else:
+                            # Try parsing the date
+                            date_obj = None
+                            try:
+                                date_obj = date_parser.parse(str(original_value)).date()
+                                # # Show how the date will look when formatted for display
+                                # formatted = format_date_value(date_obj)
+                                # preview_item['warnings'].append(
+                                #     f"Date '{original_value}' will be stored as '{date_obj}' and displayed as '{formatted}'"
+                                # )
+                            except:
                                 preview_item['warnings'].append(
                                     f"Could not parse date '{original_value}' for {date_field}"
                                 )
@@ -1020,6 +1079,66 @@ def import_model(request, model_name):
                         preview_item['warnings'].append(
                             f"Value '{row_data['exact_loc']}' for exact_loc will be converted to TRUE/FALSE"
                         )
+                
+                # Perform strict validation checks for fields that must be valid
+                if model_name == 'specimen':
+                    # Validate foreign key fields using our pre-cached data
+                    fk_fields_validation = {
+                        'locality': (Locality, 'localityCode', 'Locality'),
+                        'recordedBy': (Initials, 'initials', 'Initials'),
+                        'georeferencedBy': (Initials, 'initials', 'Initials'),
+                        'identifiedBy': (Initials, 'initials', 'Initials')
+                    }
+                    
+                    for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
+                        if fk_field in row_data and row_data[fk_field]:
+                            lookup_value = row_data[fk_field]
+                            key = f"{fk_field}_invalid"
+                            
+                            # Check if this value is in our pre-identified invalid values
+                            if key in common_errors and lookup_value in common_errors[key]:
+                                error_msg = f"Invalid {display_name}: '{lookup_value}' does not exist in the database"
+                                preview_item['errors'].append(error_msg)
+                                preview_item['error_fields'].add(fk_field)
+                            else:
+                                # Double-check in the database in case we missed something
+                                if not related_model.objects.filter(**{lookup_field: lookup_value}).exists():
+                                    error_msg = f"Invalid {display_name}: '{lookup_value}' does not exist in the database"
+                                    preview_item['errors'].append(error_msg)
+                                    preview_item['error_fields'].add(fk_field)
+                    
+                    # Validate sex field using pre-identified invalid values
+                    if 'sex' in row_data and row_data['sex']:
+                        if 'sex_values' in common_errors and row_data['sex'] in common_errors['sex_values']:
+                            error_msg = f"Invalid sex: '{row_data['sex']}'. Must be 'male', 'female', or '.'"
+                            preview_item['errors'].append(error_msg)
+                            preview_item['error_fields'].add('sex')
+                        elif row_data['sex'] not in ['male', 'female', '.']:
+                            # Double-check in case we missed something in pre-validation
+                            error_msg = f"Invalid sex: '{row_data['sex']}'. Must be 'male', 'female', or '.'"
+                            preview_item['errors'].append(error_msg)
+                            preview_item['error_fields'].add('sex')
+                    
+                    # Check required fields for catalogNumber generation
+                    # (Only flag as error if catalogNumber is not provided but components are missing)
+                    if not row_data.get('catalogNumber'):
+                        missing_components = []
+                        
+                        if not row_data.get('specimenNumber'):
+                            missing_components.append('specimenNumber')
+                        
+                        if not row_data.get('year'):
+                            missing_components.append('year')
+                        
+                        if 'locality' not in row_data or not row_data['locality']:
+                            missing_components.append('locality')
+                        
+                        if missing_components:
+                            components_str = ', '.join(missing_components)
+                            error_msg = f"Missing required field(s): {components_str}. These are needed to generate catalogNumber."
+                            preview_item['errors'].append(error_msg)
+                            for field in missing_components:
+                                preview_item['error_fields'].add(field)
             
             preview_data.append(preview_item)
         
@@ -1027,15 +1146,197 @@ def import_model(request, model_name):
         context['preview'] = preview_data
         context['fields'] = expected_fields
         
+        # Check if any rows have errors that would prevent import
+        has_errors = False
+        error_count = 0
+        for item in preview_data:
+            if item['errors']:
+                has_errors = True
+                error_count += len(item['errors'])
+        
+        context['has_errors'] = has_errors
+        context['error_count'] = error_count
+        
+        # Store error status in session for security check during confirmation
+        request.session['has_errors'] = has_errors
+        request.session.modified = True
+        
         # Render preview template
         return render(request, 'butterflies/import_model_preview.html', context)
     
-    # Step 4: Handle import confirmation
+    # Step 4: Handle revalidation of form data
+    elif request.method == 'POST' and request.POST.get('revalidate'):
+        # Get model fields and row count
+        fields = [f.name for f in model._meta.fields if f.name != 'id']
+        rows = int(request.POST.get('row_count', 0))
+        
+        # Reconstruct rows from form data
+        all_rows_data = []
+        for i in range(rows):
+            row_data = {f: request.POST.get(f'row_{i}_{f}', '') for f in fields}
+            # Clean data: convert empty strings to None
+            for field, value in row_data.items():
+                if value == '':
+                    row_data[field] = None
+            all_rows_data.append(row_data)
+            
+        # Now perform the same validation as in the file upload case
+        # Pre-validate to identify common error patterns
+        common_errors = {}
+        if model_name == 'specimen':
+            # Check foreign key fields across all rows
+            fk_fields_validation = {
+                'locality': (Locality, 'localityCode', 'Locality'),
+                'recordedBy': (Initials, 'initials', 'Initials'),
+                'georeferencedBy': (Initials, 'initials', 'Initials'),
+                'identifiedBy': (Initials, 'initials', 'Initials')
+            }
+            
+            # Build a cache of valid values
+            valid_values_cache = {}
+            for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
+                valid_values_cache[fk_field] = set(
+                    related_model.objects.values_list(lookup_field, flat=True)
+                )
+            
+            # Track invalid values
+            for row_data in all_rows_data:
+                if 'sex' in row_data and row_data['sex']:
+                    if row_data['sex'] not in ['male', 'female', '.']:
+                        if 'sex_values' not in common_errors:
+                            common_errors['sex_values'] = set()
+                        common_errors['sex_values'].add(row_data['sex'])
+                        
+                # Track invalid foreign keys
+                for fk_field in fk_fields_validation:
+                    if fk_field in row_data and row_data[fk_field]:
+                        if row_data[fk_field] not in valid_values_cache[fk_field]:
+                            key = f"{fk_field}_invalid"
+                            if key not in common_errors:
+                                common_errors[key] = set()
+                            common_errors[key].add(row_data[fk_field])
+                            
+        # Now process each row for preview with consistent error detection
+        preview_data = []
+        for row_data in all_rows_data:
+            # Check for duplicates if we have a unique field
+            is_duplicate = False
+            suggested_key = None
+            
+            if unique_field and unique_field in row_data and row_data[unique_field]:
+                unique_value = row_data[unique_field]
+                if model.objects.filter(**{unique_field: unique_value}).exists():
+                    is_duplicate = True
+                    # Generate suggested unique value with suffix
+                    counter = 2
+                    while model.objects.filter(**{unique_field: f"{unique_value}-{counter}"}).exists():
+                        counter += 1
+                    suggested_key = f"{unique_value}-{counter}"
+            
+            # Create preview item
+            preview_item = {
+                'data': row_data,
+                'duplicate': is_duplicate,
+                'suggested_key': suggested_key,
+                'warnings': [],  # Store any format warnings here
+                'errors': [],    # Store validation errors here that must be fixed
+                'error_fields': set()  # Track fields with errors for highlighting
+            }
+            
+            # Perform the same validation as in the file upload case
+            # Add validation code here - same as in the file upload case
+            if model_name == 'specimen':
+                # Validate foreign key fields using our pre-cached data
+                fk_fields_validation = {
+                    'locality': (Locality, 'localityCode', 'Locality'),
+                    'recordedBy': (Initials, 'initials', 'Initials'),
+                    'georeferencedBy': (Initials, 'initials', 'Initials'),
+                    'identifiedBy': (Initials, 'initials', 'Initials')
+                }
+                
+                for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
+                    if fk_field in row_data and row_data[fk_field]:
+                        lookup_value = row_data[fk_field]
+                        key = f"{fk_field}_invalid"
+                        
+                        # Check if this value is in our pre-identified invalid values
+                        if key in common_errors and lookup_value in common_errors[key]:
+                            error_msg = f"Invalid {display_name}: '{lookup_value}' does not exist in the database"
+                            preview_item['errors'].append(error_msg)
+                            preview_item['error_fields'].add(fk_field)
+                
+                # Validate sex field
+                if 'sex' in row_data and row_data['sex']:
+                    if 'sex_values' in common_errors and row_data['sex'] in common_errors['sex_values']:
+                        error_msg = f"Invalid sex: '{row_data['sex']}'. Must be 'male', 'female', or '.'"
+                        preview_item['errors'].append(error_msg)
+                        preview_item['error_fields'].add('sex')
+                
+                # Check required fields for catalogNumber generation
+                if not row_data.get('catalogNumber'):
+                    missing_components = []
+                    
+                    if not row_data.get('specimenNumber'):
+                        missing_components.append('specimenNumber')
+                    
+                    if not row_data.get('year'):
+                        missing_components.append('year')
+                    
+                    if 'locality' not in row_data or not row_data['locality']:
+                        missing_components.append('locality')
+                    
+                    if missing_components:
+                        components_str = ', '.join(missing_components)
+                        error_msg = f"Missing required field(s): {components_str}. These are needed to generate catalogNumber."
+                        preview_item['errors'].append(error_msg)
+                        for field in missing_components:
+                            preview_item['error_fields'].add(field)
+            
+            preview_data.append(preview_item)
+        
+        # Add preview data to context
+        context['preview'] = preview_data
+        context['fields'] = fields
+        
+        # Check if any rows have errors that would prevent import
+        has_errors = False
+        error_count = 0
+        for item in preview_data:
+            if item['errors']:
+                has_errors = True
+                error_count += len(item['errors'])
+        
+        context['has_errors'] = has_errors
+        context['error_count'] = error_count
+        
+        # Store error status in session for security check during confirmation
+        request.session['has_errors'] = has_errors
+        request.session.modified = True
+        
+        # Add a message to indicate revalidation
+        if has_errors:
+            messages.warning(request, f"Still found {error_count} errors. Please fix all errors before importing.")
+        else:
+            messages.success(request, "All validation errors have been fixed! You can now import the data.")
+        
+        # Render preview template
+        return render(request, 'butterflies/import_model_preview.html', context)
+        
+    # Step 5: Handle import confirmation
     elif request.method == 'POST' and request.POST.get('confirm'):
         # Get model fields and row count
         fields = [f.name for f in model._meta.fields if f.name != 'id']
         rows = int(request.POST.get('row_count', 0))
         debug_mode = request.POST.get('debug_mode') == 'true'
+        
+        # Security check: Ensure there are no validation errors before proceeding
+        # This prevents bypassing the disabled button via direct POST
+        if 'has_errors' in request.session and request.session['has_errors']:
+            messages.error(
+                request,
+                'Import cancelled: There are validation errors that must be fixed before importing.'
+            )
+            return redirect('import_model', model_name=model_name)
         
         # Initialize counters
         imported_count = 0
@@ -1096,21 +1397,37 @@ def import_model(request, model_name):
                                     f"{related_model.__name__} '{lookup_value}' not found for {fk_field} in row {i+1}."
                                 )
                     
-                    # Convert date fields to proper format using our standardized function
+                    # Convert date fields from string to date objects
                     date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
                     for field in date_fields:
                         if field in row_data and row_data[field]:
                             try:
-                                # Use our improved format_date_value for consistent date handling
-                                formatted_date = format_date_value(row_data[field])
-                                if formatted_date:
-                                    row_data[field] = formatted_date
+                                # Parse string date to Python date object
+                                date_value = None
+                                
+                                # Try direct parsing with dateutil
+                                try:
+                                    date_value = date_parser.parse(str(row_data[field])).date()
+                                except:
+                                    # If direct parsing fails, try our standard format
+                                    try:
+                                        date_value = parse_date_value(row_data[field])
+                                    except:
+                                        date_value = None
+                                
+                                if date_value:
+                                    row_data[field] = date_value
                                     if debug_mode:
-                                        messages.info(request, f"Converted date for {field} from '{row_data[field]}' to '{formatted_date}'")
+                                        messages.info(request, f"Converted date for {field} from '{row_data[field]}' to '{date_value}'")
+                                else:
+                                    row_data[field] = None
+                                    if debug_mode:
+                                        messages.warning(request, f"Could not parse date '{row_data[field]}' for {field}, set to None")
                             except Exception as e:
-                                # If formatting fails, log warning and keep original value
+                                # If parsing fails, log warning and set to None
+                                row_data[field] = None
                                 if debug_mode:
-                                    messages.warning(request, f"Could not format date for {field}: {str(e)}")
+                                    messages.warning(request, f"Error parsing date for {field}: {str(e)}")
                     
                     # Construct eventDate from components if missing
                     if not row_data.get('eventDate'):
@@ -1128,12 +1445,12 @@ def import_model(request, model_name):
                                 try:
                                     # If month is a number (1-12)
                                     if month.isdigit() and 1 <= int(month) <= 12:
-                                        date_obj = datetime.datetime(int(year), int(month), int(day))
+                                        date_obj = datetime.date(int(year), int(month), int(day))
                                     else:
                                         # Try abbreviated and full month names
                                         for fmt in ["%Y-%b-%d", "%Y-%B-%d"]:
                                             try:
-                                                date_obj = datetime.datetime.strptime(temp_date_str, fmt)
+                                                date_obj = datetime.datetime.strptime(temp_date_str, fmt).date()
                                                 break
                                             except ValueError:
                                                 continue
@@ -1141,18 +1458,23 @@ def import_model(request, model_name):
                                     pass
                                 
                                 if date_obj:
-                                    # Use our standardized formatting function
-                                    row_data['eventDate'] = format_date_value(date_obj)
+                                    # Store as date object
+                                    row_data['eventDate'] = date_obj
                                     if debug_mode:
-                                        messages.info(request, f"Generated eventDate '{row_data['eventDate']}' from components: {day} {month} {year}")
+                                        messages.info(request, f"Generated eventDate '{format_date_value(date_obj)}' from components: {day} {month} {year}")
                                 else:
-                                    # Fallback to simple string concatenation
-                                    row_data['eventDate'] = f"{day} {month}, {year}"
+                                    # Fallback to parsing a string
+                                    date_str = f"{day} {month}, {year}"
+                                    parsed_date = parse_date_value(date_str)
+                                    if parsed_date:
+                                        row_data['eventDate'] = parsed_date
+                                    else:
+                                        row_data['eventDate'] = None
                                     if debug_mode:
-                                        messages.warning(request, f"Using simple concatenation for eventDate: '{row_data['eventDate']}'")
+                                        messages.warning(request, f"Using string parsing for eventDate: '{date_str}' -> {parsed_date}")
                             except Exception as e:
-                                # Fallback to simple string concatenation
-                                row_data['eventDate'] = f"{day} {month}, {year}"
+                                # Log error and set to None
+                                row_data['eventDate'] = None
                                 if debug_mode:
                                     messages.warning(request, f"Error validating date components: {str(e)}. Using: '{row_data['eventDate']}'")
                         elif debug_mode and (day or month or year):
@@ -1260,11 +1582,20 @@ def import_model(request, model_name):
         else:
             messages.error(request, 'No records were imported successfully.')
         
-        # Handle import errors
+        # Handle import errors - make sure they appear on the list page
         import_errors = request.session.get('import_errors', [])
         if import_errors:
-            messages.warning(request, f'There were {len(import_errors)} errors during import. See details below.')
             request.session['import_complete'] = True
+            # Don't add this warning message as we'll show detailed errors on the list page
+            # messages.warning(request, f'There were {len(import_errors)} errors during import. See details below.')
+        else:
+            # Clear any previous import state
+            request.session['import_complete'] = False
+            if 'import_errors' in request.session:
+                del request.session['import_errors']
+        
+        # Save the session before redirecting
+        request.session.modified = True
         
         # Redirect to the list view
         return redirect('dynamic_list', model_name=model_name)

@@ -100,7 +100,7 @@ class Specimen(models.Model):
     exact_loc = models.CharField(max_length=5, blank=True, null=True, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text='Dropdown: "TRUE", "FALSE".')
     coordinateUncertaintyInMeters = models.CharField(max_length=100, blank=True, null=True, help_text="Text.")
     georeferencedBy = models.ForeignKey(Initials, to_field='initials', on_delete=models.SET_NULL, null=True, related_name='georeferenced_specimens', help_text="Dropdown: initials from Initials table.")
-    georeferencedDate = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    georeferencedDate = models.DateField(blank=True, null=True, help_text="Date of georeferencing.")
     georeferenceProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     minimumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
     maximumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
@@ -123,7 +123,7 @@ class Specimen(models.Model):
     month = models.CharField(max_length=10, blank=True, null=True, help_text="Dropdown/typeable.")
     day = models.CharField(max_length=2, blank=True, null=True, help_text="Dropdown/typeable.")
     eventTime = models.CharField(max_length=50, blank=True, null=True, help_text="Time (XX:XX) military format.")
-    eventDate = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    eventDate = models.DateField(blank=True, null=True, help_text="Date of the event or collection.")
     habitatNotes = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     samplingProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     
@@ -142,7 +142,7 @@ class Specimen(models.Model):
     # 6. Identification Fields
     # ----------------------------------
     identifiedBy = models.ForeignKey(Initials, to_field='initials', on_delete=models.SET_NULL, null=True, related_name='identified_specimens', help_text="Dropdown: initials from Initials table.")
-    dateIdentified = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    dateIdentified = models.DateField(blank=True, null=True, help_text="Date of identification.")
     identificationReferences = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     identificationRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     
