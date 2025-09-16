@@ -1,6 +1,13 @@
 # views.py
 # Consolidated view functions for butterfly collections using the organized form approach.
 # All forms now use the organized layout for better usability.
+#
+# Date Handling Strategy:
+# - In the database: Dates are stored as strings in format "DD Month, YYYY" (e.g. "15 November, 2025")
+# - During input: Various formats are accepted and automatically converted using format_date_value()
+# - During display: Dates are shown in their string representation directly from the database
+# - During sorting/filtering: Dates are parsed to datetime objects using dateutil.parser
+# - The format_date_value() function is the central point for date standardization
 
 # --- Imports ---
 from django.apps import apps
@@ -36,10 +43,50 @@ def model_list():
     """
     return list(apps.get_app_config('butterflies').get_models())
 
+def parse_date_value(value):
+    """
+    Parse a date string in the standard format or any supported format into a datetime object.
+    This is the complement to format_date_value() - use this when you need a datetime object
+    for calculations, sorting, or comparisons.
+    
+    Parameters:
+        value: String date representation, ideally in "DD Month, YYYY" format
+    Returns:
+        datetime object or None if parsing fails
+    """
+    if not value:
+        return None
+        
+    try:
+        # If already a datetime, return it
+        if isinstance(value, (datetime.datetime, datetime.date)):
+            return value if isinstance(value, datetime.datetime) else datetime.datetime.combine(value, datetime.time.min)
+            
+        # Try direct parsing of standard format first
+        standard_pattern = r"^\d{1,2} [A-Za-z]+,? \d{4}$"
+        if re.match(standard_pattern, str(value)):
+            # Try a few variations of our standard format
+            for fmt in ["%d %B, %Y", "%d %B %Y"]:
+                try:
+                    return datetime.datetime.strptime(str(value), fmt)
+                except:
+                    continue
+                    
+        # Use dateutil's flexible parser as a fallback
+        return date_parser.parse(str(value))
+            
+    except Exception as e:
+        import logging
+        logging.warning(f"Date parsing error for '{value}': {str(e)}")
+        return None
+
 def format_date_value(value):
     """
-    Convert various date formats to the required string format: DD Month, YYYY.
+    Convert various date formats to the standardized string format: DD Month, YYYY.
     Handles datetime objects, strings, and pandas Timestamp objects.
+    
+    This is the central date formatting function for the entire application.
+    All dates should pass through this function for standardization.
     
     Parameters:
         value: A date value in any format (datetime, string, Timestamp, etc.)
@@ -55,8 +102,8 @@ def format_date_value(value):
             # Use %d and strip leading zero instead of %-d which doesn't work on Windows
             day = dt.strftime("%d").lstrip("0")
             if day == "": day = "1"  # Handle case where day is "01"
-            month = dt.strftime("%B")
-            year = dt.strftime("%Y")
+            month = dt.strftime("%B")  # Full month name
+            year = dt.strftime("%Y")   # 4-digit year
             return f"{day} {month}, {year}"
         
         # If value is already a datetime object
@@ -69,20 +116,72 @@ def format_date_value(value):
             
         # If value is a string, try to parse it
         elif isinstance(value, str):
-            # First check if it's already in the correct format
+            # First check if it's already in the correct format (DD Month, YYYY)
             date_pattern = r"^\d{1,2} [A-Za-z]+\.?,? \d{4}$"
             if re.match(date_pattern, value):
-                return value
+                # It's already in the right format, but standardize to ensure consistency
+                try:
+                    dt = date_parser.parse(value)
+                    return format_date(dt)
+                except:
+                    # If parsing fails, return the original as it's close enough
+                    return value
                 
-            # Try to parse with dateutil
+            # Next check for ISO format (YYYY-MM-DD)
+            iso_pattern = r"^\d{4}-\d{2}-\d{2}$"
+            if re.match(iso_pattern, value):
+                try:
+                    dt = datetime.datetime.strptime(value, "%Y-%m-%d")
+                    return format_date(dt)
+                except:
+                    pass
+                
+            # Check for DD-MMM-YYYY format (from help text)
+            dmm_pattern = r"^\d{1,2}-[A-Za-z]{3,9}-\d{4}$"
+            if re.match(dmm_pattern, value):
+                try:
+                    # Replace abbreviated month names with standard ones if needed
+                    value = value.replace(".", "")  # Remove periods from abbreviated months
+                    # Try various formats with different separators and month formats
+                    for fmt in ["%d-%b-%Y", "%d-%B-%Y"]:
+                        try:
+                            dt = datetime.datetime.strptime(value, fmt)
+                            return format_date(dt)
+                        except:
+                            pass
+                except:
+                    pass
+                    
+            # Try some common date formats
+            common_formats = [
+                "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y",  # Slash formats
+                "%Y.%m.%d", "%d.%m.%Y", "%m.%d.%Y",  # Dot formats
+                "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",  # Word month formats
+                "%Y%m%d"  # No separator format
+            ]
+            
+            for fmt in common_formats:
+                try:
+                    dt = datetime.datetime.strptime(value, fmt)
+                    return format_date(dt)
+                except:
+                    continue
+            
+            # Last resort: Try dateutil's flexible parser
             try:
-                dt = date_parser.parse(value)
+                dt = date_parser.parse(value, dayfirst=False)  # default to MM/DD/YYYY
                 return format_date(dt)
             except:
-                pass
+                # Try again with day first
+                try:
+                    dt = date_parser.parse(value, dayfirst=True)  # Try DD/MM/YYYY
+                    return format_date(dt)
+                except:
+                    pass
                 
     except Exception as e:
-        print(f"Date conversion error: {str(e)}")
+        import logging
+        logging.warning(f"Date conversion error for value '{value}': {str(e)}")
         
     # If all conversions fail, return the original value if it's a string
     return str(value) if value is not None else None
@@ -393,21 +492,13 @@ def report_table(request):
         # Default to minimum date if missing date information
         parsed_date = datetime.datetime.min
         
-        # Try to parse eventDate (format: "Jan. 12, 2025" or similar)
+        # Try to parse eventDate using our standardized approach
         if specimen.eventDate:
-            try:
-                # Handle variations in date format
-                date_str = specimen.eventDate.replace('.', '')  # Remove periods from month abbreviations
-                # Try different date formats
-                for fmt in ["%b %d, %Y", "%d-%b-%Y", "%d %b %Y", "%d %B %Y", "%B %d, %Y"]:
-                    try:
-                        parsed_date = datetime.datetime.strptime(date_str, fmt)
-                        break
-                    except ValueError:
-                        continue
-            except (ValueError, AttributeError):
-                # Keep default if parsing fails
-                pass
+            # Use our centralized date parsing function for consistency
+            parsed_date_obj = parse_date_value(specimen.eventDate)
+            if parsed_date_obj:
+                parsed_date = parsed_date_obj
+            # If parsing failed, keep the default minimum date
                 
         # Add time if available (format: "14:37")
         if specimen.eventTime and isinstance(parsed_date, datetime.datetime):
@@ -798,8 +889,11 @@ def import_model(request, model_name):
                 # Use dtype=str to read everything as text
                 df = pd.read_csv(file, dtype=str, keep_default_na=False)
             elif file_ext in ('xls', 'xlsx'):
-                # Use dtype=str and convert_float=False to prevent numeric conversion
-                df = pd.read_excel(file, dtype=str, convert_float=False)
+                # Use dtype=str to read everything as text initially
+                df = pd.read_excel(file, dtype=str)
+                # Convert all numeric columns to string to prevent automatic float conversion
+                for col in df.columns:
+                    df[col] = df[col].astype(str)
             else:
                 messages.error(request, 'Unsupported file type. Please upload a CSV or Excel file.')
                 context['error'] = 'Unsupported file type. Please upload a CSV or Excel file.'
@@ -896,20 +990,27 @@ def import_model(request, model_name):
             
             # Check for potential format issues
             if model_name == 'specimen':
-                # Check date fields
+                # Check date fields with improved validation
                 date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
                 for date_field in date_fields:
                     if date_field in row_data and row_data[date_field]:
+                        original_value = row_data[date_field]
                         try:
-                            # Try parsing the date to see if it's valid
-                            formatted = format_date_value(row_data[date_field])
-                            if not formatted:
+                            # Try parsing the date using our standardized function
+                            formatted = format_date_value(original_value)
+                            if formatted:
+                                if formatted != original_value:
+                                    # Warn user that we'll convert the format
+                                    preview_item['warnings'].append(
+                                        f"Date '{original_value}' will be standardized to '{formatted}'"
+                                    )
+                            else:
                                 preview_item['warnings'].append(
-                                    f"Date format for {date_field} might need adjustment"
+                                    f"Could not parse date '{original_value}' for {date_field}"
                                 )
-                        except:
+                        except Exception as e:
                             preview_item['warnings'].append(
-                                f"Invalid date format for {date_field}"
+                                f"Invalid date format '{original_value}' for {date_field}: {str(e)}"
                             )
                 
                 # Check boolean fields
@@ -995,17 +1096,21 @@ def import_model(request, model_name):
                                     f"{related_model.__name__} '{lookup_value}' not found for {fk_field} in row {i+1}."
                                 )
                     
-                    # Convert date fields to proper format
+                    # Convert date fields to proper format using our standardized function
                     date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
                     for field in date_fields:
                         if field in row_data and row_data[field]:
                             try:
+                                # Use our improved format_date_value for consistent date handling
                                 formatted_date = format_date_value(row_data[field])
                                 if formatted_date:
                                     row_data[field] = formatted_date
-                            except:
-                                # If formatting fails, keep original value
-                                pass
+                                    if debug_mode:
+                                        messages.info(request, f"Converted date for {field} from '{row_data[field]}' to '{formatted_date}'")
+                            except Exception as e:
+                                # If formatting fails, log warning and keep original value
+                                if debug_mode:
+                                    messages.warning(request, f"Could not format date for {field}: {str(e)}")
                     
                     # Construct eventDate from components if missing
                     if not row_data.get('eventDate'):
@@ -1013,7 +1118,46 @@ def import_model(request, model_name):
                         month = row_data.get('month')
                         year = row_data.get('year')
                         if day and month and year:
-                            row_data['eventDate'] = f"{day} {month}, {year}"
+                            # First try to create a valid date to check if components make sense
+                            try:
+                                # Try to create a datetime object to validate the date
+                                temp_date_str = f"{year}-{month}-{day}"
+                                date_obj = None
+                                
+                                # Try parsing with various month formats
+                                try:
+                                    # If month is a number (1-12)
+                                    if month.isdigit() and 1 <= int(month) <= 12:
+                                        date_obj = datetime.datetime(int(year), int(month), int(day))
+                                    else:
+                                        # Try abbreviated and full month names
+                                        for fmt in ["%Y-%b-%d", "%Y-%B-%d"]:
+                                            try:
+                                                date_obj = datetime.datetime.strptime(temp_date_str, fmt)
+                                                break
+                                            except ValueError:
+                                                continue
+                                except:
+                                    pass
+                                
+                                if date_obj:
+                                    # Use our standardized formatting function
+                                    row_data['eventDate'] = format_date_value(date_obj)
+                                    if debug_mode:
+                                        messages.info(request, f"Generated eventDate '{row_data['eventDate']}' from components: {day} {month} {year}")
+                                else:
+                                    # Fallback to simple string concatenation
+                                    row_data['eventDate'] = f"{day} {month}, {year}"
+                                    if debug_mode:
+                                        messages.warning(request, f"Using simple concatenation for eventDate: '{row_data['eventDate']}'")
+                            except Exception as e:
+                                # Fallback to simple string concatenation
+                                row_data['eventDate'] = f"{day} {month}, {year}"
+                                if debug_mode:
+                                    messages.warning(request, f"Error validating date components: {str(e)}. Using: '{row_data['eventDate']}'")
+                        elif debug_mode and (day or month or year):
+                            # Warn about incomplete date components
+                            messages.warning(request, f"Incomplete date components for row {i+1}: day={day}, month={month}, year={year}")
                     
                     # Handle exact_loc boolean field
                     if 'exact_loc' in row_data and row_data['exact_loc']:
