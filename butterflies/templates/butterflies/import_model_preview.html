@@ -129,13 +129,13 @@
     <div style="margin-top: 15px;">
         <div>
             {% if has_errors %}
-            <button type="button" disabled style="cursor: not-allowed; opacity: 0.6; background-color: #cccccc; color: #666666;">Confirm Import</button>
-            <button type="submit" name="revalidate" value="true" style="margin-left: 10px; background-color: #ff9800; color: white;">Re-validate</button>
-            <span style="margin-left: 10px; color: #d32f2f;">Please fix all errors before importing</span>
+            <button type="button" class="btn btn-primary" disabled>Confirm Import</button>
+            <button type="submit" name="revalidate" value="true" class="btn btn-secondary ml-2">Re-validate</button>
+            <span class="ml-2 text-danger">Please fix all errors before importing</span>
             {% else %}
-            <button type="submit">Confirm Import</button>
+            <button type="submit" class="btn btn-primary">Confirm Import</button>
             {% endif %}
-            <a href="{% url 'import_model' model_name_internal %}" style="margin-left: 10px;">Cancel</a>
+            <a href="{% url 'import_model' model_name_internal %}" class="btn btn-secondary ml-2">Cancel</a>
         </div>
     </div>
 </form>

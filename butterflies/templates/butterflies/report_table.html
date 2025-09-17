@@ -5,15 +5,15 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'butterflies/css/table-styles.css' %}">
 <link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
-<div style="margin-bottom: 1em; display: flex; align-items: center;">
+<div class="d-flex align-items-center mb-3">
   <div>
-    <h3 style="margin: 0 0 5px 0;">{% trans "Export Full Specimen Report" %}</h3>
-    <a href="{{ export_csv_url }}" class="btn btn-primary" style="margin-right: 10px;">{% trans "CSV Format" %}</a>
+    <h3 class="m-0 mb-1">{% trans "Export Full Specimen Report" %}</h3>
+    <a href="{{ export_csv_url }}" class="btn btn-primary mr-2">{% trans "CSV Format" %}</a>
     <a href="{{ export_excel_url }}" class="btn btn-primary">{% trans "Excel Format" %}</a>
   </div>
-  <div style="margin-left: 20px; color: #666; max-width: 400px;">
-    <p style="margin: 0;">{% trans "These exports include all data shown in the table below, including related fields." %}</p>
-    <p style="margin: 5px 0 0 0;">{% trans "For individual table management, use the links at the bottom of the page." %}</p>
+  <div class="ml-3 text-muted" style="max-width: 400px;">
+    <p class="m-0">{% trans "These exports include all data shown in the table below, including related fields." %}</p>
+    <p class="mt-1 mb-0">{% trans "For individual table management, use the links at the bottom of the page." %}</p>
   </div>
 </div>
 <h2>{% trans "Full Specimen Report" %}</h2>
@@ -115,16 +115,31 @@
     {% endfor %}
     </tbody>
     </table>
-<div style="text-align: center; color: #666; padding: 10px; font-size: 0.9em;">
+<div class="text-muted p-3 text-center">
     {% trans "Only most recent 20 specimen records shown. Download Full Specimen Report at top of page to view all records." %}
 </div>
 
-<div style="margin-top: 2em;">
-    <h3>Other Tables</h3>
-    <ul>
-        <li><a href="{% url 'dynamic_list' 'specimen' %}">Specimen Table</a></li>
-        <li><a href="{% url 'dynamic_list' 'locality' %}">Locality Table</a></li>
-        <li><a href="{% url 'dynamic_list' 'initials' %}">Initials Table</a></li>
-    </ul>
+<div class="d-flex align-items-center mb-3 mt-4">
+  <div>
+    <h3 class="m-0 mb-1">{% trans "Manage Specimen Records" %}</h3>
+    <a href="{% url 'dynamic_list' 'specimen' %}" class="btn btn-primary">{% trans "Edit Specimen Table" %}</a>
+  </div>
+  <div class="ml-3 text-muted" style="max-width: 400px;">
+    <p class="m-0">{% trans "Click to edit existing specimen records or add new records." %}</p>
+    <p class="mt-1 mb-0">{% trans "The specimen table provides filtering and search capabilities." %}</p>
+  </div>
+</div>
+
+<div class="d-flex align-items-center mt-4">
+    <div class="flex-grow-1">
+        <h3 class="mb-2">{% trans "Other Reports" %}</h3>
+        <ul class="mb-0 pl-3">
+            <li><a href="{% url 'dynamic_list' 'locality' %}">{% trans "Full Locality Report" %}</a></li>
+            <li><a href="{% url 'dynamic_list' 'initials' %}">{% trans "Full Initials Report" %}</a></li>
+        </ul>
+    </div>
+    <div class="text-muted ml-3" style="max-width: 300px;">
+        {% trans "Click on report to edit underlying table." %}
+    </div>
 </div>
 {% endblock %}

@@ -3,6 +3,7 @@
 {% load butterfly_extras butterfly_display %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'butterflies/css/table-styles.css' %}">
+<div class="table-wrapper">
 <table class="concise-table">
     <tr>
         {% for field in fields %}
@@ -42,3 +43,4 @@
     <tr><td colspan="{{ fields|length }}">{% trans 'No records found.' %}</td></tr>
     {% endfor %}
 </table>
+</div>

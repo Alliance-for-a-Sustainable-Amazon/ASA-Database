@@ -1,0 +1,211 @@
+/* Base styles for ASA Database */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Language switcher */
+.language-switcher {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+/* Form elements styling */
+select {
+    min-width: 150px;
+    padding: 8px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+/* Searchable inputs styling */
+.searchable-input {
+    min-width: 150px;
+    padding: 8px;
+    border: 1px solid #6c2eb9;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    background-color: #f9f9ff;
+}
+
+.searchable-input:focus {
+    outline: none;
+    border-color: #8c43e6;
+    box-shadow: 0 0 5px rgba(140, 67, 230, 0.5);
+}
+
+/* Navigation styles */
+.main-nav {
+    display: flex;
+    justify-content: flex-end; /* Align content to the right */
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+/* User roles styling */
+.role-superuser {
+    color: #0066cc;
+    font-weight: bold;
+}
+
+.role-admin {
+    color: #0066cc;
+    font-weight: bold;
+}
+
+.role-researcher {
+    color: #339933;
+}
+
+/* Title styling */
+.title-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* User info styling */
+.user-info {
+    margin-right: 10px;
+}
+
+/* Button styling */
+.btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background-color: #28a745; /* Green color */
+    color: white;
+    border-color: #28a745;
+}
+
+.btn-primary:hover {
+    background-color: #218838; /* Darker green on hover */
+    border-color: #1e7e34;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Submit button styling */
+button[type="submit"], input[type="submit"] {
+    background-color: #28a745; /* Green color */
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #28a745;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover, input[type="submit"]:hover {
+    background-color: #218838; /* Darker green on hover */
+    border-color: #1e7e34;
+}
+
+/* Disabled button styling */
+button[disabled], input[type="submit"][disabled], .btn[disabled] {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Margin utilities */
+.mt-3 {
+    margin-top: 1rem;
+}
+
+.ml-2 {
+    margin-left: 0.5rem;
+}
+
+/* Container */
+.container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Alert styling */
+.alert {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+/* Form groups */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+/* Messages */
+.messages {
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.messages .success {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.messages .error {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}

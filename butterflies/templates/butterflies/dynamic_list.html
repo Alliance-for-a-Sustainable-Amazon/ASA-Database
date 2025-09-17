@@ -4,16 +4,16 @@
 {% block header %}{% blocktrans %}{{ model_name }} List{% endblocktrans %}{% endblock %}
 {% block content %}
 
-<div style="margin-bottom: 15px;">
-  <a href="{% url 'export_model_csv' model_name_internal %}" style="margin-right: 5px;">{% trans "Export CSV" %}</a>
-  <a href="{% url 'export_model_excel' model_name_internal %}" style="margin-right: 5px;">{% trans "Export Excel" %}</a>
+<div class="mb-3">
+  <a href="{% url 'export_model_csv' model_name_internal %}" class="mr-2">{% trans "Export CSV" %}</a>
+  <a href="{% url 'export_model_excel' model_name_internal %}" class="mr-2">{% trans "Export Excel" %}</a>
   
   {% load auth_tags %}
   {% if user.is_superuser or user|has_group:'Admin' %}
     <a href="{% url 'import_model' model_name_internal %}">{% trans "Import Data" %}</a>
     {% if model_name_internal == 'specimen' %}
       {% with bulk_delete_confirm_msg=_("This is a debug feature. Are you sure you want to proceed to the bulk delete page?") %}
-        <a href="{% url 'debug_bulk_delete_specimen' %}" style="margin-left: 20px; color: red;"
+        <a href="{% url 'debug_bulk_delete_specimen' %}" class="ml-3 text-danger"
            onclick="return confirm('{{ bulk_delete_confirm_msg }}')">
           {% trans "Debug Bulk Delete" %}
         </a>
@@ -23,10 +23,10 @@
 </div>
 
 {% if import_errors %}
-<div class="import-errors" style="margin-bottom: 20px; padding: 15px; border: 1px solid #f8d7da; background-color: #ffeef0; border-radius: 5px;">
-  <h4 style="color: #721c24; margin-top: 0; font-weight: bold;">{% trans "Import Errors" %}</h4>
-  <p style="color: #721c24;">{% trans "The following errors occurred during import:" %}</p>
-  <ul style="margin-bottom: 0; color: #721c24;">
+<div class="alert alert-danger mb-4 p-3 rounded">
+  <h4 class="mt-0 font-bold text-danger">{% trans "Import Errors" %}</h4>
+  <p class="text-danger">{% trans "The following errors occurred during import:" %}</p>
+  <ul class="mb-0 text-danger">
     {% for error in import_errors %}
       <li>{{ error }}</li>
     {% endfor %}

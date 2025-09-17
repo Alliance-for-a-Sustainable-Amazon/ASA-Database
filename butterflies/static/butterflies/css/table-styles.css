@@ -1,8 +1,15 @@
 /* Concise table styles for ASA Database */
+/* Table container with fixed height and scrolling */
+.table-wrapper {
+    max-height: 500px; /* Fixed height container */
+    overflow-y: auto; /* Enable vertical scrolling */
+    margin-bottom: 20px; /* Space below the table */
+    border: 1px solid #ddd;
+}
+
 .concise-table {
     border-collapse: collapse;
     width: 100%;
-    border: 1px solid #ddd;
 }
 
 .concise-table th {
@@ -14,6 +21,9 @@
     vertical-align: middle;
     border: 1px solid #ccc;
     border-bottom: 2px solid #ccc;
+    position: sticky; /* Make headers sticky */
+    top: 0; /* Stick to top when scrolling */
+    z-index: 10; /* Ensure headers stay on top */
 }
 
 .concise-table td {
