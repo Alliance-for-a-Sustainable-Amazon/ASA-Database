@@ -1,7 +1,9 @@
 {# _table.html - Reusable table and search row for any model #}
 {% load i18n %}
 {% load butterfly_extras butterfly_display %}
-<table border="1">
+{% load static %}
+<link rel="stylesheet" href="{% static 'butterflies/css/table-styles.css' %}">
+<table class="concise-table">
     <tr>
         {% for field in fields %}
             <th>{{ field.verbose_name }}</th>
@@ -23,9 +25,9 @@
     <tr>
         {% for field in fields %}
             {% if forloop.first %}
-                <td><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{{ obj|get_field_value:field.name|dot_if_none }}</a></td>
+                <td title="{{ obj|get_field_value:field.name|dot_if_none }}"><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{{ obj|get_field_value:field.name|dot_if_none }}</a></td>
             {% else %}
-                <td>{{ obj|get_field_value:field.name|dot_if_none }}</td>
+                <td title="{{ obj|get_field_value:field.name|dot_if_none }}">{{ obj|get_field_value:field.name|dot_if_none }}</td>
             {% endif %}
         {% endfor %}
         <td>
