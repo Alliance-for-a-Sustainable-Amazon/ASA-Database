@@ -986,6 +986,18 @@ def process_foreign_keys(row_data, row_index, request, debug_mode=False):
     for fk_field, (related_model, lookup_field) in fk_fields.items():
         if fk_field in row_data and row_data[fk_field]:
             lookup_value = row_data[fk_field]
+            
+            # Special case: allow "." as a placeholder for identifiedBy (treat as None/NULL)
+            if fk_field == 'identifiedBy' and lookup_value == '.':
+                if debug_mode:
+                    messages.info(
+                        request,
+                        f"Found '.' placeholder for {fk_field} in row {row_index+1}. Setting to NULL."
+                    )
+                row_data[fk_field] = None
+                continue
+                
+            # Normal case: look up the related object
             related_obj = related_model.objects.filter(**{lookup_field: lookup_value}).first()
             if related_obj:
                 row_data[fk_field] = related_obj
@@ -1010,22 +1022,43 @@ def parse_date_field(date_value, debug_mode=False):
     """
     if not date_value or date_value == '.':
         return None, None, True  # Empty or placeholder, not an error
+    
+    # Convert to string if not already
+    if not isinstance(date_value, str):
+        date_value = str(date_value)
+    
+    # If it has a time component (contains space), extract just the date part
+    if ' ' in date_value:
+        try:
+            date_value = date_value.split(' ')[0]
+        except Exception:
+            pass
         
     try:
         # Try direct parsing with dateutil
         try:
-            date_obj = date_parser.parse(str(date_value)).date()
+            date_obj = date_parser.parse(date_value).date()
             return date_obj, None, True
-        except:
+        except Exception as dateutil_error:
             # If direct parsing fails, try our standard format
             try:
                 date_obj = parse_date_value(date_value)
                 if date_obj:
                     return date_obj, None, True
-            except:
+            except Exception:
+                pass
+            
+            # Try ISO format specifically
+            try:
+                # Handle potential timezone information
+                if 'T' in date_value:
+                    date_value = date_value.split('T')[0]
+                date_obj = datetime.date.fromisoformat(date_value)
+                return date_obj, None, True
+            except ValueError:
                 pass
                 
-        # If we get here, both parsing attempts failed
+        # If we get here, all parsing attempts failed
         return None, f"Could not parse date '{date_value}'", False
     except Exception as e:
         return None, f"Invalid date format '{date_value}': {str(e)}", False
@@ -1104,6 +1137,12 @@ def validate_specimen_data(row_data, preview_item=None, common_errors=None, debu
     for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
         if fk_field in row_data and row_data[fk_field]:
             lookup_value = row_data[fk_field]
+            
+            # Special case: allow "." as a placeholder for identifiedBy
+            if fk_field == 'identifiedBy' and lookup_value == '.':
+                # This is valid - it will be converted to NULL/None during import
+                continue
+                
             key = f"{fk_field}_invalid"
             
             # Check if this value is invalid using the common_errors or validation cache
@@ -1212,6 +1251,26 @@ def validate_specimen_data(row_data, preview_item=None, common_errors=None, debu
                 preview_item['warnings'].append(warning_msg)
             else:
                 collected_warnings.append(warning_msg)
+    
+    # Process eventTime to strip seconds (HH:MM:SS → HH:MM)
+    if 'eventTime' in row_data and row_data['eventTime']:
+        time_value = str(row_data['eventTime'])
+        # Only strip seconds if it's a standard time format (not a range with hyphens or other special formats)
+        if time_value.count(':') == 2 and '-' not in time_value and '/' not in time_value and ',' not in time_value:
+            # Extract just the hours and minutes (HH:MM)
+            try:
+                hour_minute = ':'.join(time_value.split(':')[:2])
+                row_data['eventTime'] = hour_minute
+                
+                # Add info message
+                warning_msg = f"Stripped seconds from time value: '{time_value}' → '{hour_minute}'"
+                if preview_item:
+                    preview_item['warnings'].append(warning_msg)
+                else:
+                    collected_warnings.append(warning_msg)
+            except Exception:
+                # Continue with original value if stripping fails
+                pass
                 
     # Return collected errors if no preview_item was provided
     if not preview_item:
@@ -1501,6 +1560,10 @@ def import_model(request, model_name):
                 # Track invalid foreign keys
                 for fk_field in fk_fields_validation:
                     if fk_field in row_data and row_data[fk_field]:
+                        # Special case: allow "." as a placeholder for identifiedBy
+                        if fk_field == 'identifiedBy' and row_data[fk_field] == '.':
+                            continue
+                            
                         if row_data[fk_field] not in valid_values_cache[fk_field]:
                             key = f"{fk_field}_invalid"
                             if key not in common_errors:
@@ -1608,6 +1671,10 @@ def import_model(request, model_name):
                 # Track invalid foreign keys
                 for fk_field in fk_fields_validation:
                     if fk_field in row_data and row_data[fk_field]:
+                        # Special case: allow "." as a placeholder for identifiedBy
+                        if fk_field == 'identifiedBy' and row_data[fk_field] == '.':
+                            continue
+                            
                         if row_data[fk_field] not in valid_values_cache[fk_field]:
                             key = f"{fk_field}_invalid"
                             if key not in common_errors:
@@ -1742,6 +1809,22 @@ def import_model(request, model_name):
                         skipped_count += 1
                         raise ValueError("Error processing eventDate, row skipped")
                     
+                    # Process eventTime to strip seconds from Excel time values (HH:MM:SS → HH:MM)
+                    if 'eventTime' in row_data and row_data['eventTime']:
+                        time_value = str(row_data['eventTime'])
+                        
+                        # Only strip seconds if it's a standard time format (not a range with hyphens or other special formats)
+                        if time_value.count(':') == 2 and '-' not in time_value and '/' not in time_value and ',' not in time_value:
+                            # Extract just the hours and minutes (HH:MM)
+                            try:
+                                hour_minute = ':'.join(time_value.split(':')[:2])
+                                row_data['eventTime'] = hour_minute
+                                if debug_mode:
+                                    messages.info(request, f"Stripped seconds from time value: '{time_value}' → '{hour_minute}'")
+                            except Exception as time_ex:
+                                if debug_mode:
+                                    messages.warning(request, f"Failed to strip seconds from time '{time_value}': {str(time_ex)}")
+                    
                     # Handle exact_loc boolean field
                     if 'exact_loc' in row_data and row_data['exact_loc']:
                         # Normalize to TRUE/FALSE strings
@@ -1764,6 +1847,28 @@ def import_model(request, model_name):
                             except (ValueError, TypeError):
                                 # If not a valid number, keep as is
                                 pass
+                
+                # Ensure date fields are properly formatted for Django model
+                date_fields = ['eventDate', 'dateIdentified', 'georeferencedDate']
+                for field in date_fields:
+                    if field in row_data and row_data[field]:
+                        # If it's a datetime or date object, ensure we get just the date part
+                        if hasattr(row_data[field], 'date'):
+                            row_data[field] = row_data[field].date()
+                        elif hasattr(row_data[field], 'strftime'):
+                            # It's already a date object, leave it as is
+                            pass
+                        elif isinstance(row_data[field], str) and ' ' in row_data[field]:
+                            # Handle string with datetime format by extracting just the date part
+                            try:
+                                # Extract date part from datetime string (before any space)
+                                date_part = row_data[field].split(' ')[0]
+                                row_data[field] = date_part
+                                if debug_mode:
+                                    messages.info(request, f"Extracted date part '{date_part}' from '{row_data[field]}' for {field}")
+                            except Exception as date_ex:
+                                if debug_mode:
+                                    messages.warning(request, f"Failed to extract date part from '{row_data[field]}': {str(date_ex)}")
                 
                 # Create the object with processed data
                 instance = model.objects.create(**row_data)
@@ -1806,6 +1911,11 @@ def import_model(request, model_name):
                     
                 elif "duplicate key value violates unique constraint" in error_message:
                     user_message += "This record has a duplicate value for a unique field"
+                
+                elif "invalid date format" in error_message:
+                    field_match = re.search(r'column "([^"]+)"', error_message)
+                    field_name = field_match.group(1) if field_match else "date field"
+                    user_message += f"Invalid date format for '{field_name}'. Please ensure it's in YYYY-MM-DD format"
                     
                 else:
                     # Default to simplified error message
