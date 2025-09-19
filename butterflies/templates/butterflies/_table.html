@@ -1,8 +1,14 @@
 {# _table.html - Reusable table and search row for any model #}
+
 {% load i18n %}
 {% load butterfly_extras butterfly_display %}
 {% load static %}
+{% load auth_tags %}
+
+{# Include necessary CSS for the table #}
 <link rel="stylesheet" href="{% static 'butterflies/css/table-styles.css' %}">
+<link rel="stylesheet" href="{% static 'butterflies/css/pagination.css' %}">
+
 <div class="table-wrapper">
 <table class="concise-table">
     <tr>
@@ -44,3 +50,7 @@
     {% endfor %}
 </table>
 </div>
+
+{% if paginator %}
+    {% include 'butterflies/_pagination.html' %}
+{% endif %}

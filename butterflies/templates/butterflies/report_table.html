@@ -4,6 +4,7 @@
 {% load butterfly_extras butterfly_display %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'butterflies/css/table-styles.css' %}">
+<link rel="stylesheet" href="{% static 'butterflies/css/pagination.css' %}">
 <link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
 <div class="d-flex align-items-center mb-3">
   <div>
@@ -17,6 +18,7 @@
   </div>
 </div>
 <h2>{% trans "Full Specimen Report" %}</h2>
+<div class="table-wrapper">
 <table class="concise-table">
     <thead>
         <tr>
@@ -115,8 +117,10 @@
     {% endfor %}
     </tbody>
     </table>
-<div class="text-muted p-3 text-center">
-    {% trans "Only most recent 20 specimen records shown. Download Full Specimen Report at top of page to view all records." %}
+</div>
+
+<div class="text-muted mt-3 mb-3 text-center">
+    {% trans "Showing the 20 most recent specimen records" %}
 </div>
 
 <div class="d-flex align-items-center mb-3 mt-4">

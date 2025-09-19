@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% trans "ASA Lepidoptera Adults" %}{% endblock %}</title>
     <!-- Load static files -->
-    {% load static %}
     <link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'butterflies/css/base.css' %}">
     <link rel="stylesheet" href="{% static 'butterflies/css/utilities.css' %}">
@@ -24,7 +24,9 @@
     </div>
 </head>
 <body>
-    <h1><a href="{% url 'report_table' %}" class="title-link">{% block header %}{% trans "[ASA LOGO]" %}{% endblock %}</a></h1>
+    <div class="header-container">
+        <h1><a href="{% url 'report_table' %}" class="title-link">{% block header %}<img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo" style="height: 50px;">{% endblock %}</a></h1>
+    </div>
     <div>
         {% block content %}{% endblock %}
     </div>
@@ -67,6 +69,15 @@
     // This keeps the base template clean and simple
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Base template loaded successfully');
+        // Debug header logo styling
+        console.log('Header logo style check:');
+        const logo = document.querySelector('.header-logo');
+        if (logo) {
+            console.log('Logo found!', logo);
+            console.log('Computed style:', window.getComputedStyle(logo).height);
+        } else {
+            console.log('Logo element not found!');
+        }
     });
     </script>
 </body>

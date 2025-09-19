@@ -2,7 +2,35 @@
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 20px;
+    padding: 20px 20px 20px 10px; /* Reduced left padding */
+}
+
+/* Header logo styling */
+.header-logo, h1 a img, img.header-logo {
+    max-height: 50px !important;
+    max-width: 100%;
+    height: auto;
+    display: inline-block;
+}
+
+.title-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+    margin-left: 0;
+}
+
+h1 {
+    margin-top: 0;
+    text-align: left;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.header-container {
+    text-align: left;
+    margin-left: 0;
+    padding-left: 0;
 }
 
 /* Language switcher */

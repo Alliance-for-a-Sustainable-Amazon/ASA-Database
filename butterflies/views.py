@@ -20,6 +20,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from django.db import models
 import csv
 import io
 import openpyxl
@@ -200,14 +201,17 @@ def dynamic_list(request, model_name):
     """
     Generic dynamic list view for any model.
     Displays all objects for the specified model with filtering capabilities.
+    Includes pagination for better performance.
     Requires user authentication.
     
     Parameters:
         request: HTTP request object
         model_name: String name of the model to list
     Returns:
-        Rendered template with filtered objects
+        Rendered template with paginated and filtered objects
     """
+    from django.core.paginator import Paginator
+    
     model = None
     for m in model_list():
         if m._meta.model_name == model_name:
@@ -215,21 +219,60 @@ def dynamic_list(request, model_name):
             break
     if not model:
         raise Http404("Model not found")
+    
+    # Base queryset
     objects = model.objects.all()
+    
+    # Fields for display and filtering
     fields = [
         {'name': field.name, 'verbose_name': getattr(field, 'verbose_name', field.name)}
         for field in model._meta.fields
         if field.name != 'id'
     ]
+    
     # Multi-field search for each model
     for field in fields:
         value = request.GET.get(field['name'])
-        if value:
-            objects = objects.filter(**{f"{field['name']}__icontains": value})
+        if value and value.strip():
+            # Get the actual field object from the model
+            model_field = model._meta.get_field(field['name'])
+            
+            # Handle different field types differently
+            if isinstance(model_field, models.ForeignKey):
+                # For ForeignKey fields, filter by exact match on the related model's primary key
+                # or use __id (or appropriate field) with contains if needed
+                try:
+                    # Try exact match first (if the value is the exact foreign key)
+                    objects = objects.filter(**{field['name']: value})
+                except (ValueError, models.ObjectDoesNotExist):
+                    # If exact match fails, try to find related objects where the 
+                    # primary key or string representation contains the value
+                    related_model = model_field.related_model
+                    pk_field = related_model._meta.pk.name
+                    
+                    # Find related objects with IDs or string representations containing the search term
+                    related_objects = related_model.objects.filter(**{f"{pk_field}__icontains": value})
+                    if related_objects.exists():
+                        objects = objects.filter(**{f"{field['name']}__in": related_objects})
+                    else:
+                        # No matches, return empty queryset
+                        objects = objects.none()
+            else:
+                # For regular fields, use icontains as before
+                objects = objects.filter(**{f"{field['name']}__icontains": value})
+    
+    # Add model_name_internal to each object for URL generation
     obj_list = []
     for obj in objects:
         obj.model_name_internal = model._meta.model_name
         obj_list.append(obj)
+    
+    # Pagination
+    items_per_page = 20  # Set the number of items per page
+    paginator = Paginator(obj_list, items_per_page)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
     # Check for import errors in session
     import_errors = None
     import_complete = request.session.get('import_complete', False)
@@ -249,13 +292,15 @@ def dynamic_list(request, model_name):
         request.session.modified = True
     
     return render(request, 'butterflies/dynamic_list.html', {
-        'objects': obj_list,
+        'objects': page_obj,
         'fields': fields,
         'model_name': model._meta.verbose_name.title(),
         'model_name_internal': model._meta.model_name,
         'request': request,
         'home_url': 'report_table',
         'import_errors': import_errors,  # Pass import errors to the template
+        'paginator': paginator,
+        'page_obj': page_obj,
     })
 
 def dynamic_detail(request, model_name, object_id):
@@ -488,15 +533,16 @@ def create_initials(request):
 @login_required
 def report_table(request):
     """
-    Shows a table of the 20 most recent specimens based on eventDate and eventTime.
-    This is the main dashboard view.
+    Shows a paginated table of specimens based on eventDate and eventTime.
+    This is the main dashboard view with pagination for better performance.
     Requires user authentication.
     
     Parameters:
         request: HTTP request object
     Returns:
-        Rendered template with the 20 most recent specimens
+        Rendered template with paginated specimens
     """
+    from django.core.paginator import Paginator
     
     # Get all specimens with related objects
     all_specimens = Specimen.objects.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy').all()
@@ -527,14 +573,18 @@ def report_table(request):
         # Add to list for sorting
         specimens_with_dates.append((specimen, parsed_date))
     
-    # Sort by datetime (most recent first) and take top 20
+    # Sort by datetime (most recent first)
     specimens_with_dates.sort(key=itemgetter(1), reverse=True)
-    specimens = [item[0] for item in specimens_with_dates[:20]]
+    sorted_specimens = [item[0] for item in specimens_with_dates]
+    
+    # Take just the 20 most recent specimens (no pagination)
+    recent_specimens = sorted_specimens[:20]
     
     return render(request, 'butterflies/report_table.html', {
-        'specimens': specimens,
+        'specimens': recent_specimens,
         'export_csv_url': reverse('export_report_csv'),
         'export_excel_url': reverse('export_report_excel'),
+        # Not passing paginator or page_obj to template
     })
 
 # --- Export Views ---
