@@ -3,6 +3,14 @@
 {% load butterfly_extras %}
 <h2>{% blocktrans %}Preview {{ model_name_plural }} Import{% endblocktrans %}</h2>
 
+{% if has_errors %}
+<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #f44336; background-color: #ffebee; border-radius: 4px;">
+    <h3 style="margin-top: 0; color: #d32f2f; font-weight: bold;">{% trans "Import Cannot Proceed" %}</h3>
+    <p style="color: #d32f2f;">{% blocktrans %}There are {{ error_count }} error(s) that must be fixed before importing.{% endblocktrans %}</p>
+    <p style="color: #d32f2f;">{% trans "Fields with errors are highlighted in red. Please correct these values before trying to import." %}</p>
+</div>
+{% endif %}
+
 {% if has_unique_field %}
 <div style="margin-bottom: 15px;">
     <p>{% trans "Review the data before confirming import." %} <strong>{% trans "Important:" %}</strong></p>
@@ -10,6 +18,9 @@
         <li>{% blocktrans %}Duplicate records (with the same "{{ unique_field }}") are highlighted in <span style="background-color: #ffeeee; padding: 2px 5px;">pink</span>.{% endblocktrans %}</li>
         <li>{% blocktrans %}For duplicates, we'll automatically modify the "{{ unique_field }}" by adding a numbered suffix (e.g., "ABC123-2").{% endblocktrans %}</li>
         <li>{% trans "You can edit any values before confirming the import." %}</li>
+        {% if has_errors %}
+        <li style="color: #d32f2f; font-weight: bold;">{% trans "Fields with errors are highlighted in red and must be fixed before import." %}</li>
+        {% endif %}
     </ul>
 </div>
 {% else %}
@@ -39,7 +50,7 @@
     <table border="1" cellpadding="4" cellspacing="0">
         <thead>
             <tr>
-                <th>Status</th>
+                <th style="min-width: 200px;">Status / Messages</th>
                 {% for field in fields %}
                 <th>
                     {{ field }}{% if field == unique_field %} <small style="color:#555555; font-style: italic;">(unique key)</small>{% endif %}
@@ -70,6 +81,28 @@
                     {% else %}
                     New
                     {% endif %}
+                    
+                    {% if item.errors %}
+                    <div style="margin-top: 10px; padding: 5px; background-color: #ffebee; border: 1px solid #f44336; border-radius: 3px;">
+                        <strong style="color: #d32f2f;">Errors:</strong>
+                        <ul style="margin: 5px 0 0 15px; padding: 0; color: #d32f2f;">
+                            {% for error in item.errors %}
+                            <li style="margin-bottom: 3px;">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if item.warnings %}
+                    <div style="margin-top: 10px; padding: 5px; background-color: #fff8e1; border: 1px solid #ffc107; border-radius: 3px;">
+                        <strong style="color: #ff8f00;">Warnings:</strong>
+                        <ul style="margin: 5px 0 0 15px; padding: 0; color: #ff8f00;">
+                            {% for warning in item.warnings %}
+                            <li style="margin-bottom: 3px;">{{ warning }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
                 </td>
                 {% for field in fields %}
                 <td>
@@ -80,7 +113,11 @@
                     <div style="font-size: 0.8em; color: #666;">Original: {{ item.data|get_item:field|default:'' }}</div>
                     {% else %}
                     <input type="text" name="row_{{ forloop.parentloop.counter0 }}_{{ field }}" 
-                           value="{{ item.data|get_item:field|default:'' }}">
+                           value="{{ item.data|get_item:field|default:'' }}"
+                           {% if field in item.error_fields %}
+                           style="border: 2px solid #f44336; background-color: #ffebee;"
+                           title="This field has errors that must be fixed before import"
+                           {% endif %}>
                     {% endif %}
                 </td>
                 {% endfor %}
@@ -91,8 +128,14 @@
     
     <div style="margin-top: 15px;">
         <div>
-            <button type="submit">Confirm Import</button>
-            <a href="{% url 'import_model' model_name_internal %}" style="margin-left: 10px;">Cancel</a>
+            {% if has_errors %}
+            <button type="button" class="btn btn-primary" disabled>Confirm Import</button>
+            <button type="submit" name="revalidate" value="true" class="btn btn-secondary ml-2">Re-validate</button>
+            <span class="ml-2 text-danger">Please fix all errors before importing</span>
+            {% else %}
+            <button type="submit" class="btn btn-primary">Confirm Import</button>
+            {% endif %}
+            <a href="{% url 'import_model' model_name_internal %}" class="btn btn-secondary ml-2">Cancel</a>
         </div>
     </div>
 </form>

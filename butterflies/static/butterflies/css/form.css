@@ -1,0 +1,221 @@
+/* Form styles for ASA Database */
+
+/* Base styling for all inputs */
+input, select, textarea, .searchable-input {
+    padding: 6px 8px;
+    border: 1px solid #888888; /* Gray border */
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+/* Specific styling for textareas */
+textarea {
+    width: 100%;
+    min-height: 80px;
+    display: block;
+    font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus, .searchable-input:focus {
+    outline: none;
+    border-color: #555555; /* Darker gray when focused */
+    box-shadow: 0 0 3px rgba(85, 85, 85, 0.5);
+}
+
+/* Text field container for textarea fields */
+.text-field-container {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.text-field-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Styling for textareas - using !important to override any conflicting styles */
+.text-field-container textarea {
+    display: block !important;
+    width: 100% !important;
+    min-height: 80px !important;
+    border: 1px solid #888888 !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
+    font-size: 14px !important;
+    border-radius: 4px !important;
+    background-color: #ffffff !important;
+}
+
+/* Category section styling */
+.category-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+}
+
+.category-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #555555;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #cccccc;
+}
+
+/* Field section styling */
+.field-section {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 4px;
+}
+
+/* History section styling */
+.history-section {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background: #f5f5f5;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+}
+
+/* Flex container for form sections */
+.flex-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.date-container, .initials-container, .description-container {
+    flex: 1 1 auto;
+    min-width: 150px;
+}
+
+/* Specific styling for different container types */
+.date-container {
+    flex: 0 0 120px;
+}
+
+.initials-container {
+    flex: 0 0 100px;
+}
+
+.description-container {
+    flex: 1;
+}
+
+/* Field grid for organized form layout */
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+/* Category toggle button */
+.category-toggle {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 5px;
+    color: #555555;
+}
+
+/* Field container within the grid */
+.field-container {
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.field-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Error styling */
+.error {
+    color: #dc3545;
+    padding: 5px;
+    margin-top: 3px;
+    font-size: 0.9rem;
+}
+
+.error.nonfield, .error.summary {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+}
+
+/* Form info section */
+.form-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+}
+
+/* Field help text */
+.field-help {
+    display: block;
+    margin-top: 3px;
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Required fields */
+.required-field label::after {
+    content: "*";
+    color: #dc3545;
+    margin-left: 4px;
+}
+
+/* Category content */
+.category-content {
+    padding-top: 10px;
+}
+
+/* Hidden fields */
+.hidden-field {
+    display: none;
+}
+
+/* Searchable dropdown styling */
+.searchable-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.searchable-input {
+    width: 100%;
+    cursor: pointer;
+}
+
+.searchable-dropdown {
+    position: absolute;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    background: white;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.searchable-option {
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.searchable-option:hover {
+    background-color: #eeeeee; /* Light gray on hover */
+}

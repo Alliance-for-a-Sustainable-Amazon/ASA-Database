@@ -1,65 +1,18 @@
 {% load i18n %}
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% trans "Adult Specimens" %}{% endblock %}</title>
+    <title>{% block title %}{% trans "ASA Lepidoptera Adults" %}{% endblock %}</title>
     <!-- Load static files -->
-    {% load static %}
     <link rel="icon" type="image/x-icon" href="{% static 'butterflies/img/favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'butterflies/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'butterflies/css/utilities.css' %}">
     <script src="{% static 'butterflies/js/prevent-submit.js' %}"></script>
     <!-- Additional head content can be injected by templates -->
     {% block extra_head %}{% endblock %}
-    <style>
-        /* Add some basic styling */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        .language-switcher {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-        }
-        
-        /* Style for standard dropdowns */
-        select {
-            min-width: 150px;
-            padding: 8px;
-            border: 1px solid #aaa;
-            border-radius: 4px;
-            margin-bottom: 5px;
-        }
-        
-        /* Style for searchable inputs with datalist */
-        .searchable-input {
-            min-width: 150px;
-            padding: 8px;
-            border: 1px solid #6c2eb9;
-            border-radius: 4px;
-            margin-bottom: 5px;
-            background-color: #f9f9ff;
-        }
-        
-        .searchable-input:focus {
-            outline: none;
-            border-color: #8c43e6;
-            box-shadow: 0 0 5px rgba(140, 67, 230, 0.5);
-        }
-        
-        /* Form info display */
-        /* .form-info {
-            background-color: #f0f0f0;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        } */
-    </style>
     <!-- Language Switcher -->
     <div class="language-switcher">
         <form action="{% url 'set_language' %}" method="post">{% csrf_token %}
@@ -71,15 +24,17 @@
     </div>
 </head>
 <body>
-    <h1>{% block header %}Adult Specimens{% endblock %}</h1>
-    
+    <div class="header-container">
+        <h1><a href="{% url 'report_table' %}" class="title-link">{% block header %}<img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo" style="height: 50px;">{% endblock %}</a></h1>
+    </div>
     <div>
         {% block content %}{% endblock %}
     </div>
     
     <!-- Navigation -->
     {% load auth_tags %}
-    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+    <nav class="main-nav">
+        <!-- Commented out navigation items
         <div>
             <a href="{% url 'report_table' %}">Home</a> |
             <a href="{% url 'dynamic_create' 'specimen' %}">New Specimen</a>
@@ -87,24 +42,24 @@
              | <a href="{% url 'dynamic_create' 'locality' %}">New Locality</a> |
                <a href="{% url 'dynamic_create' 'initials' %}">New Initials</a>
             {% endif %}
-        </div>
+        </div> -->
         <div>
             {% if user.is_authenticated %}
-                <span style="margin-right: 10px;">
-                    Logged in as <strong>{{ user.username }}</strong>
+                <span class="user-info">
+                    {% trans "Logged in as" %} <strong>{{ user.username }}</strong>
                     {% if user.is_superuser %}
-                        <span style="color: #0066cc; font-weight: bold;">[Superuser]</span> |
-                        <a href="{% url 'user_list' %}">Manage Users</a> |
+                        <span class="role-superuser">[{% trans "Superuser" %}]</span> |
+                        <a href="{% url 'user_list' %}">{% trans "Manage Users" %}</a> |
                     {% elif user|has_group:'Admin' %}
-                        <span style="color: #0066cc; font-weight: bold;">[Admin]</span> |
-                        <a href="{% url 'user_list' %}">Manage Users</a> |
+                        <span class="role-admin">[{% trans "Admin" %}]</span> |
+                        <a href="{% url 'user_list' %}">{% trans "Manage Users" %}</a> |
                     {% else %}
-                        <span style="color: #339933;">[Researcher]</span>
+                        <span class="role-researcher">[{% trans "Researcher" %}]</span>
                     {% endif %}
                 </span>
-                <a href="{% url 'custom_logout' %}">Log out</a>
+                <a href="{% url 'custom_logout' %}">{% trans "Log out" %}</a>
             {% else %}
-                <a href="{% url 'login' %}">Log in</a>
+                <a href="{% url 'login' %}">{% trans "Log in" %}</a>
             {% endif %}
         </div>
     </nav>
@@ -114,6 +69,15 @@
     // This keeps the base template clean and simple
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Base template loaded successfully');
+        // Debug header logo styling
+        console.log('Header logo style check:');
+        const logo = document.querySelector('.header-logo');
+        if (logo) {
+            console.log('Logo found!', logo);
+            console.log('Computed style:', window.getComputedStyle(logo).height);
+        } else {
+            console.log('Logo element not found!');
+        }
     });
     </script>
 </body>
