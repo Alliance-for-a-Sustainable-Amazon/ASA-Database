@@ -1,0 +1,258 @@
+{% load filter_tags form_utils query_utils butterfly_extras %}
+
+<div class="filter-form-container">
+    <h4 class="filter-title">Filter {{ model_name|title }}</h4>
+    <form method="get" class="filter-form" id="filterForm">
+        {% csrf_token %}
+        
+        {# Main filters section - always visible #}
+        <div class="main-filters">
+            <div class="main-filters-grid">
+                {% for field in fields %}
+                    {% if field.name|is_special_filter %}
+                        {% filter_field_info field.name as filter_info %}
+                        <div class="filter-group">
+                            <label for="filter_{{ field.name }}">{{ field.verbose_name|title }}</label>
+                            <input type="text" 
+                                   id="filter_{{ field.name }}" 
+                                   name="{{ field.name }}" 
+                                   value="{{ request.GET|get:field.name|default:'' }}" 
+                                   placeholder="{{ filter_info.placeholder }}"
+                                   class="{{ filter_info.special_class }}">
+                            <div class="filter-help">
+                                <small>{{ filter_info.help_text }}</small>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        {# Advanced filters dropdown #}
+        <div class="advanced-filters">
+            <div class="dropdown-container">
+                <button class="btn btn-info advanced-filters-toggle" type="button" 
+                        id="advancedFiltersButton">
+                    <span class="toggle-text">Show Advanced Filters</span>
+                    <i class="toggle-icon">▼</i>
+                </button>
+                
+                <div id="advancedFiltersPanel" class="filter-dropdown-panel">
+                    <div class="advanced-filters-grid">
+                        {% for field in fields %}
+                            {% if not field.name|is_special_filter %}
+                                {% filter_field_info field.name as filter_info %}
+                                <div class="filter-group">
+                                    <label for="filter_{{ field.name }}">{{ field.verbose_name|title }}</label>
+                                    <input type="text" 
+                                           id="filter_{{ field.name }}" 
+                                           name="{{ field.name }}" 
+                                           value="{{ request.GET|get:field.name|default:'' }}" 
+                                           placeholder="{{ filter_info.placeholder }}">
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {# Filter controls #}
+        <div class="filter-controls">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="?{% if model_name_internal %}model={{ model_name_internal }}{% endif %}" class="btn btn-outline-secondary">Clear Filters</a>
+        </div>
+    </form>
+
+    {% if request.GET %}
+        <div class="active-filters">
+            <h5>Active Filters:</h5>
+            <ul class="filter-tags">
+                {% for field in fields %}
+                    {% if request.GET|get:field.name %}
+                        <li>
+                            <span class="filter-tag">
+                                <strong>{{ field.verbose_name|title }}:</strong> 
+                                {{ request.GET|get:field.name }}
+                                <a href="?{% remove_query_param request.GET field.name %}" 
+                                   class="remove-filter" title="Remove filter">×</a>
+                            </span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .filter-form-container {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .filter-title {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    
+    .main-filters,
+    .advanced-filters {
+        margin-bottom: 15px;
+    }
+    
+    .main-filters-grid,
+    .advanced-filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 10px;
+    }
+    
+    .filter-group {
+        margin-bottom: 10px;
+    }
+    
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    
+    .filter-group input {
+        width: 100%;
+        padding: 5px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+    
+    .filter-dropdown-panel {
+        display: none;
+        margin-top: 10px;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+    }
+    
+    .filter-dropdown-panel.show {
+        display: block;
+    }
+    
+    .advanced-filters-toggle {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .advanced-filters-toggle .toggle-icon {
+        transition: transform 0.3s;
+        font-style: normal;
+    }
+    
+    .advanced-filters-toggle.active .toggle-icon {
+        transform: rotate(180deg);
+    }
+    
+    .filter-help {
+        margin-top: 3px;
+        color: #6c757d;
+    }
+    
+    .special-filter {
+        border-color: #007bff;
+    }
+    
+    .filter-controls {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .active-filters {
+        margin-top: 15px;
+    }
+    
+    .filter-tags {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .filter-tag {
+        background-color: #e9ecef;
+        padding: 5px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .remove-filter {
+        margin-left: 5px;
+        color: #dc3545;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    
+    .remove-filter:hover {
+        color: #bd2130;
+    }
+</style>
+
+<script>
+    // Add this script to enhance filter usability
+    document.addEventListener('DOMContentLoaded', function() {
+        // Focus outline on input when typing
+        document.querySelectorAll('.filter-form input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.classList.remove('focused');
+            });
+        });
+        
+        // Advanced filters toggle functionality
+        const advancedFiltersButton = document.getElementById('advancedFiltersButton');
+        const advancedFiltersPanel = document.getElementById('advancedFiltersPanel');
+        
+        if (advancedFiltersButton && advancedFiltersPanel) {
+            // Check if any advanced filters have values
+            let hasValue = false;
+            advancedFiltersPanel.querySelectorAll('input').forEach(input => {
+                if (input.value) {
+                    hasValue = true;
+                }
+            });
+            
+            // Show panel if any filters have values
+            if (hasValue) {
+                advancedFiltersPanel.classList.add('show');
+                advancedFiltersButton.classList.add('active');
+                advancedFiltersButton.querySelector('.toggle-text').textContent = 'Hide Advanced Filters';
+            }
+            
+            // Toggle advanced filters panel
+            advancedFiltersButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                advancedFiltersPanel.classList.toggle('show');
+                this.classList.toggle('active');
+                
+                // Update button text based on panel state
+                const toggleText = this.querySelector('.toggle-text');
+                if (advancedFiltersPanel.classList.contains('show')) {
+                    toggleText.textContent = 'Hide Advanced Filters';
+                } else {
+                    toggleText.textContent = 'Show Advanced Filters';
+                }
+            });
+        }
+    });
+</script>

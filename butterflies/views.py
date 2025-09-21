@@ -35,6 +35,7 @@ from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
 from .utils import dot_if_none
 from butterflies.utils.image_utils import get_specimen_image_urls
 from .auth_utils import admin_required
+from .filter_utils import FilterBuilder, apply_model_filters
 
 
 # --- Utility Functions ---
@@ -196,7 +197,13 @@ def format_date_value(value):
     return str(value) if value is not None else None
 
 # --- Generic CRUD Views ---
-@login_required
+    # Using FilterUtils class - functionality moved to filter_utils.py
+    pass
+
+# Filter-related functions moved to filter_utils.py
+
+# Filter application function moved to filter_utils.py
+
 def dynamic_list(request, model_name):
     """
     Generic dynamic list view for any model.
@@ -211,6 +218,7 @@ def dynamic_list(request, model_name):
         Rendered template with paginated and filtered objects
     """
     from django.core.paginator import Paginator
+    from .filter_utils import apply_model_filters
     
     model = None
     for m in model_list():
@@ -223,43 +231,25 @@ def dynamic_list(request, model_name):
     # Base queryset
     objects = model.objects.all()
     
+    # Define special filters for specimen model
+    special_filters = None
+    if model._meta.model_name == 'specimen':
+        special_filters = {
+            'catalogNumber': {'field': 'catalogNumber', 'range_support': True},
+            'locality': {'field': 'locality__localityCode', 'range_support': False},
+            'specimenNumber': {'field': 'specimenNumber', 'range_support': True},
+            'year': {'field': 'year', 'range_support': True}
+        }
+    
+    # Apply all filters using the standardized filter utility
+    objects = apply_model_filters(objects, model, request, special_filters)
+    
     # Fields for display and filtering
     fields = [
         {'name': field.name, 'verbose_name': getattr(field, 'verbose_name', field.name)}
         for field in model._meta.fields
         if field.name != 'id'
     ]
-    
-    # Multi-field search for each model
-    for field in fields:
-        value = request.GET.get(field['name'])
-        if value and value.strip():
-            # Get the actual field object from the model
-            model_field = model._meta.get_field(field['name'])
-            
-            # Handle different field types differently
-            if isinstance(model_field, models.ForeignKey):
-                # For ForeignKey fields, filter by exact match on the related model's primary key
-                # or use __id (or appropriate field) with contains if needed
-                try:
-                    # Try exact match first (if the value is the exact foreign key)
-                    objects = objects.filter(**{field['name']: value})
-                except (ValueError, models.ObjectDoesNotExist):
-                    # If exact match fails, try to find related objects where the 
-                    # primary key or string representation contains the value
-                    related_model = model_field.related_model
-                    pk_field = related_model._meta.pk.name
-                    
-                    # Find related objects with IDs or string representations containing the search term
-                    related_objects = related_model.objects.filter(**{f"{pk_field}__icontains": value})
-                    if related_objects.exists():
-                        objects = objects.filter(**{f"{field['name']}__in": related_objects})
-                    else:
-                        # No matches, return empty queryset
-                        objects = objects.none()
-            else:
-                # For regular fields, use icontains as before
-                objects = objects.filter(**{f"{field['name']}__icontains": value})
     
     # Add model_name_internal to each object for URL generation
     obj_list = []
@@ -291,9 +281,13 @@ def dynamic_list(request, model_name):
         # Make sure changes are saved to session
         request.session.modified = True
     
+    # Create a list of field names for use in the template
+    field_names = [field['name'] for field in fields]
+    
     return render(request, 'butterflies/dynamic_list.html', {
         'objects': page_obj,
         'fields': fields,
+        'field_names': field_names,
         'model_name': model._meta.verbose_name.title(),
         'model_name_internal': model._meta.model_name,
         'request': request,
@@ -612,17 +606,16 @@ def export_model_csv(request, model_name):
     response['Content-Disposition'] = f'attachment; filename="{model_name}.csv"'
     writer = csv.writer(response)
     
-    fields = [f.name for f in model._meta.fields if f.name != 'id']
-    writer.writerow(fields)
+    # Get exportable fields for this model (without related fields)
+    exportable_fields = get_exportable_fields(model, include_related=False)
+    headers = [field['name'] for field in exportable_fields]
+    writer.writerow(headers)
     
+    # Export all objects
     for obj in model.objects.all():
         row = []
-        for field in fields:
-            value = getattr(obj, field)
-            # Handle foreign key relations
-            if hasattr(value, 'pk'):
-                value = str(value)
-            row.append(value)
+        for field_info in exportable_fields:
+            row.append(get_field_value_for_export(obj, field_info))
         writer.writerow(row)
     
     return response
@@ -650,17 +643,16 @@ def export_model_excel(request, model_name):
     ws = wb.active
     ws.title = model._meta.verbose_name_plural.title()
     
-    fields = [f.name for f in model._meta.fields if f.name != 'id']
-    ws.append(fields)
+    # Get exportable fields for this model (without related fields)
+    exportable_fields = get_exportable_fields(model, include_related=False)
+    headers = [field['name'] for field in exportable_fields]
+    ws.append(headers)
     
+    # Export all objects
     for obj in model.objects.all():
         row = []
-        for field in fields:
-            value = getattr(obj, field)
-            # Handle foreign key relations
-            if hasattr(value, 'pk'):
-                value = str(value)
-            row.append(value)
+        for field_info in exportable_fields:
+            row.append(get_field_value_for_export(obj, field_info))
         ws.append(row)
     
     output = io.BytesIO()
@@ -671,6 +663,81 @@ def export_model_excel(request, model_name):
     response['Content-Disposition'] = f'attachment; filename="{model_name}.xlsx"'
     
     return response
+
+# Helper function to get exportable fields for a model
+def get_exportable_fields(model, include_related=True):
+    """
+    Get a list of field definitions for export.
+    This function extracts all fields from a model and formats them for export.
+    
+    Args:
+        model: Django model class
+        include_related: Whether to include related fields from ForeignKeys
+        
+    Returns:
+        List of dictionaries with field metadata
+    """
+    from django.db.models import ForeignKey
+    exportable_fields = []
+    
+    # 1. Add direct fields from the model
+    for field in model._meta.fields:
+        if field.name != 'id':  # Skip the ID field
+            exportable_fields.append({
+                'name': field.name,
+                'verbose_name': field.verbose_name,
+                'is_relation': isinstance(field, ForeignKey),
+                'related_model': field.related_model.__name__ if isinstance(field, ForeignKey) else None
+            })
+    
+    # 2. Add related fields if requested
+    if include_related and model == Specimen:
+        # Add locality-related fields
+        locality_fields = [
+            ('country', 'country'),
+            ('stateProvince', 'province'),
+            ('county', 'region'),
+            ('municipality', 'district'),
+            ('habitat', 'habitat')
+        ]
+        
+        for export_name, django_field in locality_fields:
+            exportable_fields.append({
+                'name': export_name,
+                'verbose_name': export_name,
+                'is_relation': True,
+                'related_model': 'Locality',
+                'related_field': django_field
+            })
+    
+    return exportable_fields
+
+# Helper function to extract a field's value
+def get_field_value_for_export(obj, field_info):
+    """
+    Extract a field value from an object based on field info.
+    Handles regular fields, foreign keys, and related fields.
+    
+    Args:
+        obj: Model instance
+        field_info: Dictionary with field metadata
+        
+    Returns:
+        Field value formatted for export
+    """
+    if field_info.get('is_relation') and field_info.get('related_model') == 'Locality':
+        # Handle locality-related fields
+        locality = getattr(obj, 'locality', None)
+        if not locality:
+            return ''
+        return getattr(locality, field_info.get('related_field', ''), '')
+    elif field_info.get('is_relation'):
+        # Handle other foreign key fields
+        related_obj = getattr(obj, field_info['name'], None)
+        return str(related_obj) if related_obj else ''
+    else:
+        # Handle direct fields
+        return getattr(obj, field_info['name'], '')
 
 def export_report_csv(request):
     """
@@ -685,33 +752,11 @@ def export_report_csv(request):
     response['Content-Disposition'] = 'attachment; filename="specimen_report.csv"'
     writer = csv.writer(response)
     
-    # Define all the headers based on the organized form categories
-    headers = [
-        # 1. Record-level Fields
-        'modified',
-        
-        # 2. Location Fields
-        'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc', 
-        'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate', 
-        'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
-        'country', 'stateProvince', 'county', 'municipality',
-        
-        # 3. Occurrence Fields
-        'specimenNumber', 'catalogNumber', 'recordedBy', 'sex', 
-        'behavior', 'occurrenceRemarks', 'disposition',
-        
-        # 4. Event Fields
-        'year', 'month', 'day', 'eventTime', 'eventDate', 'habitat',
-        'habitatNotes', 'samplingProtocol',
-        
-        # 5. Taxon Fields
-        'family', 'subfamily', 'tribe', 'subtribe', 'genus',
-        'specificEpithet', 'binomial', 'infraspecificEpithet',
-        
-        # 6. Identification Fields
-        'identifiedBy', 'dateIdentified', 'identificationReferences', 'identificationRemarks'
-    ]
+    # Get exportable fields
+    exportable_fields = get_exportable_fields(Specimen)
     
+    # Build headers from exportable fields
+    headers = [field['name'] for field in exportable_fields]
     writer.writerow(headers)
     
     # Get all specimens with related data
@@ -721,50 +766,9 @@ def export_report_csv(request):
     
     # Write each specimen row with all fields
     for specimen in specimens:
-        row = [
-            specimen.modified,
-            specimen.specimenNumber,
-            specimen.catalogNumber,
-            specimen.recordedBy,
-            specimen.sex,
-            specimen.behavior,
-            specimen.disposition,
-            specimen.occurrenceRemarks,
-            specimen.eventDate,
-            specimen.eventTime,
-            specimen.year,
-            specimen.month,
-            specimen.day,
-            specimen.locality.habitat if specimen.locality else '',
-            specimen.habitatNotes,
-            specimen.samplingProtocol,
-            specimen.locality.country if specimen.locality else '',
-            specimen.locality.region if specimen.locality else '',
-            specimen.locality.province if specimen.locality else '',
-            specimen.locality.district if specimen.locality else '',
-            str(specimen.locality) if specimen.locality else '',
-            specimen.minimumElevationInMeters,
-            specimen.maximumElevationInMeters,
-            specimen.decimalLatitude,
-            specimen.decimalLongitude,
-            specimen.exact_loc,
-            specimen.coordinateUncertaintyInMeters,
-            str(specimen.georeferencedBy) if specimen.georeferencedBy else '',
-            specimen.georeferencedDate,
-            specimen.georeferenceProtocol,
-            str(specimen.identifiedBy) if specimen.identifiedBy else '',
-            specimen.dateIdentified,
-            specimen.identificationReferences,
-            specimen.identificationRemarks,
-            specimen.family,
-            specimen.subfamily,
-            specimen.tribe,
-            specimen.subtribe,
-            specimen.genus,
-            specimen.specificEpithet,
-            specimen.binomial,
-            specimen.infraspecificEpithet
-        ]
+        row = []
+        for field_info in exportable_fields:
+            row.append(get_field_value_for_export(specimen, field_info))
         writer.writerow(row)
     
     return response
@@ -782,32 +786,11 @@ def export_report_excel(request):
     ws = wb.active
     ws.title = "Specimen Report"
     
-    # Define all the headers based on the organized form categories
-    headers = [
-        # 1. Record-level Fields
-        'modified',
-        
-        # 2. Location Fields
-        'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc', 
-        'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate', 
-        'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
-        'country', 'stateProvince', 'county', 'municipality',
-        
-        # 3. Occurrence Fields
-        'specimenNumber', 'catalogNumber', 'recordedBy', 'sex', 'behavior', 'occurrenceRemarks', 'disposition',
-        
-        # 4. Event Fields
-        'year', 'month', 'day', 'eventTime', 'eventDate', 'habitat',
-        'habitatNotes', 'samplingProtocol',
-        
-        # 5. Taxon Fields
-        'family', 'subfamily', 'tribe', 'subtribe', 'genus',
-        'specificEpithet', 'binomial', 'infraspecificEpithet',
-        
-        # 6. Identification Fields
-        'identifiedBy', 'dateIdentified', 'identificationReferences', 'identificationRemarks'
-    ]
+    # Get exportable fields
+    exportable_fields = get_exportable_fields(Specimen)
     
+    # Build headers from exportable fields
+    headers = [field['name'] for field in exportable_fields]
     ws.append(headers)
     
     # Get all specimens with related data
@@ -817,50 +800,9 @@ def export_report_excel(request):
     
     # Write each specimen row with all fields
     for specimen in specimens:
-        row = [
-            specimen.modified,
-            specimen.specimenNumber,
-            specimen.catalogNumber,
-            str(specimen.recordedBy) if specimen.recordedBy else '',
-            specimen.sex,
-            specimen.behavior,
-            specimen.disposition,
-            specimen.occurrenceRemarks,
-            specimen.eventDate,
-            specimen.eventTime,
-            specimen.year,
-            specimen.month,
-            specimen.day,
-            specimen.locality.habitat if specimen.locality else '',
-            specimen.habitatNotes,
-            specimen.samplingProtocol,
-            specimen.locality.country if specimen.locality else '',
-            specimen.locality.region if specimen.locality else '',
-            specimen.locality.province if specimen.locality else '',
-            specimen.locality.district if specimen.locality else '',
-            str(specimen.locality) if specimen.locality else '',
-            specimen.minimumElevationInMeters,
-            specimen.maximumElevationInMeters,
-            specimen.decimalLatitude,
-            specimen.decimalLongitude,
-            specimen.exact_loc,
-            specimen.coordinateUncertaintyInMeters,
-            str(specimen.georeferencedBy) if specimen.georeferencedBy else '',
-            specimen.georeferencedDate,
-            specimen.georeferenceProtocol,
-            str(specimen.identifiedBy) if specimen.identifiedBy else '',
-            specimen.dateIdentified,
-            specimen.identificationReferences,
-            specimen.identificationRemarks,
-            specimen.family,
-            specimen.subfamily,
-            specimen.tribe,
-            specimen.subtribe,
-            specimen.genus,
-            specimen.specificEpithet,
-            specimen.binomial,
-            specimen.infraspecificEpithet
-        ]
+        row = []
+        for field_info in exportable_fields:
+            row.append(get_field_value_for_export(specimen, field_info))
         ws.append(row)
     
     # Format the Excel file

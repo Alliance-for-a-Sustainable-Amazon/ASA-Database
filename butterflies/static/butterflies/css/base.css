@@ -27,10 +27,44 @@ h1 {
     padding-left: 0;
 }
 
+h2 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+.page-subtitle {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: bold;
+    display: block;
+    color: #333;
+}
+
 .header-container {
     text-align: left;
     margin-left: 0;
     padding-left: 0;
+}
+
+/* Help text styling */
+.help-text {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: normal;
+    max-width: 400px;
+}
+
+/* Flexbox utility */
+.d-flex {
+    display: flex;
+}
+
+.align-items-center {
+    align-items: center;
 }
 
 /* Language switcher */
@@ -174,6 +208,14 @@ button[disabled], input[type="submit"][disabled], .btn[disabled] {
 
 .ml-2 {
     margin-left: 0.5rem;
+}
+
+.ml-3 {
+    margin-left: 1rem;
+}
+
+.mb-0 {
+    margin-bottom: 0;
 }
 
 /* Container */

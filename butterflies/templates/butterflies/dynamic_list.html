@@ -1,8 +1,17 @@
 {% extends "butterflies/base.html" %}
 {% load i18n %}
+{% load static %}
+{% load butterfly_extras butterfly_display query_utils %}
 {% block title %}{% blocktrans %}Edit {{ model_name }} Table{% endblocktrans %}{% endblock %}
-{# {% block header %}{% blocktrans %}{{ model_name }} List{% endblocktrans %}{% endblock %} #}
+{% block header %}<img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo" style="height: 50px;">{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'butterflies/css/utilities.css' %}">
+<div class="d-flex align-items-center mb-3">
+  <h2 class="mb-0">{% blocktrans %}Edit {{ model_name }} Table{% endblocktrans %}</h2>
+  <div class="ml-3 text-muted" style="max-width: 400px;">
+    <p class="m-0">{% trans "Enter specimen catalog number or range and add additional filters (optional)." %}</p>
+  </div>
+</div>
 
 <div class="mb-3">
   <a href="{% url 'export_model_csv' model_name_internal %}" class="mr-2">{% trans "Export CSV" %}</a>
@@ -22,6 +31,13 @@
   {% endif %}
 </div>
 
+<div class="mb-4">
+  <h3 class="mb-2">{% trans "Edit existing records" %}</h3>
+  
+  <!-- Standardized filter form -->
+  {% include 'butterflies/includes/_filter_form.html' %}
+</div>
+
 {% if import_errors %}
 <div class="alert alert-danger mb-4 p-3 rounded">
   <h4 class="mt-0 font-bold text-danger">{% trans "Import Errors" %}</h4>
@@ -34,7 +50,7 @@
 </div>
 {% endif %}
 
-{% include "butterflies/_table.html" with objects=objects fields=fields request=request %}
+{% include "butterflies/_table.html" with objects=objects fields=fields field_names=field_names request=request %}
 <a href="{% url 'dynamic_create' model_name_internal %}">{% blocktrans %}Add New {{ model_name }}{% endblocktrans %}</a>
 <a href="{% url 'report_table' %}">{% trans "Back to Report Table" %}</a>
 {% endblock %}

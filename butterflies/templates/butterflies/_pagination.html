@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load query_utils %}
 {# _pagination.html - Reusable pagination for all tables #}
 <div class="pagination">
     <span class="pagination-info">
@@ -9,8 +10,8 @@
     
     <div class="pagination-controls">
         {% if page_obj.has_previous %}
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1" class="page-link">&laquo; {% trans "first" %}</a>
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="page-link">{% trans "previous" %}</a>
+            <a href="?{% update_query_param request.GET 'page' 1 %}" class="page-link">&laquo; {% trans "first" %}</a>
+            <a href="?{% update_query_param request.GET 'page' page_obj.previous_page_number %}" class="page-link">{% trans "previous" %}</a>
         {% else %}
             <span class="page-link disabled">&laquo; {% trans "first" %}</span>
             <span class="page-link disabled">{% trans "previous" %}</span>
@@ -20,13 +21,13 @@
             {% if page_obj.number == num %}
                 <span class="page-link active">{{ num }}</span>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}" class="page-link">{{ num }}</a>
+                <a href="?{% update_query_param request.GET 'page' num %}" class="page-link">{{ num }}</a>
             {% endif %}
         {% endfor %}
         
         {% if page_obj.has_next %}
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="page-link">{% trans "next" %}</a>
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ paginator.num_pages }}" class="page-link">{% trans "last" %} &raquo;</a>
+            <a href="?{% update_query_param request.GET 'page' page_obj.next_page_number %}" class="page-link">{% trans "next" %}</a>
+            <a href="?{% update_query_param request.GET 'page' paginator.num_pages %}" class="page-link">{% trans "last" %} &raquo;</a>
         {% else %}
             <span class="page-link disabled">{% trans "next" %}</span>
             <span class="page-link disabled">{% trans "last" %} &raquo;</span>

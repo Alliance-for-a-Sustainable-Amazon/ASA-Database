@@ -1,7 +1,7 @@
-{# _table.html - Reusable table and search row for any model #}
+{# _table.html - Reusable table for any model (search fields removed) #}
 
 {% load i18n %}
-{% load butterfly_extras butterfly_display %}
+{% load butterfly_extras butterfly_display query_utils %}
 {% load static %}
 {% load auth_tags %}
 
@@ -15,18 +15,7 @@
         {% for field in fields %}
             <th>{{ field.verbose_name }}</th>
         {% endfor %}
-    </tr>
-    <tr>
-        <form method="get">
-        {% for field in fields %}
-            <td>
-                <input type="text" name="{{ field.name }}" value="{{ request.GET|get_search_value:field.name }}" placeholder="{% trans 'Search...' %}">
-            </td>
-        {% endfor %}
-        <td>
-            <button type="submit">{% trans 'Search' %}</button>
-        </td>
-        </form>
+        <th>{% trans 'Actions' %}</th>
     </tr>
     {% for obj in objects %}
     <tr>
