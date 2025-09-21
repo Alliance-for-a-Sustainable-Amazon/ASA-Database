@@ -50,23 +50,6 @@ h2 {
     padding-left: 0;
 }
 
-/* Help text styling */
-.help-text {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: normal;
-    max-width: 400px;
-}
-
-/* Flexbox utility */
-.d-flex {
-    display: flex;
-}
-
-.align-items-center {
-    align-items: center;
-}
-
 /* Language switcher */
 .language-switcher {
     position: fixed;
@@ -112,7 +95,7 @@ select {
 
 /* User roles styling */
 .role-superuser {
-    color: #0066cc;
+    color: black;
     font-weight: bold;
 }
 
@@ -133,7 +116,7 @@ select {
 
 /* User info styling */
 .user-info {
-    margin-right: 10px;
+    /* margin-right: 10px; */
 }
 
 /* Button styling */
@@ -147,14 +130,14 @@ select {
 }
 
 .btn-primary {
-    background-color: #28a745; /* Green color */
+    background-color: #81b53e; /* ASA green color */
     color: white;
-    border-color: #28a745;
+    border-color: #81b53e;
 }
 
 .btn-primary:hover {
-    background-color: #218838; /* Darker green on hover */
-    border-color: #1e7e34;
+    background-color: #73a337; /* Darker ASA green on hover */
+    border-color: #699433;
 }
 
 .btn-secondary {
@@ -179,19 +162,42 @@ select {
     border-color: #bd2130;
 }
 
+.btn-info {
+    background-color: #e2e6ea; /* Very light gray color */
+    color: #495057; /* Dark gray text for better contrast */
+    border-color: #dae0e5;
+}
+
+.btn-info:hover {
+    background-color: #d3d9df; /* Slightly darker gray on hover */
+    border-color: #c8cfd6;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    background-color: transparent;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
 /* Submit button styling */
 button[type="submit"], input[type="submit"] {
-    background-color: #28a745; /* Green color */
+    background-color: #81b53e; /* ASA green color */
     color: white;
     padding: 6px 12px;
     border-radius: 4px;
-    border: 1px solid #28a745;
+    border: 1px solid #81b53e;
     cursor: pointer;
 }
 
 button[type="submit"]:hover, input[type="submit"]:hover {
-    background-color: #218838; /* Darker green on hover */
-    border-color: #1e7e34;
+    background-color: #73a337; /* Darker ASA green on hover */
+    border-color: #699433;
 }
 
 /* Disabled button styling */
@@ -208,14 +214,6 @@ button[disabled], input[type="submit"][disabled], .btn[disabled] {
 
 .ml-2 {
     margin-left: 0.5rem;
-}
-
-.ml-3 {
-    margin-left: 1rem;
-}
-
-.mb-0 {
-    margin-bottom: 0;
 }
 
 /* Container */

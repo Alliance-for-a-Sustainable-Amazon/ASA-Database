@@ -16,13 +16,11 @@
 <div class="mb-3">
   <a href="{% url 'export_model_csv' model_name_internal %}" class="mr-2">{% trans "Export CSV" %}</a>
   <a href="{% url 'export_model_excel' model_name_internal %}" class="mr-2">{% trans "Export Excel" %}</a>
-  
   {% load auth_tags %}
   {% if user.is_superuser or user|has_group:'Admin' %}
-    <a href="{% url 'import_model' model_name_internal %}">{% trans "Import Data" %}</a>
     {% if model_name_internal == 'specimen' %}
       {% with bulk_delete_confirm_msg=_("This is a debug feature. Are you sure you want to proceed to the bulk delete page?") %}
-        <a href="{% url 'debug_bulk_delete_specimen' %}" class="ml-3 text-danger"
+        <a href="{% url 'debug_bulk_delete_specimen' %}" class="text-danger"
            onclick="return confirm('{{ bulk_delete_confirm_msg }}')">
           {% trans "Debug Bulk Delete" %}
         </a>
@@ -51,6 +49,21 @@
 {% endif %}
 
 {% include "butterflies/_table.html" with objects=objects fields=fields field_names=field_names request=request %}
-<a href="{% url 'dynamic_create' model_name_internal %}">{% blocktrans %}Add New {{ model_name }}{% endblocktrans %}</a>
-<a href="{% url 'report_table' %}">{% trans "Back to Report Table" %}</a>
+
+<div class="mt-4 mb-4 d-flex align-items-center">
+  <a href="{% url 'dynamic_create' model_name_internal %}" style="background-color: #81b53e; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;">
+    {% trans "Add Single Record" %}
+  </a>
+  
+  {% if user.is_superuser or user|has_group:'Admin' %}
+  <div class="ml-4 d-flex align-items-center">
+    <a href="{% url 'import_model' model_name_internal %}" style="text-decoration: underline;" class="mr-2">
+      {% trans "Import Data" %}
+    </a>
+    <span class="text-muted font-sm">
+      ({% trans "CSV, Excel" %})
+    </span>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

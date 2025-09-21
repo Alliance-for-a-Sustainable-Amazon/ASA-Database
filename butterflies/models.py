@@ -150,11 +150,25 @@ class Specimen(models.Model):
         # Always auto-generate catalogNumber since it's now the primary key
         year = self.year or 'XXXX'
         locality_code = self.locality.localityCode if self.locality and self.locality.localityCode else 'XXXX'
+        
+        # Get the specimen number
+        if self.specimenNumber:
+            # Format specimen number with leading zeros if it's numeric
+            try:
+                # Convert to int and format with 4 digits
+                specimen_number_for_catalog = f"{int(self.specimenNumber):04d}"
+            except (ValueError, TypeError):
+                # If not numeric, use as is
+                specimen_number_for_catalog = self.specimenNumber
+        else:
+            specimen_number_for_catalog = f'SP{Specimen.objects.count()+1:04d}'
+        
+        # Keep the original specimen number in the model field
         specimen_number = self.specimenNumber or f'SP{Specimen.objects.count()+1:04d}'
         
-        # If catalogNumber is not set, generate it
+        # If catalogNumber is not set, generate it with formatted specimen number
         if not self.catalogNumber:
-            self.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
+            self.catalogNumber = f"{year}-{locality_code}-{specimen_number_for_catalog}"
             
         # Ensure catalogNumber is never empty as it's now the primary key
         if not self.catalogNumber or self.catalogNumber.strip() == '':

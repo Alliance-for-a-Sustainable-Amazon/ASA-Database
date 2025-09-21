@@ -271,9 +271,9 @@ def apply_model_filters(queryset, model, request, special_filters=None):
             specimenNumber_as_int=Cast('specimenNumber_as_int', output_field=IntegerField())
         )
         
-        # Apply default ordering
+        # Apply default ordering (year in descending order)
         queryset = queryset.order_by(
-            'year_as_int',
+            '-year_as_int',  # Descending order by year
             'specimenNumber_as_int',
             F('eventDate').asc(nulls_last=True),
             'month', 'day'
