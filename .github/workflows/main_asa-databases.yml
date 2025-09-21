@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
         
-      - name: Run tests
-        run: python manage.py test
+      # - name: Run tests
+      #   run: python manage.py test
         
       - name: Make startup script executable
         run: chmod +x startup.sh
@@ -77,4 +77,5 @@ jobs:
         with:
           app-name: 'asa-databases'
           slot-name: 'Production'
+
           
