@@ -8,22 +8,25 @@
         {# Main filters section - always visible #}
         <div class="main-filters">
             <div class="main-filters-grid">
-                {% for field in fields %}
-                    {% if field.name|is_special_filter %}
-                        {% filter_field_info field.name as filter_info %}
-                        <div class="filter-group">
-                            <label for="filter_{{ field.name }}">{{ field.verbose_name|title }}</label>
-                            <input type="text" 
-                                   id="filter_{{ field.name }}" 
-                                   name="{{ field.name }}" 
-                                   value="{{ request.GET|get:field.name|default:'' }}" 
-                                   placeholder="{{ filter_info.placeholder }}"
-                                   class="{{ filter_info.special_class }}">
-                            <div class="filter-help">
-                                <small>{{ filter_info.help_text }}</small>
+                {% get_ordered_special_fields as ordered_fields %}
+                {% for special_name in ordered_fields %}
+                    {% for field in fields %}
+                        {% if field.name == special_name %}
+                            {% filter_field_info field.name as filter_info %}
+                            <div class="filter-group">
+                                <label for="filter_{{ field.name }}">{{ filter_info.display_name }}</label>
+                                <input type="text" 
+                                       id="filter_{{ field.name }}" 
+                                       name="{{ field.name }}" 
+                                       value="{{ request.GET|get:field.name|default:'' }}" 
+                                       placeholder="{{ filter_info.placeholder }}"
+                                       class="{{ filter_info.special_class }}">
+                                <div class="filter-help">
+                                    <small>{{ filter_info.help_text }}</small>
+                                </div>
                             </div>
-                        </div>
-                    {% endif %}
+                        {% endif %}
+                    {% endfor %}
                 {% endfor %}
             </div>
         </div>
@@ -43,7 +46,7 @@
                             {% if not field.name|is_special_filter %}
                                 {% filter_field_info field.name as filter_info %}
                                 <div class="filter-group">
-                                    <label for="filter_{{ field.name }}">{{ field.verbose_name|title }}</label>
+                                    <label for="filter_{{ field.name }}">{{ filter_info.display_name }}</label>
                                     <input type="text" 
                                            id="filter_{{ field.name }}" 
                                            name="{{ field.name }}" 
@@ -70,9 +73,10 @@
             <ul class="filter-tags">
                 {% for field in fields %}
                     {% if request.GET|get:field.name %}
+                        {% filter_field_info field.name as filter_info %}
                         <li>
                             <span class="filter-tag">
-                                <strong>{{ field.verbose_name|title }}:</strong> 
+                                <strong>{{ filter_info.display_name }}:</strong> 
                                 {{ request.GET|get:field.name }}
                                 <a href="?{% remove_query_param request.GET field.name %}" 
                                    class="remove-filter" title="Remove filter">×</a>
