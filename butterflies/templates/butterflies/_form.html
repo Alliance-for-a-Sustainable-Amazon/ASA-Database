@@ -9,171 +9,16 @@
         <div class="error summary">Please correct the errors below.</div>
     {% endif %}
     
-    <!-- Enhanced CSS for organized form elements -->
+    <!-- Load form CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'butterflies/css/form.css' %}">
+    <!-- Only custom styling that's specific to this template and not in the external CSS -->
     <style>
-        /* Base styling for all inputs */
-        input, select, textarea, .searchable-input {
-            padding: 6px 8px;
-            border: 1px solid #888888; /* Gray border */
-            border-radius: 4px;
-            font-size: 14px;
-            min-width: 150px;
-        }
-        
-        /* Specific styling for textareas */
-        textarea {
-            width: 100%;
-            min-height: 80px;
-            display: block;
-            font-family: inherit;
-        }
-        
-        input:focus, select:focus, textarea:focus, .searchable-input:focus {
-            outline: none;
-            border-color: #555555; /* Darker gray when focused */
-            box-shadow: 0 0 3px rgba(85, 85, 85, 0.5);
-        }
-        
-        /* Text field container for textarea fields */
-        .text-field-container {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        
-        .text-field-container label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        /* Styling for textareas - using !important to override any conflicting styles */
-        .text-field-container textarea {
-            display: block !important;
-            width: 100% !important;
-            min-height: 80px !important;
-            border: 1px solid #888888 !important;
-            padding: 8px !important;
-            box-sizing: border-box !important;
-            font-size: 14px !important;
-            border-radius: 4px !important;
-            background-color: #ffffff !important;
-        }
-        
-        /* Category section styling */
-        .category-section {
-            margin-bottom: 2rem;
-            padding: 1rem;
-            border: 1px solid #cccccc;
-            border-radius: 6px;
-            background-color: #f9f9f9;
-        }
-        
-        .category-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #555555;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #cccccc;
-        }
-        
-        /* Field section styling */
-        .field-section {
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            border-radius: 4px;
-        }
-        
-        /* .field-section:hover {
-            background-color: #f5f5f5;
-        } */
-        
-        /* History section styling */
-        .history-section {
-            margin-bottom: 1em;
-            padding: 0.5em;
-            background: #f5f5f5;
-            border: 1px solid #dddddd;
-            border-radius: 4px;
-        }
-        
-        /* Flex container for form sections */
-        .flex-container {
-            display: flex;
-            gap: 10px;
-            align-items: baseline;
-            width: 100%;
-        }
-        
-        /* Container styling */
-        .date-container {
-            flex: 0 0 220px; /* Fixed width for date fields */
-        }
-        
-        .initials-container {
-            flex: 0 0 150px; /* Fixed width for initials */
-        }
-        
-        .description-container {
-            flex: 1; /* Grow to fill available space */
-            min-width: 200px;
-        }
-        
-        /* Searchable dropdown styling */
-        .searchable-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .searchable-input {
-            width: 100%;
-            cursor: pointer;
-        }
-        
-        .searchable-dropdown {
-            position: absolute;
-            width: 100%;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #dddddd;
-            border-radius: 4px;
-            background: white;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        .searchable-option {
-            padding: 6px 10px;
-            cursor: pointer;
-        }
-        
-        .searchable-option:hover {
-            background-color: #eeeeee; /* Light gray on hover */
-        }
-        
-        /* Form field error styling */
-        .field-error, .error {
+        /* Custom form field error styling */
+        .field-error {
             color: #777777; /* Gray error text for grayscale theme */
             font-size: 12px;
             margin-top: 4px;
-        }
-        
-        /* Toggle button for category sections */
-        .category-toggle {
-            background: none;
-            border: none;
-            color: #555555;
-            cursor: pointer;
-            float: right;
-            font-size: 1rem;
-        }
-        
-        /* Grid layout for form fields */
-        .field-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
         }
     </style>
 
@@ -619,7 +464,7 @@
         {% endfor %}
     {% endif %}
     
-    <button type="submit">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
 </form>
 <br/>
 

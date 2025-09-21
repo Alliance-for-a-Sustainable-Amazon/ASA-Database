@@ -4,7 +4,7 @@
 <h2>{% blocktrans %}Import {{ model_name_plural }}{% endblocktrans %}</h2>
 
 {% if error %}
-<div style="color: red; margin-bottom: 15px;">{{ error }}</div>
+<div class="text-danger mb-3">{{ error }}</div>
 {% endif %}
 
 <p>{% trans "Upload a CSV or Excel file with the following columns:" %}</p>
@@ -21,11 +21,11 @@
         <label for="file">{% trans "Select file:" %}</label>
         <input type="file" name="file" id="file" required accept=".csv,.xls,.xlsx">
     </div>
-    <div style="margin-top: 10px;">
-        <button type="submit">{% trans "Upload" %}</button>
+    <div class="mt-2">
+        <button type="submit" class="btn btn-primary">{% trans "Upload" %}</button>
     </div>
 </form>
 
-<div style="margin-top: 20px;">
+<div class="mt-4">
     <a href="{% url 'dynamic_list' model_name_internal %}">{% blocktrans %}Back to {{ model_name }} List{% endblocktrans %}</a>
 </div>

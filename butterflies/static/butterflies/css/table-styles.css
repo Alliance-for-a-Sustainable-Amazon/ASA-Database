@@ -1,0 +1,76 @@
+/* Concise table styles for ASA Database */
+/* Table container with fixed height and scrolling */
+.table-wrapper {
+    max-height: 500px; /* Fixed height container */
+    overflow-y: auto; /* Enable vertical scrolling */
+    margin-bottom: 20px; /* Space below the table */
+    border: 1px solid #ddd;
+}
+
+.concise-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.concise-table th {
+    padding: 12px 8px;
+    background-color: #f2f2f2;
+    font-weight: bold;
+    text-align: left;
+    height: 40px;
+    vertical-align: middle;
+    border: 1px solid #ccc;
+    border-bottom: 2px solid #ccc;
+    position: sticky; /* Make headers sticky */
+    top: 0; /* Stick to top when scrolling */
+    z-index: 10; /* Ensure headers stay on top */
+}
+
+.concise-table td {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    height: 24px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+
+/* Search input styles removed as filters are now in the dedicated filter area */
+
+.concise-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Add tooltip effect when hovering over truncated content */
+.concise-table td:hover {
+    position: relative;
+}
+
+/* Style for action links in the last column */
+.concise-table td a {
+    text-decoration: none;
+    color: #0066cc;
+}
+
+.concise-table td a:hover {
+    text-decoration: underline;
+}
+
+/* Add zebra striping for better readability */
+.concise-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Make the table more responsive */
+@media screen and (max-width: 768px) {
+    .concise-table {
+        font-size: 14px;
+    }
+    .concise-table td {
+        padding: 4px;
+        max-width: 150px;
+    }
+}

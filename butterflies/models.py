@@ -100,7 +100,7 @@ class Specimen(models.Model):
     exact_loc = models.CharField(max_length=5, blank=True, null=True, choices=[('TRUE', 'TRUE'), ('FALSE', 'FALSE')], help_text='Dropdown: "TRUE", "FALSE".')
     coordinateUncertaintyInMeters = models.CharField(max_length=100, blank=True, null=True, help_text="Text.")
     georeferencedBy = models.ForeignKey(Initials, to_field='initials', on_delete=models.SET_NULL, null=True, related_name='georeferenced_specimens', help_text="Dropdown: initials from Initials table.")
-    georeferencedDate = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    georeferencedDate = models.DateField(blank=True, null=True, help_text="Date of georeferencing.")
     georeferenceProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     minimumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
     maximumElevationInMeters = models.CharField(max_length=20, blank=True, null=True, help_text="Text/number (X,XXX).")
@@ -108,7 +108,7 @@ class Specimen(models.Model):
     # ----------------------------------
     # 3. Occurrence Fields
     # ----------------------------------
-    specimenNumber = models.CharField(max_length=100, unique=True, blank=True, null=True, default=None, help_text="Manual entry. If duplicate, error.")
+    specimenNumber = models.CharField(max_length=100, blank=True, null=True, default=None, help_text="Manual entry. Can have duplicates across different locations.")
     catalogNumber = models.CharField(max_length=100, primary_key=True, help_text="Auto-generated: year-localityCode-specimenNumber (nnnn). Primary key for specimen.")
     recordedBy = models.ForeignKey(Initials, to_field='initials', on_delete=models.SET_NULL, null=True, help_text="Dropdown: initials from Initials table.")
     sex = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('.', '.')], help_text="Dropdown: male/female/.")
@@ -123,7 +123,7 @@ class Specimen(models.Model):
     month = models.CharField(max_length=10, blank=True, null=True, help_text="Dropdown/typeable.")
     day = models.CharField(max_length=2, blank=True, null=True, help_text="Dropdown/typeable.")
     eventTime = models.CharField(max_length=50, blank=True, null=True, help_text="Time (XX:XX) military format.")
-    eventDate = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    eventDate = models.DateField(blank=True, null=True, help_text="Date of the event or collection.")
     habitatNotes = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     samplingProtocol = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     
@@ -142,7 +142,7 @@ class Specimen(models.Model):
     # 6. Identification Fields
     # ----------------------------------
     identifiedBy = models.ForeignKey(Initials, to_field='initials', on_delete=models.SET_NULL, null=True, related_name='identified_specimens', help_text="Dropdown: initials from Initials table.")
-    dateIdentified = models.CharField(max_length=100, blank=True, null=True, help_text="Date (DD-MMM-YYYY; ex., 27-Nov-2024).")
+    dateIdentified = models.DateField(blank=True, null=True, help_text="Date of identification.")
     identificationReferences = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     identificationRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     
@@ -150,11 +150,25 @@ class Specimen(models.Model):
         # Always auto-generate catalogNumber since it's now the primary key
         year = self.year or 'XXXX'
         locality_code = self.locality.localityCode if self.locality and self.locality.localityCode else 'XXXX'
+        
+        # Get the specimen number
+        if self.specimenNumber:
+            # Format specimen number with leading zeros if it's numeric
+            try:
+                # Convert to int and format with 4 digits
+                specimen_number_for_catalog = f"{int(self.specimenNumber):04d}"
+            except (ValueError, TypeError):
+                # If not numeric, use as is
+                specimen_number_for_catalog = self.specimenNumber
+        else:
+            specimen_number_for_catalog = f'SP{Specimen.objects.count()+1:04d}'
+        
+        # Keep the original specimen number in the model field
         specimen_number = self.specimenNumber or f'SP{Specimen.objects.count()+1:04d}'
         
-        # If catalogNumber is not set, generate it
+        # If catalogNumber is not set, generate it with formatted specimen number
         if not self.catalogNumber:
-            self.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
+            self.catalogNumber = f"{year}-{locality_code}-{specimen_number_for_catalog}"
             
         # Ensure catalogNumber is never empty as it's now the primary key
         if not self.catalogNumber or self.catalogNumber.strip() == '':

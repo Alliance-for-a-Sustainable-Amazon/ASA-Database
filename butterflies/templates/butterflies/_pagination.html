@@ -1,0 +1,36 @@
+{% load i18n %}
+{% load query_utils %}
+{# _pagination.html - Reusable pagination for all tables #}
+<div class="pagination">
+    <span class="pagination-info">
+        {% blocktrans with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
+        Showing {{ start }} to {{ end }} of {{ total }} entries
+        {% endblocktrans %}
+    </span>
+    
+    <div class="pagination-controls">
+        {% if page_obj.has_previous %}
+            <a href="?{% update_query_param request.GET 'page' 1 %}" class="page-link">&laquo; {% trans "first" %}</a>
+            <a href="?{% update_query_param request.GET 'page' page_obj.previous_page_number %}" class="page-link">{% trans "previous" %}</a>
+        {% else %}
+            <span class="page-link disabled">&laquo; {% trans "first" %}</span>
+            <span class="page-link disabled">{% trans "previous" %}</span>
+        {% endif %}
+        
+        {% for num in paginator.page_range %}
+            {% if page_obj.number == num %}
+                <span class="page-link active">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?{% update_query_param request.GET 'page' num %}" class="page-link">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+            <a href="?{% update_query_param request.GET 'page' page_obj.next_page_number %}" class="page-link">{% trans "next" %}</a>
+            <a href="?{% update_query_param request.GET 'page' paginator.num_pages %}" class="page-link">{% trans "last" %} &raquo;</a>
+        {% else %}
+            <span class="page-link disabled">{% trans "next" %}</span>
+            <span class="page-link disabled">{% trans "last" %} &raquo;</span>
+        {% endif %}
+    </div>
+</div>

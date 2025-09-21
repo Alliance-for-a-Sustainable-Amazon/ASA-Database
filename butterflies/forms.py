@@ -11,41 +11,34 @@ import re
 # Custom 24-hour time input widget
 class MilitaryTimeInput(forms.TextInput):
     """
-    A custom widget for entering time in 24-hour format only.
-    This widget enforces the 24-hour time format and prevents browser conversion to 12-hour format.
+    A custom widget for entering time in 24-hour format or time ranges.
+    This widget allows more flexible time formats, including ranges like "14:00-16:30".
     """
     def __init__(self, attrs=None):
         default_attrs = {
-            'placeholder': 'HH:MM', 
+            'placeholder': 'HH:MM or HH:MM-HH:MM', 
             'class': 'military-time-input',
-            'pattern': '([01]?[0-9]|2[0-3]):[0-5][0-9]',  # HTML5 pattern validation for 24h format
-            'maxlength': '5'
+            # Remove pattern restriction to allow time ranges
+            'maxlength': '15'  # Allow for time ranges (e.g., "14:00-16:30")
         }
         if attrs:
             default_attrs.update(attrs)
         super().__init__(default_attrs)
     
     def format_value(self, value):
-        """Format the time value as HH:MM in 24-hour format"""
+        """Format the time value - return as is since we now support ranges"""
         if isinstance(value, time):
             return value.strftime('%H:%M')
         return value or ''
     
     def value_from_datadict(self, data, files, name):
-        """Extract the time value from the form data and ensure it's in 24-hour format"""
+        """Extract the time value from the form data without strict validation"""
         value = super().value_from_datadict(data, files, name)
         if not value:
             return None
             
-        # Validate that input matches 24-hour format
-        match = re.match(r'^([01]?[0-9]|2[0-3]):([0-5][0-9])$', value)
-        if not match:
-            # If format is invalid, return the value as-is so form validation will catch it
-            return value
-            
-        # Return properly formatted value
-        hours, minutes = match.groups()
-        return f"{int(hours):02d}:{minutes}"
+        # No validation - just return the value as entered
+        return value
 
 # Constants for reusable choices
 DAY_CHOICES = [('', 'Day')] + [(str(i).zfill(2), str(i).zfill(2)) for i in range(1, 32)]
@@ -326,13 +319,13 @@ class SpecimenForm(forms.ModelForm):
         label="Day"
     )
     
-    # 21. eventTime (using 24-hour format with custom widget)
+    # 21. eventTime (using 24-hour format with custom widget, now supporting ranges)
     eventTime = forms.CharField(
         required=False,
-        label="Event Time (24h)",
-        max_length=5,
+        label="Event Time",
+        max_length=15,
         widget=MilitaryTimeInput(),
-        help_text="Use 24-hour format (e.g., 14:30 for 2:30 PM)"
+        help_text="Use 24-hour format. Can be a single time (14:30) or time range (14:00-16:30)"
     )
     
     # Not using separate EventDate mini-fields anymore - using main date fields instead
@@ -484,10 +477,12 @@ class SpecimenForm(forms.ModelForm):
     
     def clean_eventTime(self):
         """
-        Specific clean method for eventTime field to save it as-is without conversion
+        Specific clean method for eventTime field to save it as-is without conversion.
+        This allows for flexible time formats including ranges like "14:00-16:30".
         """
         time_value = self.cleaned_data.get('eventTime')
         # Simply return the value as entered by the user without any validation or conversion
+        # This permits both single times and time ranges
         return time_value
         
     def clean(self):
@@ -519,14 +514,20 @@ class SpecimenForm(forms.ModelForm):
         # ----------------------------------
         # 2. Location Fields (2-11)
         # ----------------------------------
-        # Process georeferencedDate as simple text concatenation
+        # Process georeferencedDate as Python date object
         georef_day = self.cleaned_data.get('georef_day')
         georef_month = self.cleaned_data.get('georef_month') 
         georef_year = self.cleaned_data.get('georef_year')
         
         if georef_day and georef_month and georef_year:
-            # Store as simple text string
-            instance.georeferencedDate = f"{georef_day} {georef_month}, {georef_year}"
+            # Convert to a proper Python date object
+            try:
+                date_str = f"{georef_day} {georef_month}, {georef_year}"
+                from butterflies.views import parse_date_value
+                instance.georeferencedDate = parse_date_value(date_str)
+            except Exception as e:
+                import logging
+                logging.error(f"Failed to convert georeferencedDate: {str(e)}")
             
         # georeferenceProtocol is now directly handled by the model field
         # No special processing needed as it's a direct text input
@@ -563,7 +564,14 @@ class SpecimenForm(forms.ModelForm):
         month_value = self.cleaned_data.get('month')
         year_value = self.cleaned_data.get('year')
         if day_value and month_value and year_value:
-            instance.eventDate = f"{day_value} {month_value}, {year_value}"
+            # Convert to a proper Python date object
+            try:
+                date_str = f"{day_value} {month_value}, {year_value}"
+                from butterflies.views import parse_date_value
+                instance.eventDate = parse_date_value(date_str)
+            except Exception as e:
+                import logging
+                logging.error(f"Failed to convert eventDate: {str(e)}")
                 
         # habitatNotes and samplingProtocol are now directly handled by the model fields
         # No special processing needed as they're direct text inputs
@@ -575,14 +583,20 @@ class SpecimenForm(forms.ModelForm):
         # ----------------------------------
         # 6. Identification Fields (31-34)
         # ----------------------------------
-        # Process dateIdentified as simple text concatenation
+        # Process dateIdentified as Python date object
         date_id_day = self.cleaned_data.get('dateIdentified_day')
         date_id_month = self.cleaned_data.get('dateIdentified_month')
         date_id_year = self.cleaned_data.get('dateIdentified_year')
         
         if date_id_day and date_id_month and date_id_year:
-            # Store as simple text string
-            instance.dateIdentified = f"{date_id_day} {date_id_month} {date_id_year}"
+            # Convert to a proper Python date object
+            try:
+                date_str = f"{date_id_day} {date_id_month}, {date_id_year}"
+                from butterflies.views import parse_date_value
+                instance.dateIdentified = parse_date_value(date_str)
+            except Exception as e:
+                import logging
+                logging.error(f"Failed to convert dateIdentified: {str(e)}")
             
         # identificationReferences and identificationRemarks are now directly handled by the model fields
         # No special processing needed as they're direct text inputs
