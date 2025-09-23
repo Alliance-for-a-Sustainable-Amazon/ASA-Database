@@ -1398,15 +1398,33 @@ def import_model(request, model_name):
         Rendered template for import form, preview, or redirect
     """
     # Using the helper functions defined outside this function
+    
+    # DEBUG: Log which model we're importing
+    print(f"\n\n========== DEBUGGING IMPORT PROCESS ==========")
+    print(f"Import requested for model: {model_name}")
+    import inspect
+    print(f"Called from: {inspect.stack()[1].function}")
+    print(f"Request method: {request.method}")
+    if request.method == 'POST':
+        print(f"POST data keys: {list(request.POST.keys())}")
+        print(f"FILES: {list(request.FILES.keys()) if request.FILES else 'No files'}")
+    print(f"================================================\n\n")
 
     # Find the model
     model = None
+    print(f"\n[DEBUG] Searching for model: {model_name}")
+    available_models = []
     for m in model_list():
+        available_models.append(m._meta.model_name)
         if m._meta.model_name == model_name:
             model = m
             break
     
+    print(f"[DEBUG] Available models: {available_models}")
+    print(f"[DEBUG] Found model: {model._meta.model_name if model else 'None'}")
+    
     if not model:
+        print(f"[ERROR] Model '{model_name}' not found in available models")
         raise Http404("Model not found")
     
     # Prepare context with model information
@@ -1448,37 +1466,56 @@ def import_model(request, model_name):
         file = request.FILES['file']
         file_ext = file.name.split('.')[-1].lower()
         
+        print(f"\n[DEBUG] Processing file: {file.name} ({file_ext})")
+        print(f"[DEBUG] File size: {file.size} bytes")
+        
         try:
             # Read file contents - all values as strings initially
             if file_ext == 'csv':
                 # Use dtype=str to read everything as text
+                print(f"[DEBUG] Reading CSV file")
                 df = pd.read_csv(file, dtype=str, keep_default_na=False)
             elif file_ext in ('xls', 'xlsx'):
                 # Use dtype=str to read everything as text initially
+                print(f"[DEBUG] Reading Excel file")
                 df = pd.read_excel(file, dtype=str)
                 # Convert all numeric columns to string to prevent automatic float conversion
                 for col in df.columns:
                     df[col] = df[col].astype(str)
             else:
+                print(f"[ERROR] Unsupported file type: {file_ext}")
                 messages.error(request, 'Unsupported file type. Please upload a CSV or Excel file.')
                 context['error'] = 'Unsupported file type. Please upload a CSV or Excel file.'
                 return render(request, 'butterflies/import_model.html', context)
             
+            print(f"[DEBUG] DataFrame loaded, shape: {df.shape}")
+            print(f"[DEBUG] DataFrame columns: {list(df.columns)}")
+            print(f"[DEBUG] First 2 rows: {df.head(2).to_dict(orient='records')}")
+            
             # Basic cleanup - strip whitespace from all string values
+            print(f"[DEBUG] Starting data cleanup")
             for col in df.columns:
                 df[col] = df[col].astype(str).str.strip()
             
             # Replace empty strings with None
+            print(f"[DEBUG] Replacing empty values with None")
             df = df.replace(['', 'nan', 'None', 'NaN', 'null', 'NULL'], None)
             
             # Remove completely empty rows
+            print(f"[DEBUG] Removing empty rows")
+            original_rows = len(df)
             df = df.dropna(how='all')
+            print(f"[DEBUG] Removed {original_rows - len(df)} empty rows")
             
             # Check if dataframe is empty after cleaning
             if df.empty:
+                print(f"[ERROR] DataFrame is empty after cleaning")
                 messages.error(request, 'The uploaded file contains no usable data after cleaning.')
                 context['error'] = 'The uploaded file contains no usable data after cleaning.'
                 return render(request, 'butterflies/import_model.html', context)
+            
+            print(f"[DEBUG] After cleanup, DataFrame shape: {df.shape}")
+            print(f"[DEBUG] After cleanup, first row: {df.iloc[0].to_dict()}")
                 
         except Exception as e:
             messages.error(request, f'Error processing file: {str(e)}')
@@ -1488,6 +1525,7 @@ def import_model(request, model_name):
         # Step 2: Check columns and prepare data for preview
         # Get expected field names
         expected_fields = [f.name for f in model._meta.fields if f.name != 'id']
+        print(f"\n[DEBUG] Expected fields for {model_name}: {expected_fields}")
         
         # Map any foreign key fields to their expected column names for import
         if model_name == 'specimen':
@@ -1497,17 +1535,22 @@ def import_model(request, model_name):
                 'georeferencedBy': 'georeferencedBy', # Initials.initials
                 'identifiedBy': 'identifiedBy',   # Initials.initials
             }
+            print(f"[DEBUG] Using foreign key mappings for specimen: {fk_fields}")
         else:
             fk_fields = {}
+            print(f"[DEBUG] No foreign key mappings for {model_name}")
         
         # Check for missing columns
         available_columns = list(df.columns)
         missing_columns = []
         
+        print(f"[DEBUG] Available columns in file: {available_columns}")
+        
         for field in expected_fields:
             # Check if field is in DataFrame columns or has a mapped name
             if field not in available_columns and field not in fk_fields.keys():
                 missing_columns.append(field)
+                print(f"[DEBUG] Missing column: {field}")
         
         if missing_columns:
             context['error'] = f'Missing columns: {", ".join(missing_columns)}'
@@ -1518,9 +1561,11 @@ def import_model(request, model_name):
         # Step 3: Prepare data for preview
         # Get debug mode parameter (show detailed conversion info)
         debug_mode = request.POST.get('debug_mode') == 'true'
+        print(f"[DEBUG] Debug mode: {debug_mode}")
         
         # First, convert all rows to clean dicts for processing
         all_rows_data = []
+        print(f"\n[DEBUG] Converting rows to dicts")
         for idx, row in df.iterrows():
             # Convert row to clean dict (None instead of NaN)
             row_data = {}
@@ -1530,10 +1575,19 @@ def import_model(request, model_name):
                     col_name = fk_fields[field]
                     if col_name in row:
                         row_data[field] = row[col_name]
+                        print(f"[DEBUG] Row {idx}, FK field {field} = {row[col_name]}")
                 # For regular fields, use the field name directly
                 elif field in row:
                     row_data[field] = row[field]
+                    
+                    # Extra debugging for locality and initials models
+                    if model_name in ['locality', 'initials'] and field in ['localityCode', 'initials']:
+                        print(f"[DEBUG] Row {idx}, PK field {field} = {row[field]}")
+            
+            print(f"[DEBUG] Row {idx} data: {row_data}")
             all_rows_data.append(row_data)
+            
+        print(f"[DEBUG] Created {len(all_rows_data)} row data dictionaries")
             
         # Pre-validate to identify common error patterns
         common_errors = {}
@@ -1565,8 +1619,11 @@ def import_model(request, model_name):
         # We'll use the parse_date_field helper function defined outside this function
 
         # Now process each row for preview with consistent error detection
+        print(f"\n[DEBUG] Processing rows for preview")
+        print(f"[DEBUG] Unique field: {unique_field}")
         preview_data = []
-        for row_data in all_rows_data:
+        for row_index, row_data in enumerate(all_rows_data):
+            print(f"\n[DEBUG] Processing preview for row {row_index}: {row_data}")
             
             # Check for duplicates if we have a unique field
             is_duplicate = False
@@ -1574,9 +1631,13 @@ def import_model(request, model_name):
             
             if unique_field and unique_field in row_data and row_data[unique_field]:
                 unique_value = row_data[unique_field]
+                print(f"[DEBUG] Checking if {unique_field}='{unique_value}' exists in database")
                 # Check for duplicates and mark as error
-                if model.objects.filter(**{unique_field: unique_value}).exists():
+                exists = model.objects.filter(**{unique_field: unique_value}).exists()
+                print(f"[DEBUG] Exists in database? {exists}")
+                if exists:
                     is_duplicate = True
+                    print(f"[DEBUG] Marked as duplicate: {unique_value}")
                     # We'll add error to the preview item after it's created
             
             # Create preview item
@@ -1597,16 +1658,20 @@ def import_model(request, model_name):
                 preview_item['errors'].append(error_msg)
                 preview_item['error_fields'].add(unique_field)
             
-                # Check for potential format issues
+            # Check for potential format issues
             if model_name == 'specimen':
                 # Use our unified helper functions for validation
                 validate_specimen_data(row_data, preview_item, common_errors, debug_mode)
                 
                 # Process dates using our unified helper
                 process_date_fields_unified(row_data, None, None, preview_item, debug_mode)
-                preview_data.append(preview_item)
+            
+            # Add the preview item for ALL model types (fixed the bug here)
+            print(f"[DEBUG] Adding preview item for {model_name}")
+            preview_data.append(preview_item)
         
         # Add preview data to context
+        print(f"\n[DEBUG] Final preview data has {len(preview_data)} items")
         context['preview'] = preview_data
         context['fields'] = expected_fields
         
