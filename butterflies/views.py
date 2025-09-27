@@ -24,11 +24,17 @@ from django.db import models
 import csv
 import io
 import openpyxl
+import os
 import pandas as pd
 import re
 import datetime
+import tempfile
 from dateutil import parser as date_parser
 from operator import itemgetter
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import json
+import pickle
+import base64
 # App-specific imports
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
@@ -1134,7 +1140,7 @@ def validate_specimen_data(row_data, preview_item=None, common_errors=None, debu
             if fk_field == 'identifiedBy' and lookup_value == '.':
                 # This is valid - it will be converted to NULL/None during import
                 continue
-                
+            
             key = f"{fk_field}_invalid"
             
             # Check if this value is invalid using the common_errors or validation cache
@@ -1474,11 +1480,85 @@ def import_model(request, model_name):
             if file_ext == 'csv':
                 # Use dtype=str to read everything as text
                 print(f"[DEBUG] Reading CSV file")
-                df = pd.read_csv(file, dtype=str, keep_default_na=False)
+                
+                # First determine the number of non-empty rows
+                print(f"[DEBUG] Scanning CSV file for non-empty rows")
+                try:
+                    # Create a copy of the file in memory to avoid consuming the file object
+                    file_copy = io.StringIO(file.read().decode('utf-8'))
+                    file.seek(0)  # Reset the file pointer for later reading
+                    
+                    # Sample the first 100 rows to get column count
+                    sample_df = pd.read_csv(file_copy, nrows=100, dtype=str)
+                    file_copy.seek(0)  # Reset for full scan
+                    
+                    # Count non-empty rows efficiently using csv module
+                    csv_reader = csv.reader(file_copy)
+                    headers = next(csv_reader)  # Get headers
+                    
+                    # Count rows that have at least one non-empty field
+                    row_count = 0
+                    max_rows = 1000000  # Safety limit to prevent infinite loops
+                    for i, row in enumerate(csv_reader):
+                        if i >= max_rows:
+                            print(f"[WARNING] Reached safety limit of {max_rows} rows")
+                            break
+                        
+                        if any(field.strip() for field in row):
+                            row_count += 1
+                    
+                    print(f"[DEBUG] Found {row_count} non-empty rows in CSV (plus header)")
+                    
+                    # Read only the non-empty rows (plus some buffer)
+                    nrows = min(row_count + 100, max_rows)  # Add buffer for safety
+                    df = pd.read_csv(file, dtype=str, keep_default_na=False, nrows=nrows)
+                    
+                except Exception as e:
+                    print(f"[DEBUG] Error in CSV row scanning: {str(e)}, falling back to standard read")
+                    file.seek(0)  # Reset file pointer
+                    df = pd.read_csv(file, dtype=str, keep_default_na=False)
+                
             elif file_ext in ('xls', 'xlsx'):
                 # Use dtype=str to read everything as text initially
                 print(f"[DEBUG] Reading Excel file")
-                df = pd.read_excel(file, dtype=str)
+                
+                try:                
+                    # Save the uploaded file to a temporary file
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_ext}") as temp_file:
+                        for chunk in file.chunks():
+                            temp_file.write(chunk)
+                        temp_path = temp_file.name
+                    
+                    # Open the workbook and get the first sheet
+                    print(f"[DEBUG] Opening Excel workbook to determine data range")
+                    wb = openpyxl.load_workbook(temp_path, read_only=True, data_only=True)
+                    sheet = wb.active
+                    
+                    # Find the actual data range
+                    max_row = 0
+                    for row_idx, row in enumerate(sheet.iter_rows(min_row=1, max_row=sheet.max_row), 1):
+                        if any(cell.value for cell in row):
+                            max_row = row_idx
+                    
+                    # Add some buffer rows
+                    max_row = min(max_row + 10, 1000000)  # Safety limit
+                    print(f"[DEBUG] Determined Excel data extends to row {max_row}")
+                    
+                    # Close the workbook and clean up
+                    wb.close()
+                    
+                    # Now read only the rows with data
+                    file.seek(0)  # Reset file pointer
+                    df = pd.read_excel(file, dtype=str, nrows=max_row)
+                    
+                    # Remove the temporary file
+                    os.unlink(temp_path)
+                    
+                except Exception as e:
+                    print(f"[DEBUG] Error in Excel row scanning: {str(e)}, falling back to standard read")
+                    file.seek(0)  # Reset file pointer
+                    df = pd.read_excel(file, dtype=str)
+                
                 # Convert all numeric columns to string to prevent automatic float conversion
                 for col in df.columns:
                     df[col] = df[col].astype(str)
@@ -1497,14 +1577,23 @@ def import_model(request, model_name):
             for col in df.columns:
                 df[col] = df[col].astype(str).str.strip()
             
-            # Replace empty strings with None
+            # Replace empty strings with None more efficiently
             print(f"[DEBUG] Replacing empty values with None")
-            df = df.replace(['', 'nan', 'None', 'NaN', 'null', 'NULL'], None)
+            empty_values = ['', 'nan', 'None', 'NaN', 'null', 'NULL']
             
-            # Remove completely empty rows
+            # Process column by column to be more memory efficient
+            for col in df.columns:
+                df[col] = df[col].apply(lambda x: None if x in empty_values or pd.isna(x) or x is None else x)
+            
+            # Remove completely empty rows more efficiently
             print(f"[DEBUG] Removing empty rows")
             original_rows = len(df)
-            df = df.dropna(how='all')
+            
+            # Create a mask of rows that have at least one non-None value
+            # This is more efficient than dropna for large dataframes
+            non_empty_mask = df.applymap(lambda x: x is not None and x != '').any(axis=1)
+            df = df[non_empty_mask]
+            
             print(f"[DEBUG] Removed {original_rows - len(df)} empty rows")
             
             # Check if dataframe is empty after cleaning
@@ -1558,266 +1647,344 @@ def import_model(request, model_name):
             context['expected_columns'] = expected_fields
             return render(request, 'butterflies/import_model.html', context)
         
-        # Step 3: Prepare data for preview
-        # Get debug mode parameter (show detailed conversion info)
-        debug_mode = request.POST.get('debug_mode') == 'true'
-        print(f"[DEBUG] Debug mode: {debug_mode}")
+        # Store raw data in session for pagination
+        # We store the raw DataFrame to avoid re-processing every time
+        request.session['import_df'] = serialize_dataframe(df)
+        request.session['import_expected_fields'] = expected_fields
+        request.session['import_fk_fields'] = fk_fields
+        request.session['import_unique_field'] = unique_field
+        request.session['import_model_name'] = model_name
+        request.session['import_all_errors'] = False  # Reset error tracking
+        request.session['show_errors_only'] = False  # Reset filter state for new import
+        request.session.modified = True
         
-        # First, convert all rows to clean dicts for processing
-        all_rows_data = []
-        print(f"\n[DEBUG] Converting rows to dicts")
-        for idx, row in df.iterrows():
-            # Convert row to clean dict (None instead of NaN)
-            row_data = {}
-            for field in expected_fields:
-                # For foreign keys, use the mapped column name if available
+        # Set up pagination
+        page = 1  # Start with first page
+        rows_per_page = 20  # Set a reasonable default
+        
+        # Now process paginated data
+        return process_paginated_import_data(request, page, rows_per_page, context)
+    
+    # Handle pagination navigation
+    elif request.method == 'POST' and request.POST.get('page'):
+        # Get pagination parameters
+        page = int(request.POST.get('page', 1))
+        rows_per_page = int(request.POST.get('rows_per_page', 20))
+        
+        # Check if we have stored data
+        if 'import_df' not in request.session:
+            messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+            return redirect('import_model', model_name=model_name)
+        
+        # Reset error filter if we're navigating and it was automatically disabled
+        if request.session.get('show_errors_only', False):
+            # Quick check if there are any errors in the dataset at all
+            df = deserialize_dataframe(request.session.get('import_df'))
+            if df is not None:
+                # Simple check - if we're still in error-only mode, validate it's still needed
+                # This will be properly handled in process_paginated_import_data
+                pass
+        
+        # Process the requested page
+        return process_paginated_import_data(request, page, rows_per_page, context)
+    
+    # Handle error filter toggle
+    elif request.method == 'POST' and (request.POST.get('show_errors_only') or request.POST.get('show_all')):
+        # Get current pagination parameters
+        page = int(request.POST.get('current_page', 1))
+        rows_per_page = int(request.POST.get('rows_per_page', 20))
+        
+        # Check if we have stored data
+        if 'import_df' not in request.session:
+            messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+            return redirect('import_model', model_name=model_name)
+        
+        # Toggle the error filter state
+        if request.POST.get('show_errors_only'):
+            request.session['show_errors_only'] = True
+            messages.info(request, 'Now showing only rows with errors.')
+        else:
+            request.session['show_errors_only'] = False
+            messages.info(request, 'Now showing all rows.')
+        
+        request.session.modified = True
+        
+        # Process the current page with the new filter
+        return process_paginated_import_data(request, page, rows_per_page, context)
+    
+    # Handle applying edits (save edited values)
+    elif request.method == 'POST' and request.POST.get('apply_edits'):
+        # Get pagination parameters
+        page = int(request.POST.get('current_page', 1))
+        rows_per_page = int(request.POST.get('rows_per_page', 20))
+        
+        # Check if we have stored data
+        if 'import_df' not in request.session:
+            messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+            return redirect('import_model', model_name=model_name)
+        
+        # Apply the edits and reprocess the current page
+        df = deserialize_dataframe(request.session.get('import_df'))
+        if df is None:
+            messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+            return redirect('import_model', model_name=model_name)
+        
+        # Apply edited values to the DataFrame
+        total_rows = len(df)
+        start_idx = (page - 1) * rows_per_page
+        end_idx = min(start_idx + rows_per_page, total_rows)
+        
+        fields = request.session.get('import_expected_fields', [])
+        expected_fields = fields  # Make sure expected_fields is available for revalidation
+        fk_fields = request.session.get('import_fk_fields', {})
+        edited_count = 0
+        edited_rows = set()  # Track which rows were actually edited
+        
+        # Only process rows that actually have form data (important when error filter is active)
+        for i, idx in enumerate(range(start_idx, end_idx)):
+            # Check if this row has any form data - if not, skip it entirely
+            has_form_data = False
+            for field in fields:
+                form_key = f'row_{i}_{field}'
+                if form_key in request.POST:
+                    has_form_data = True
+                    break
+            
+            # Skip this row if no form data found (means it wasn't visible in the form)
+            if not has_form_data:
+                continue
+            
+            row_was_edited = False
+            for field in fields:
+                form_key = f'row_{i}_{field}'
+                # Only process if the form field actually exists in POST data
+                if form_key not in request.POST:
+                    continue
+                    
+                new_value = request.POST.get(form_key, '').strip()
+                if new_value == '':
+                    new_value = None
+                
+                # Get current value for comparison
+                current_value = None
                 if field in fk_fields:
                     col_name = fk_fields[field]
-                    if col_name in row:
-                        row_data[field] = row[col_name]
-                        print(f"[DEBUG] Row {idx}, FK field {field} = {row[col_name]}")
-                # For regular fields, use the field name directly
-                elif field in row:
-                    row_data[field] = row[field]
-                    
-                    # Extra debugging for locality and initials models
-                    if model_name in ['locality', 'initials'] and field in ['localityCode', 'initials']:
-                        print(f"[DEBUG] Row {idx}, PK field {field} = {row[field]}")
-            
-            print(f"[DEBUG] Row {idx} data: {row_data}")
-            all_rows_data.append(row_data)
-            
-        print(f"[DEBUG] Created {len(all_rows_data)} row data dictionaries")
-            
-        # Pre-validate to identify common error patterns
-        common_errors = {}
-        if model_name == 'specimen':
-            # Get foreign key validation info
-            fk_fields_validation, valid_values_cache = build_fk_validation_cache()
-            
-            # Track invalid sex values and foreign keys
-            for row_data in all_rows_data:
-                if 'sex' in row_data and row_data['sex']:
-                    if row_data['sex'] not in ['male', 'female', '.']:
-                        if 'sex_values' not in common_errors:
-                            common_errors['sex_values'] = set()
-                        common_errors['sex_values'].add(row_data['sex'])
-                        
-                # Track invalid foreign keys
-                for fk_field in fk_fields_validation:
-                    if fk_field in row_data and row_data[fk_field]:
-                        # Special case: allow "." as a placeholder for identifiedBy
-                        if fk_field == 'identifiedBy' and row_data[fk_field] == '.':
-                            continue
-                            
-                        if row_data[fk_field] not in valid_values_cache[fk_field]:
-                            key = f"{fk_field}_invalid"
-                            if key not in common_errors:
-                                common_errors[key] = set()
-                            common_errors[key].add(row_data[fk_field])
-                            
-        # We'll use the parse_date_field helper function defined outside this function
-
-        # Now process each row for preview with consistent error detection
-        print(f"\n[DEBUG] Processing rows for preview")
-        print(f"[DEBUG] Unique field: {unique_field}")
-        preview_data = []
-        for row_index, row_data in enumerate(all_rows_data):
-            print(f"\n[DEBUG] Processing preview for row {row_index}: {row_data}")
-            
-            # Check for duplicates if we have a unique field
-            is_duplicate = False
-            suggested_key = None
-            
-            if unique_field and unique_field in row_data and row_data[unique_field]:
-                unique_value = row_data[unique_field]
-                print(f"[DEBUG] Checking if {unique_field}='{unique_value}' exists in database")
-                # Check for duplicates and mark as error
-                exists = model.objects.filter(**{unique_field: unique_value}).exists()
-                print(f"[DEBUG] Exists in database? {exists}")
-                if exists:
-                    is_duplicate = True
-                    print(f"[DEBUG] Marked as duplicate: {unique_value}")
-                    # We'll add error to the preview item after it's created
-            
-            # Create preview item
-            preview_item = {
-                'data': row_data,
-                'duplicate': is_duplicate,
-                'suggested_key': suggested_key,
-                'warnings': [],  # Store any format warnings here
-                'errors': [],    # Store validation errors here that must be fixed
-                'error_fields': set()  # Track fields with errors for highlighting
-            }
-            
-            # Add duplicate error message if duplicate was found
-            if is_duplicate and unique_field:
-                unique_value = row_data[unique_field]
-                field_label = unique_field.capitalize()
-                error_msg = f"Duplicate {field_label}: '{unique_value}' already exists in the database"
-                preview_item['errors'].append(error_msg)
-                preview_item['error_fields'].add(unique_field)
-            
-            # Check for potential format issues
-            if model_name == 'specimen':
-                # Use our unified helper functions for validation
-                validate_specimen_data(row_data, preview_item, common_errors, debug_mode)
+                    if col_name in df.columns:
+                        current_value = df.at[idx, col_name]
+                elif field in df.columns:
+                    current_value = df.at[idx, field]
                 
-                # Process dates using our unified helper
-                process_date_fields_unified(row_data, None, None, preview_item, debug_mode)
+                # Convert current_value to comparable format
+                if current_value is not None:
+                    current_value = str(current_value).strip()
+                    if current_value == '':
+                        current_value = None
+                
+                # Check if value actually changed
+                if new_value != current_value:
+                    edited_count += 1
+                    row_was_edited = True
+                    # Update the DataFrame
+                    if field in fk_fields:
+                        col_name = fk_fields[field]
+                        df.at[idx, col_name] = new_value
+                    elif field in df.columns:
+                        df.at[idx, field] = new_value
             
-            # Add the preview item for ALL model types (fixed the bug here)
-            print(f"[DEBUG] Adding preview item for {model_name}")
-            preview_data.append(preview_item)
+            # Track this row as edited if any field was changed
+            if row_was_edited:
+                edited_rows.add(idx)
         
-        # Add preview data to context
-        print(f"\n[DEBUG] Final preview data has {len(preview_data)} items")
-        context['preview'] = preview_data
-        context['fields'] = expected_fields
-        
-        # Check if any rows have errors that would prevent import
-        has_errors = False
-        error_count = 0
-        for item in preview_data:
-            if item['errors']:
-                has_errors = True
-                error_count += len(item['errors'])
-        
-        context['has_errors'] = has_errors
-        context['error_count'] = error_count
-        
-        # Store error status in session for security check during confirmation
-        request.session['has_errors'] = has_errors
+        # Save updated dataframe back to session
+        request.session['import_df'] = serialize_dataframe(df)
         request.session.modified = True
         
-        # Render preview template
-        return render(request, 'butterflies/import_model_preview.html', context)
-    
+        # If any rows were edited, revalidate only those rows efficiently
+        fixed_errors = 0
+        if edited_rows:
+            # Get validation setup for efficient checking (only if we have edited rows)
+            if model_name == 'specimen':
+                fk_fields_validation, valid_values_cache = build_fk_validation_cache()
+                common_errors = {}
+                debug_mode = request.POST.get('debug_mode') == 'true'
+                
+                # Check each edited row for errors (this is fast - only edited rows)
+                for idx in edited_rows:
+                    row = df.iloc[idx]
+                    # Convert row to clean dict for validation
+                    row_data = {}
+                    for field in expected_fields:
+                        if field in fk_fields:
+                            col_name = fk_fields[field]
+                            if col_name in row:
+                                row_data[field] = row[col_name]
+                        elif field in row:
+                            row_data[field] = row[field]
+                    
+                    # Create a temporary validation item
+                    temp_item = {'errors': [], 'error_fields': set()}
+                    validate_specimen_data(row_data, temp_item, common_errors, debug_mode)
+                    process_date_fields_unified(row_data, None, None, temp_item, debug_mode)
+                    
+                    # If this row no longer has errors, count it as fixed
+                    if not temp_item['errors']:
+                        fixed_errors += 1
+                
+                # Only do comprehensive scan if we think we might have fixed all errors
+                # This avoids the expensive full scan in most cases
+                if fixed_errors > 0:
+                    # Quick check: if this page still has errors, don't bother with full scan
+                    current_page_has_errors = False
+                    start_idx_check = (page - 1) * rows_per_page
+                    end_idx_check = min(start_idx_check + rows_per_page, len(df))
+                    
+                    for idx in range(start_idx_check, end_idx_check):
+                        if idx in edited_rows:
+                            continue  # Skip edited rows, we already checked them
+                        
+                        row = df.iloc[idx]
+                        row_data = {}
+                        for field in expected_fields:
+                            if field in fk_fields:
+                                col_name = fk_fields[field]
+                                if col_name in row:
+                                    row_data[field] = row[col_name]
+                            elif field in row:
+                                row_data[field] = row[field]
+                        
+                        temp_item = {'errors': [], 'error_fields': set()}
+                        validate_specimen_data(row_data, temp_item, common_errors, debug_mode)
+                        if temp_item['errors']:
+                            current_page_has_errors = True
+                            break
+                    
+                    # Only do expensive full scan if current page is clean
+                    if not current_page_has_errors:
+                        has_any_errors = False
+                        # Quick scan through remaining rows (skip current page and edited rows)
+                        for idx in range(len(df)):
+                            if start_idx_check <= idx < end_idx_check:
+                                continue  # Skip current page, already checked
+                            
+                            row = df.iloc[idx]
+                            row_data = {}
+                            for field in expected_fields:
+                                if field in fk_fields:
+                                    col_name = fk_fields[field]
+                                    if col_name in row:
+                                        row_data[field] = row[col_name]
+                                elif field in row:
+                                    row_data[field] = row[field]
+                            
+                            temp_item = {'errors': [], 'error_fields': set()}
+                            validate_specimen_data(row_data, temp_item, common_errors, debug_mode)
+                            if temp_item['errors']:
+                                has_any_errors = True
+                                break  # Found error, stop scanning
+                        
+                        # Update global error state only if comprehensive scan was clean
+                        if not has_any_errors:
+                            request.session['import_all_errors'] = False
+                            request.session['show_errors_only'] = False  # Auto-disable filter
+                            request.session.modified = True
+        
+        # Show intelligent success message
+        if edited_count > 0:
+            message = f'Applied {edited_count} edit(s) successfully.'
+            if fixed_errors > 0:
+                message += f' Fixed {fixed_errors} error(s).'
+            if not request.session.get('import_all_errors', False):
+                message += ' All errors have been resolved!'
+            messages.success(request, message)
+        else:
+            messages.info(request, 'No changes were made.')
+        
+        # Process the current page with updated data
+        return process_paginated_import_data(request, page, rows_per_page, context)
+        
     # Step 4: Handle revalidation of form data
     elif request.method == 'POST' and request.POST.get('revalidate'):
-        # Get model fields and row count
-        fields = [f.name for f in model._meta.fields if f.name != 'id']
-        rows = int(request.POST.get('row_count', 0))
-        debug_mode = request.POST.get('debug_mode') == 'true'
+        # Get pagination parameters
+        page = int(request.POST.get('current_page', 1))
+        rows_per_page = int(request.POST.get('rows_per_page', 20))
         
-        # Reconstruct rows from form data
-        all_rows_data = []
-        for i in range(rows):
-            row_data = {f: request.POST.get(f'row_{i}_{f}', '') for f in fields}
-            # Clean data: convert empty strings to None
-            for field, value in row_data.items():
-                if value == '':
-                    row_data[field] = None
-            all_rows_data.append(row_data)
+        # Check if we have stored data
+        if 'import_df' not in request.session:
+            messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+            return redirect('import_model', model_name=model_name)
+        
+        # Apply any current edits first, then revalidate
+        df = deserialize_dataframe(request.session.get('import_df'))
+        if df is None:
+            messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+            return redirect('import_model', model_name=model_name)
+        
+        # Get the row indices for the current page
+        total_rows = len(df)
+        start_idx = (page - 1) * rows_per_page
+        end_idx = min(start_idx + rows_per_page, total_rows)
+        
+        # Apply any edits from the form to the DataFrame
+        fields = request.session.get('import_expected_fields', [])
+        fk_fields = request.session.get('import_fk_fields', {})
+        
+        # Only process rows that actually have form data (important when error filter is active)
+        for i, idx in enumerate(range(start_idx, end_idx)):
+            # Check if this row has any form data - if not, skip it entirely
+            has_form_data = False
+            for field in fields:
+                form_key = f'row_{i}_{field}'
+                if form_key in request.POST:
+                    has_form_data = True
+                    break
             
-        # Now perform the same validation as in the file upload case
-        # Pre-validate to identify common error patterns
-        common_errors = {}
-        if model_name == 'specimen':
-            # Get foreign key validation info
-            fk_fields_validation, valid_values_cache = build_fk_validation_cache()
-            
-            # Track invalid values
-            for row_data in all_rows_data:
-                if 'sex' in row_data and row_data['sex']:
-                    if row_data['sex'] not in ['male', 'female', '.']:
-                        if 'sex_values' not in common_errors:
-                            common_errors['sex_values'] = set()
-                        common_errors['sex_values'].add(row_data['sex'])
-                        
-                # Track invalid foreign keys
-                for fk_field in fk_fields_validation:
-                    if fk_field in row_data and row_data[fk_field]:
-                        # Special case: allow "." as a placeholder for identifiedBy
-                        if fk_field == 'identifiedBy' and row_data[fk_field] == '.':
-                            continue
-                            
-                        if row_data[fk_field] not in valid_values_cache[fk_field]:
-                            key = f"{fk_field}_invalid"
-                            if key not in common_errors:
-                                common_errors[key] = set()
-                            common_errors[key].add(row_data[fk_field])
-                            
-        # Now process each row for preview with consistent error detection
-        preview_data = []
-        for row_data in all_rows_data:
-            # Check for duplicates if we have a unique field
-            is_duplicate = False
-            suggested_key = None
-            
-            if unique_field and unique_field in row_data and row_data[unique_field]:
-                unique_value = row_data[unique_field]
-                # Check for duplicates and mark as error
-                if model.objects.filter(**{unique_field: unique_value}).exists():
-                    is_duplicate = True
-                    # We'll add error to the preview item after it's created
-            
-            # Create preview item
-            preview_item = {
-                'data': row_data,
-                'duplicate': is_duplicate,
-                'suggested_key': suggested_key,
-                'warnings': [],  # Store any format warnings here
-                'errors': [],    # Store validation errors here that must be fixed
-                'error_fields': set()  # Track fields with errors for highlighting
-            }
-            
-            # Add duplicate error message if duplicate was found
-            if is_duplicate and unique_field:
-                unique_value = row_data[unique_field]
-                field_label = unique_field.capitalize()
-                error_msg = f"Duplicate {field_label}: '{unique_value}' already exists in the database"
-                preview_item['errors'].append(error_msg)
-                preview_item['error_fields'].add(unique_field)
-            
-            # Perform the same validation as in the file upload case
-            if model_name == 'specimen':
-                # Use our unified helper functions for validation
-                validate_specimen_data(row_data, preview_item, common_errors, debug_mode)
+            # Skip this row if no form data found (means it wasn't visible in the form)
+            if not has_form_data:
+                continue
                 
-                # Process dates using our unified helper
-                process_date_fields_unified(row_data, None, None, preview_item, debug_mode)
-            
-            preview_data.append(preview_item)
+            for field in fields:
+                form_key = f'row_{i}_{field}'
+                # Only process if the form field actually exists in POST data
+                if form_key not in request.POST:
+                    continue
+                    
+                new_value = request.POST.get(form_key, '').strip()
+                if new_value == '':
+                    new_value = None
+                    
+                # Update the cell in the dataframe
+                if field in fk_fields:
+                    col_name = fk_fields[field]
+                    if col_name in df.columns:
+                        df.at[idx, col_name] = new_value
+                elif field in df.columns:
+                    df.at[idx, field] = new_value
         
-        # Add preview data to context
-        context['preview'] = preview_data
-        context['fields'] = fields
-        
-        # Check if any rows have errors that would prevent import
-        has_errors = False
-        error_count = 0
-        for item in preview_data:
-            if item['errors']:
-                has_errors = True
-                error_count += len(item['errors'])
-        
-        context['has_errors'] = has_errors
-        context['error_count'] = error_count
-        
-        # Store error status in session for security check during confirmation
-        request.session['has_errors'] = has_errors
+        # Save updated dataframe back to session
+        request.session['import_df'] = serialize_dataframe(df)
         request.session.modified = True
         
-        # Add a message to indicate revalidation
-        if has_errors:
-            messages.warning(request, f"Still found {error_count} errors. Please fix all errors before importing.")
-        else:
-            messages.success(request, "All validation errors have been fixed! You can now import the data.")
-        
-        # Render preview template
-        return render(request, 'butterflies/import_model_preview.html', context)
+        # Process the current page with updated data
+        return process_paginated_import_data(request, page, rows_per_page, context)
         
     # Step 5: Handle import confirmation
     elif request.method == 'POST' and request.POST.get('confirm'):
-        # Get model fields and row count
-        fields = [f.name for f in model._meta.fields if f.name != 'id']
-        rows = int(request.POST.get('row_count', 0))
+        # Get stored data from session
+        df = deserialize_dataframe(request.session.get('import_df'))
+        expected_fields = request.session.get('import_expected_fields', [])
+        fk_fields = request.session.get('import_fk_fields', {})
+        
+        if df is None or not expected_fields:
+            messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+            return redirect('import_model', model_name=model_name)
+        
+        # Get model fields for import
+        fields = expected_fields
         debug_mode = request.POST.get('debug_mode') == 'true'
         
         # Security check: Ensure there are no validation errors before proceeding
         # This prevents bypassing the disabled button via direct POST
-        if 'has_errors' in request.session and request.session['has_errors']:
+        if request.session.get('import_all_errors', False):
             messages.error(
                 request,
                 'Import cancelled: There are validation errors that must be fixed before importing.'
@@ -1833,10 +2000,19 @@ def import_model(request, model_name):
             del request.session['import_errors']
         request.session['import_errors'] = []
         
-        # Process each row from form data
-        for i in range(rows):
-            # Extract data for this row from POST data
-            row_data = {f: request.POST.get(f'row_{i}_{f}', '') for f in fields}
+        # Process each row from the stored dataframe
+        for idx, row in df.iterrows():
+            # Convert row to clean dict (None instead of NaN)
+            row_data = {}
+            for field in fields:
+                # For foreign keys, use the mapped column name if available
+                if field in fk_fields:
+                    col_name = fk_fields[field]
+                    if col_name in row:
+                        row_data[field] = row[col_name]
+                # For regular fields, use the field name directly
+                elif field in row:
+                    row_data[field] = row[field]
             
             # Clean data: convert empty strings to None
             for field, value in row_data.items():
@@ -1853,15 +2029,15 @@ def import_model(request, model_name):
                 # Model-specific conversions
                 if model_name == 'specimen':
                     # Process foreign key fields using our helper function
-                    process_foreign_keys(row_data, i, request, debug_mode)
+                    process_foreign_keys(row_data, idx, request, debug_mode)
                     
                     # Process all date fields using our unified helper
-                    process_date_fields_unified(row_data, request, i, None, debug_mode)
+                    process_date_fields_unified(row_data, request, idx, None, debug_mode)
                     
                     # Check if event date processing caused a skip flag
                     # The check is already done inside process_date_fields_unified, 
                     # but we need to handle the skip logic here
-                    success, should_skip, _ = process_event_date(row_data, None, request, i, debug_mode)
+                    success, should_skip, _ = process_event_date(row_data, None, request, idx, debug_mode)
                     if not success and should_skip:
                         skipped_count += 1
                         raise ValueError("Error processing eventDate, row skipped")
@@ -1944,7 +2120,7 @@ def import_model(request, model_name):
                             instance.save()
                             
                             if debug_mode:
-                                messages.info(request, f"Auto-generated catalogNumber '{instance.catalogNumber}' for row {i+1}")
+                                messages.info(request, f"Auto-generated catalogNumber '{instance.catalogNumber}' for row {idx+1}")
                 
                 imported_count += 1
                 
@@ -1953,7 +2129,7 @@ def import_model(request, model_name):
                 error_message = str(e)
                 
                 # Create a user-friendly error message
-                user_message = f"Error in row {i+1}: "
+                user_message = f"Error in row {idx+1}: "
                 
                 # Handle common error types
                 if "violates not-null constraint" in error_message:
@@ -1988,7 +2164,7 @@ def import_model(request, model_name):
                 
                 # Add technical details in debug mode
                 if debug_mode:
-                    debug_message = f"Technical details for row {i+1}: {error_message}"
+                    debug_message = f"Technical details for row {idx+1}: {error_message}"
                     import_errors.append(debug_message)
                 
                 skipped_count += 1
@@ -2014,6 +2190,13 @@ def import_model(request, model_name):
             request.session['import_complete'] = False
             if 'import_errors' in request.session:
                 del request.session['import_errors']
+            
+            # Clean up session data from pagination
+            for key in ['import_df', 'import_expected_fields', 'import_fk_fields', 
+                        'import_unique_field', 'import_model_name', 'import_page',
+                        'import_rows_per_page', 'import_all_errors', 'show_errors_only']:
+                if key in request.session:
+                    del request.session[key]
         
         # Save the session before redirecting
         request.session.modified = True
@@ -2023,6 +2206,256 @@ def import_model(request, model_name):
     
     # Render initial import form
     return render(request, 'butterflies/import_model.html', context)
+
+def process_paginated_import_data(request, page=1, rows_per_page=20, context=None):
+    """
+    Process a subset of import data for a specific page.
+    This function handles the pagination of import preview data.
+    
+    Parameters:
+        request: HTTP request object
+        page: Page number to display (1-indexed)
+        rows_per_page: Number of rows to display per page
+        context: Existing context or None to create a new one
+    Returns:
+        Rendered template with paginated preview data
+    """
+    # Initialize context if not provided
+    if context is None:
+        context = {}
+    
+    # Get stored data from session
+    df = deserialize_dataframe(request.session.get('import_df'))
+    expected_fields = request.session.get('import_expected_fields', [])
+    fk_fields = request.session.get('import_fk_fields', {})
+    unique_field = request.session.get('import_unique_field')
+    model_name = request.session.get('import_model_name')
+    
+    # Get or create model from name
+    model = None
+    for m in model_list():
+        if m._meta.model_name == model_name:
+            model = m
+            break
+            
+    if not model or df is None:
+        messages.error(request, 'Session expired or invalid data. Please upload the file again.')
+        return redirect('import_model', model_name=model_name)
+    
+    # Set up pagination
+    total_rows = len(df)
+    paginator = Paginator(range(total_rows), rows_per_page)
+    
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    
+    # Get slice of dataframe for current page
+    start_idx = (page_obj.number - 1) * rows_per_page
+    end_idx = min(start_idx + rows_per_page, total_rows)
+    page_indices = list(range(start_idx, end_idx))
+    
+    # Get debug mode parameter
+    debug_mode = request.POST.get('debug_mode') == 'true'
+    print(f"[DEBUG] Debug mode: {debug_mode}")
+    
+    # Extract rows for this page and convert to dictionaries
+    all_rows_data = []
+    for idx in page_indices:
+        row = df.iloc[idx]
+        # Convert row to clean dict (None instead of NaN)
+        row_data = {}
+        for field in expected_fields:
+            # For foreign keys, use the mapped column name if available
+            if field in fk_fields:
+                col_name = fk_fields[field]
+                if col_name in row:
+                    row_data[field] = row[col_name]
+            # For regular fields, use the field name directly
+            elif field in row:
+                row_data[field] = row[field]
+        
+        all_rows_data.append(row_data)
+    
+    # Pre-validate to identify common error patterns
+    common_errors = {}
+    if model_name == 'specimen':
+        # Get foreign key validation info
+        fk_fields_validation, valid_values_cache = build_fk_validation_cache()
+        
+        # Track invalid values
+        for row_data in all_rows_data:
+            if 'sex' in row_data and row_data['sex']:
+                if row_data['sex'] not in ['male', 'female', '.']:
+                    if 'sex_values' not in common_errors:
+                        common_errors['sex_values'] = set()
+                    common_errors['sex_values'].add(row_data['sex'])
+                    
+            # Track invalid foreign keys
+            for fk_field in fk_fields_validation:
+                if fk_field in row_data and row_data[fk_field]:
+                    # Special case: allow "." as a placeholder for identifiedBy
+                    if fk_field == 'identifiedBy' and row_data[fk_field] == '.':
+                        continue
+                        
+                    if row_data[fk_field] not in valid_values_cache[fk_field]:
+                        key = f"{fk_field}_invalid"
+                        if key not in common_errors:
+                            common_errors[key] = set()
+                        common_errors[key].add(row_data[fk_field])
+    
+    # Now process each row for preview with consistent error detection
+    preview_data = []
+    for row_index, row_data in enumerate(all_rows_data):
+        # Check for duplicates if we have a unique field
+        is_duplicate = False
+        suggested_key = None
+        
+        if unique_field and unique_field in row_data and row_data[unique_field]:
+            unique_value = row_data[unique_field]
+            # Check for duplicates and mark as error
+            if model.objects.filter(**{unique_field: unique_value}).exists():
+                is_duplicate = True
+                # Generate a suggested unique key
+                if isinstance(unique_value, str):
+                    # Try to find a non-existent suffix
+                    suffix = 2
+                    while model.objects.filter(**{unique_field: f"{unique_value}-{suffix}"}).exists():
+                        suffix += 1
+                    suggested_key = f"{unique_value}-{suffix}"
+                else:
+                    suggested_key = None
+        
+        # Create preview item
+        preview_item = {
+            'data': row_data,
+            'duplicate': is_duplicate,
+            'suggested_key': suggested_key,
+            'warnings': [],  # Store any format warnings here
+            'errors': [],    # Store validation errors here that must be fixed
+            'error_fields': set()  # Track fields with errors for highlighting
+        }
+        
+        # Add duplicate error message if duplicate was found
+        if is_duplicate and unique_field:
+            unique_value = row_data[unique_field]
+            field_label = unique_field.capitalize()
+            error_msg = f"Duplicate {field_label}: '{unique_value}' already exists in the database"
+            preview_item['errors'].append(error_msg)
+            preview_item['error_fields'].add(unique_field)
+        
+        # Check for potential format issues
+        if model_name == 'specimen':
+            # Use our unified helper functions for validation
+            validate_specimen_data(row_data, preview_item, common_errors, debug_mode)
+            
+            # Process dates using our unified helper
+            process_date_fields_unified(row_data, None, None, preview_item, debug_mode)
+        
+        # Add the preview item
+        preview_data.append(preview_item)
+    
+    # Add preview data to context
+    context['preview'] = preview_data
+    context['fields'] = expected_fields
+    context['paginator'] = paginator
+    context['page_obj'] = page_obj
+    context['current_page'] = page_obj.number
+    context['has_next'] = page_obj.has_next()
+    context['has_previous'] = page_obj.has_previous()
+    context['total_pages'] = paginator.num_pages
+    context['total_rows'] = total_rows
+    
+    # Check if any rows have errors that would prevent import (do this first)
+    has_errors = False
+    error_count = 0
+    for item in preview_data:
+        if item['errors']:
+            has_errors = True
+            error_count += len(item['errors'])
+    
+    # Add error filter state
+    show_errors_only = request.session.get('show_errors_only', False)
+    
+    # Auto-disable error filter if there are no errors on this page or globally
+    if show_errors_only and not has_errors and not request.session.get('import_all_errors', False):
+        show_errors_only = False
+        request.session['show_errors_only'] = False
+        request.session.modified = True
+        messages.info(request, 'Error filter automatically disabled - no errors found.')
+    
+    # Update all_errors in session to track if any page has errors
+    all_errors = request.session.get('import_all_errors', False)
+    
+    # If this is a revalidation request, do a comprehensive check across all data
+    if request.POST.get('revalidate'):
+        # For revalidation, scan the entire dataset to see if any errors remain
+        has_any_errors = False
+        
+        # Quick scan through all rows in the dataframe to check for errors
+        for idx in range(len(df)):
+            row = df.iloc[idx]
+            # Convert row to clean dict for validation
+            row_data = {}
+            for field in expected_fields:
+                if field in fk_fields:
+                    col_name = fk_fields[field]
+                    if col_name in row:
+                        row_data[field] = row[col_name]
+                elif field in row:
+                    row_data[field] = row[field]
+            
+            # Quick validation check for this row
+            if model_name == 'specimen':
+                # Check basic validation that would cause errors
+                temp_item = {'errors': [], 'error_fields': set()}
+                validate_specimen_data(row_data, temp_item, common_errors, debug_mode)
+                if temp_item['errors']:
+                    has_any_errors = True
+                    break  # Found at least one error, that's enough
+        
+        # Update the global error state based on comprehensive check
+        request.session['import_all_errors'] = has_any_errors
+        all_errors = has_any_errors
+        
+        # Add appropriate message
+        if not has_any_errors:
+            messages.success(request, 'All errors have been fixed! You can now import the data.')
+            # Also disable error filter since there are no more errors
+            request.session['show_errors_only'] = False
+            show_errors_only = False
+        elif has_errors:
+            messages.warning(request, f'Still found {error_count} error(s) on this page. Please fix all errors before importing.')
+        else:
+            messages.info(request, 'This page looks good, but there are still errors on other pages. Please check all pages.')
+    else:
+        # For regular navigation, maintain the cumulative error state
+        request.session['import_all_errors'] = all_errors or has_errors
+        all_errors = all_errors or has_errors
+    
+    # Set the context values after all processing is done
+    context['show_errors_only'] = show_errors_only
+    context['has_errors'] = has_errors
+    context['all_errors'] = all_errors
+    context['error_count'] = error_count
+    
+    # Store pagination info in session
+    request.session['import_page'] = page_obj.number
+    request.session['import_rows_per_page'] = rows_per_page
+    request.session.modified = True
+    
+    # Add model_name for template
+    context['model_name'] = model_name
+    context['model_name_internal'] = model_name
+    context['model_name_plural'] = model._meta.verbose_name_plural
+    context['has_unique_field'] = unique_field is not None
+    context['unique_field'] = unique_field
+    
+    # Render preview template
+    return render(request, 'butterflies/import_model_preview.html', context)
 
 # --- List View for All Models ---
 
@@ -2126,6 +2559,37 @@ def showdetails(request, template, model=None):
                             for field in object._meta.fields)
     
 # --- Authentication Views ---
+# --- Session Serialization Helpers ---
+def serialize_dataframe(df):
+    """
+    Serialize a pandas DataFrame to store in session.
+    
+    Parameters:
+        df: pandas DataFrame to serialize
+    Returns:
+        str: Base64 encoded serialized DataFrame
+    """
+    pickled = pickle.dumps(df)
+    return base64.b64encode(pickled).decode('utf-8')
+
+def deserialize_dataframe(serialized_df):
+    """
+    Deserialize a pandas DataFrame from session storage.
+    
+    Parameters:
+        serialized_df: Base64 encoded serialized DataFrame
+    Returns:
+        pandas DataFrame
+    """
+    if not serialized_df:
+        return None
+    
+    try:
+        return pickle.loads(base64.b64decode(serialized_df.encode('utf-8')))
+    except Exception as e:
+        print(f"Error deserializing DataFrame: {str(e)}")
+        return None
+
 def custom_logout(request):
     """
     Custom logout view that supports both GET and POST requests.

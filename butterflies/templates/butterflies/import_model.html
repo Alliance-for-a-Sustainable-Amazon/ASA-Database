@@ -1,6 +1,10 @@
-{# Template for importing data to any model #}
+{% extends "butterflies/base.html" %}
 {% load i18n %}
 {% load butterfly_extras %}
+
+{% block title %}{% blocktrans %}Import {{ model_name_plural }}{% endblocktrans %} - {% trans "ASA Lepidoptera Adults" %}{% endblock %}
+
+{% block content %}
 <h2>{% blocktrans %}Import {{ model_name_plural }}{% endblocktrans %}</h2>
 
 {% if error %}
@@ -22,10 +26,14 @@
         <input type="file" name="file" id="file" required accept=".csv,.xls,.xlsx">
     </div>
     <div class="mt-2">
-        <button type="submit" class="btn btn-primary">{% trans "Upload" %}</button>
+        <button type="submit" class="btn btn-primary" 
+                onclick="if(document.getElementById('file').files.length === 0) { alert('Please select a file first.'); return false; } this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Processing file...'; this.classList.add('btn-loading');">
+            {% trans "Upload" %}
+        </button>
     </div>
 </form>
 
 <div class="mt-4">
     <a href="{% url 'dynamic_list' model_name_internal %}">{% blocktrans %}Back to {{ model_name }} List{% endblocktrans %}</a>
 </div>
+{% endblock %}

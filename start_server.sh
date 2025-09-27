@@ -15,5 +15,15 @@ source .venv/bin/activate
 python manage.py makemigrations
 python manage.py migrate
 
-# Start Django development server
-python manage.py runserver
+# Configure for better handling of large imports
+export PYTHONWARNINGS="ignore::DeprecationWarning" 
+# Increase Python memory limits for large dataframes
+export PYTHONMALLOC=malloc
+# Enable fault handler for better debugging
+export PYTHONFAULTHANDLER=1
+# Allow larger file uploads (Django setting will also need to be updated)
+export MAX_UPLOAD_SIZE=52428800
+
+# Start Django development server in debug mode
+echo "Starting server with enhanced memory settings for large imports..."
+python -X faulthandler manage.py runserver --insecure 0.0.0.0:8000

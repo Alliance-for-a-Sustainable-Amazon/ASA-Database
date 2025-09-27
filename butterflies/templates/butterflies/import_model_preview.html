@@ -1,12 +1,25 @@
-{# Preview template for data import #}
+{% extends "butterflies/base.html" %}
 {% load i18n %}
 {% load butterfly_extras %}
+
+{% block title %}{% blocktrans %}Preview {{ model_name_plural }} Import{% endblocktrans %} - {% trans "ASA Lepidoptera Adults" %}{% endblock %}
+
+{% block content %}
 <h2>{% blocktrans %}Preview {{ model_name_plural }} Import{% endblocktrans %}</h2>
 
-{% if has_errors %}
+{% if all_errors %}
 <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #f44336; background-color: #ffebee; border-radius: 4px;">
     <h3 style="margin-top: 0; color: #d32f2f; font-weight: bold;">{% trans "Import Cannot Proceed" %}</h3>
-    <p style="color: #d32f2f;">{% blocktrans %}There are {{ error_count }} error(s) that must be fixed before importing.{% endblocktrans %}</p>
+    <p style="color: #d32f2f;">{% blocktrans %}There are errors that must be fixed before importing.{% endblocktrans %}</p>
+    <p style="color: #d32f2f;">{% trans "Fields with errors are highlighted in red. Please correct these values before trying to import." %}</p>
+    {% if not has_errors %}
+    <p style="color: #d32f2f; font-weight: bold;">{% trans "No errors on this page, but there are errors on other pages." %}</p>
+    {% endif %}
+</div>
+{% elif has_errors %}
+<div style="margin-bottom: 20px; padding: 15px; border: 1px solid #f44336; background-color: #ffebee; border-radius: 4px;">
+    <h3 style="margin-top: 0; color: #d32f2f; font-weight: bold;">{% trans "Page Has Errors" %}</h3>
+    <p style="color: #d32f2f;">{% blocktrans %}There are {{ error_count }} error(s) on this page that must be fixed before importing.{% endblocktrans %}</p>
     <p style="color: #d32f2f;">{% trans "Fields with errors are highlighted in red. Please correct these values before trying to import." %}</p>
 </div>
 {% endif %}
@@ -73,6 +86,7 @@
         </thead>
         <tbody>
             {% for item in preview %}
+            {% if not show_errors_only or item.errors %}
             <tr {% if item.duplicate %}style="background-color: #ffeeee;"{% endif %}>
                 <td>
                     {% if item.duplicate %}
@@ -122,19 +136,171 @@
                 </td>
                 {% endfor %}
             </tr>
+            {% endif %}
+            {% empty %}
+            <tr><td colspan="{{ fields|length|add:1 }}" style="text-align: center; padding: 20px; color: #666;">
+                No data available.
+            </td></tr>
             {% endfor %}
+            
+            {# If show_errors_only is true but no errors are visible, show a helpful message #}
+            {% if show_errors_only %}
+            {% with visible_count=0 %}
+            {% for item in preview %}
+            {% if item.errors %}
+            {% with visible_count=visible_count|add:1 %}{% endwith %}
+            {% endif %}
+            {% endfor %}
+            {% if visible_count == 0 %}
+            <tr><td colspan="{{ fields|length|add:1 }}" style="text-align: center; padding: 20px; color: #666; background-color: #f8f9fa;">
+                <strong>No rows with errors on this page.</strong><br>
+                <button type="submit" name="show_all" value="true" class="btn btn-sm btn-link" style="padding: 0; text-decoration: underline; margin-top: 5px;"
+                        onclick="this.innerHTML='Loading...'; this.style.textDecoration='none';">
+                    Show all rows
+                </button>
+                or navigate to a different page.
+            </td></tr>
+            {% endif %}
+            {% endwith %}
+            {% endif %}
         </tbody>
     </table>
     
-    <div style="margin-top: 15px;">
+    <div style="margin-top: 15px; margin-bottom: 20px;">
+        {# Pagination controls #}
+        {% if paginator.num_pages > 1 %}
+        <div style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span>Page {{ current_page }} of {{ total_pages }}</span>
+                    <span style="margin-left: 10px;">Total rows: {{ total_rows }}</span>
+                </div>
+                <div>
+                    {% if has_previous %}
+                    <button type="submit" name="page" value="1" class="btn btn-sm btn-secondary"
+                            onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Loading...'; this.classList.add('btn-loading');">
+                        First
+                    </button>
+                    <button type="submit" name="page" value="{{ current_page|add:"-1" }}" class="btn btn-sm btn-secondary"
+                            onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Loading...'; this.classList.add('btn-loading');">
+                        Previous
+                    </button>
+                    {% endif %}
+                    
+                    <span style="margin: 0 10px;">Page {{ current_page }} of {{ total_pages }}</span>
+                    
+                    {% if has_next %}
+                    <button type="submit" name="page" value="{{ current_page|add:"1" }}" class="btn btn-sm btn-secondary"
+                            onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Loading...'; this.classList.add('btn-loading');">
+                        Next
+                    </button>
+                    <button type="submit" name="page" value="{{ total_pages }}" class="btn btn-sm btn-secondary"
+                            onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Loading...'; this.classList.add('btn-loading');">
+                        Last
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {# Hidden fields for pagination #}
+        <input type="hidden" name="current_page" value="{{ current_page }}">
+        <input type="hidden" name="rows_per_page" value="{{ page_obj.paginator.per_page }}">
+        
+        {# Filter controls #}
+        {% if has_errors or all_errors %}
+        <div style="margin-bottom: 15px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <strong>Error Filter:</strong>
+                    {% if show_errors_only %}
+                    <span style="color: #856404;">Showing only rows with errors</span>
+                    {% if error_count == 0 %}
+                    <span style="color: #d32f2f;"> (no errors on this page)</span>
+                    {% else %}
+                    <span> ({{ error_count }} error rows visible)</span>
+                    {% endif %}
+                    {% else %}
+                    <span style="color: #856404;">Showing all rows</span>
+                    {% if error_count > 0 %}
+                    <span> ({{ error_count }} have errors)</span>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                <div>
+                    {% if show_errors_only %}
+                    <button type="submit" name="show_all" value="true" class="btn btn-sm btn-warning"
+                            onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Loading...'; this.classList.add('btn-loading');">
+                        Show All Rows
+                    </button>
+                    {% else %}
+                    {% if error_count > 0 %}
+                    <button type="submit" name="show_errors_only" value="true" class="btn btn-sm btn-warning"
+                            onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Filtering...'; this.classList.add('btn-loading');">
+                        Show Only Errors
+                    </button>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% elif show_errors_only %}
+        {# Show filter controls even if no errors, in case user has filter enabled but there are no errors #}
+        <div style="margin-bottom: 15px; padding: 10px; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <strong>Error Filter:</strong>
+                    <span style="color: #0c5460;">No errors found - showing all available rows</span>
+                </div>
+                <div>
+                    <button type="submit" name="show_all" value="true" class="btn btn-sm btn-info"
+                            onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Loading...'; this.classList.add('btn-loading');">
+                        Turn Off Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Instructions for users #}
+        <div style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+            <strong>Instructions:</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                <li><strong>Apply Edits:</strong> Save your changes and refresh this page to see updated validation</li>
+                <li><strong>Re-validate:</strong> Apply current edits and check all pages for errors</li>
+                <li><strong>Confirm Import:</strong> Import all data to the database (only available when no errors exist)</li>
+                {% if has_errors or all_errors %}
+                <li><strong>Show Only Errors:</strong> Filter to display only rows that have validation errors</li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        {# Loading message area #}
+        <div class="loading-message" id="loadingMessage">
+            <strong>Please wait...</strong> Your request is being processed. This may take a moment for large datasets.
+        </div>
+        
         <div>
-            {% if has_errors %}
-            <button type="button" class="btn btn-primary" disabled>Confirm Import</button>
-            <button type="submit" name="revalidate" value="true" class="btn btn-secondary ml-2">Re-validate</button>
+            {% if all_errors %}
+            <button type="button" class="btn btn-primary" disabled title="Fix all errors before importing">
+                Confirm Import
+            </button>
+            <button type="submit" name="revalidate" value="true" class="btn btn-secondary ml-2" title="Apply current edits and re-validate all data"
+                    onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Re-validating...'; this.classList.add('btn-loading'); this.form.classList.add('form-loading');">
+                Re-validate
+            </button>
             <span class="ml-2 text-danger">Please fix all errors before importing</span>
             {% else %}
-            <button type="submit" class="btn btn-primary">Confirm Import</button>
+            <button type="submit" name="confirm" value="true" class="btn btn-primary" title="Import all data to database"
+                    onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Importing...'; this.classList.add('btn-loading'); this.form.classList.add('form-loading');">
+                Confirm Import
+            </button>
             {% endif %}
+            <button type="submit" name="apply_edits" value="true" class="btn btn-success ml-2" title="Save your edits and refresh this page"
+                    onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Applying...'; this.classList.add('btn-loading'); this.form.classList.add('form-loading');">
+                Apply Edits
+            </button>
             <a href="{% url 'import_model' model_name_internal %}" class="btn btn-secondary ml-2">Cancel</a>
         </div>
     </div>
@@ -143,3 +309,4 @@
 <div style="margin-top: 20px;">
     <a href="{% url 'dynamic_list' model_name_internal %}">Back to {{ model_name }} List</a>
 </div>
+{% endblock %}
