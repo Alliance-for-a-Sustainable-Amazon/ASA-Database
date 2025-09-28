@@ -10,12 +10,12 @@ def get_specimen_image_urls(catalog_number):
     If not accessible, returns 'no data' for that image.
     """
     BASE_URL = getattr(settings, 'LEPIDOPTERA_ADULTS_IMAGES_URL', 'https://asadatabasestorage.blob.core.windows.net/lepidoptera-adults-images/')
-    dorsal_url = f"{BASE_URL}{catalog_number}_d.jpg"
-    ventral_url = f"{BASE_URL}{catalog_number}_v.jpg"
-    print(f"[DEBUG] Specimen image URLs for {catalog_number}:")
-    print(f"  Dorsal:  {dorsal_url}")
-    print(f"  Ventral: {ventral_url}")
-
+    # Convert hyphens to underscores for image filename format
+    image_filename_base = catalog_number.replace('-', '_')
+    
+    # Possible file extensions to check
+    extensions = ['jpg', 'JPG', 'jpeg', 'JPEG']
+    
     def url_exists(url):
         try:
             response = requests.head(url, timeout=3)
@@ -23,7 +23,22 @@ def get_specimen_image_urls(catalog_number):
         except Exception as e:
             print(f"[DEBUG] Error checking {url}: {e}")
             return False
-
-    dorsal = dorsal_url if url_exists(dorsal_url) else "no data"
-    ventral = ventral_url if url_exists(ventral_url) else "no data"
+    
+    def find_image_url(image_type):
+        """Find the correct URL with the right extension for the given image type (d or v)"""
+        for ext in extensions:
+            url = f"{BASE_URL}{image_filename_base}_{image_type}.{ext}"
+            if url_exists(url):
+                print(f"[DEBUG] Found {image_type} image: {url}")
+                return url
+        print(f"[DEBUG] No {image_type} image found for {catalog_number}")
+        return "no data"
+    
+    dorsal = find_image_url('d')
+    ventral = find_image_url('v')
+    
+    print(f"[DEBUG] Final specimen image URLs for {catalog_number}:")
+    print(f"  Dorsal:  {dorsal}")
+    print(f"  Ventral: {ventral}")
+    
     return {'dorsal': dorsal, 'ventral': ventral}
