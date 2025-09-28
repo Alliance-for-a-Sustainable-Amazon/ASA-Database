@@ -147,7 +147,7 @@ class Specimen(models.Model):
     identificationRemarks = models.TextField(blank=True, null=True, help_text="Append-only: Each entry is 'MM-DD-YYYY, initials, description'; entries separated by semicolon. Use form to add, not edit.")
     
     def save(self, *args, **kwargs):
-        # Always auto-generate catalogNumber since it's now the primary key
+        # Generate the new catalog number based on current field values
         year = self.year or 'XXXX'
         locality_code = self.locality.localityCode if self.locality and self.locality.localityCode else 'XXXX'
         
@@ -164,16 +164,32 @@ class Specimen(models.Model):
             specimen_number_for_catalog = f'SP{Specimen.objects.count()+1:04d}'
         
         # Keep the original specimen number in the model field
-        specimen_number = self.specimenNumber or f'SP{Specimen.objects.count()+1:04d}'
+        if not self.specimenNumber:
+            self.specimenNumber = f'SP{Specimen.objects.count()+1:04d}'
         
-        # If catalogNumber is not set, generate it with formatted specimen number
-        if not self.catalogNumber:
-            self.catalogNumber = f"{year}-{locality_code}-{specimen_number_for_catalog}"
+        # Generate the new catalog number
+        new_catalog_number = f"{year}-{locality_code}-{specimen_number_for_catalog}"
+        
+        # Check if this is an update and if the catalog number has changed
+        old_catalog_number = None
+        if self.pk:  # This is an update, not a new record
+            try:
+                # Get the old catalog number from the database
+                old_instance = Specimen.objects.get(pk=self.pk)
+                old_catalog_number = old_instance.catalogNumber
+            except Specimen.DoesNotExist:
+                pass
+        
+        # If catalog number has changed, we need to delete the old record first
+        if old_catalog_number and old_catalog_number != new_catalog_number:
+            # Delete the old record
+            Specimen.objects.filter(pk=old_catalog_number).delete()
             
-        # Ensure catalogNumber is never empty as it's now the primary key
-        if not self.catalogNumber or self.catalogNumber.strip() == '':
-            import uuid
-            self.catalogNumber = f"AUTO-{uuid.uuid4().hex[:8]}"
+            # Clear the pk so Django creates a new record
+            self.pk = None
+        
+        # Always set the new catalog number
+        self.catalogNumber = new_catalog_number
             
         super().save(*args, **kwargs)
         

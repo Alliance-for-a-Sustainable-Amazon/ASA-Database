@@ -935,7 +935,7 @@ def process_date_fields_unified(row_data, request=None, row_index=None, context=
                 
                 # Add info message in different modes
                 if debug_mode:
-                    if request:  # Import mode
+                    if request and hasattr(request, '_import_context'):  # Import mode
                         messages.info(request, f"Converted date for {field} from '{row_data[field]}' to '{date_obj}'")
                     elif context:  # Preview mode
                         formatted = format_date_value(date_obj)
@@ -948,7 +948,7 @@ def process_date_fields_unified(row_data, request=None, row_index=None, context=
                 results[field] = None
                 
                 if debug_mode:
-                    if request:  # Import mode
+                    if request and hasattr(request, '_import_context'):  # Import mode
                         messages.warning(request, f"{error_msg} for {field}, set to None")
                     elif context:  # Preview mode
                         context['errors'].append(f"{error_msg} for {field}")
@@ -987,7 +987,7 @@ def process_foreign_keys(row_data, row_index, request, debug_mode=False):
             
             # Special case: allow "." as a placeholder for identifiedBy (treat as None/NULL)
             if fk_field == 'identifiedBy' and lookup_value == '.':
-                if debug_mode:
+                if debug_mode and request and hasattr(request, '_import_context'):
                     messages.info(
                         request,
                         f"Found '.' placeholder for {fk_field} in row {row_index+1}. Setting to NULL."
@@ -1325,7 +1325,7 @@ def process_event_date(row_data, context=None, request=None, row_index=None, deb
                 handle_import_error(request, error_msg, row_index)
                 
                 # If in debug mode, continue with None value rather than failing
-                if debug_mode:
+                if debug_mode and hasattr(request, '_import_context'):
                     messages.warning(request, f"Row {row_index+1}: Using NULL for eventDate due to parsing error")
                     row_data['eventDate'] = None
                     return True, False, None
@@ -1352,7 +1352,7 @@ def process_event_date(row_data, context=None, request=None, row_index=None, deb
                 row_data['eventDate'] = date_obj
                 
                 # Add debug message if in import mode
-                if request and debug_mode:
+                if request and debug_mode and hasattr(request, '_import_context'):
                     messages.info(request, f"Generated eventDate '{format_date_value(date_obj)}' from components: {day} {month} {year}")
                 
                 return True, False, date_obj
@@ -1374,7 +1374,7 @@ def process_event_date(row_data, context=None, request=None, row_index=None, deb
                 handle_import_error(request, error_msg, row_index)
                 
                 # If in debug mode, continue with None value rather than failing
-                if debug_mode:
+                if debug_mode and hasattr(request, '_import_context'):
                     messages.warning(request, f"Row {row_index+1}: Using NULL for eventDate due to incomplete components")
                     row_data['eventDate'] = None
                     return True, False, None
@@ -1403,6 +1403,9 @@ def import_model(request, model_name):
     Returns:
         Rendered template for import form, preview, or redirect
     """
+    # Mark this request as import context for debug message filtering
+    request._import_context = True
+    
     # Using the helper functions defined outside this function
     
     # DEBUG: Log which model we're importing
@@ -2052,10 +2055,10 @@ def import_model(request, model_name):
                             try:
                                 hour_minute = ':'.join(time_value.split(':')[:2])
                                 row_data['eventTime'] = hour_minute
-                                if debug_mode:
+                                if debug_mode and hasattr(request, '_import_context'):
                                     messages.info(request, f"Stripped seconds from time value: '{time_value}' → '{hour_minute}'")
                             except Exception as time_ex:
-                                if debug_mode:
+                                if debug_mode and hasattr(request, '_import_context'):
                                     messages.warning(request, f"Failed to strip seconds from time '{time_value}': {str(time_ex)}")
                     
                     # Handle exact_loc boolean field
@@ -2097,10 +2100,10 @@ def import_model(request, model_name):
                                 # Extract date part from datetime string (before any space)
                                 date_part = row_data[field].split(' ')[0]
                                 row_data[field] = date_part
-                                if debug_mode:
+                                if debug_mode and hasattr(request, '_import_context'):
                                     messages.info(request, f"Extracted date part '{date_part}' from '{row_data[field]}' for {field}")
                             except Exception as date_ex:
-                                if debug_mode:
+                                if debug_mode and hasattr(request, '_import_context'):
                                     messages.warning(request, f"Failed to extract date part from '{row_data[field]}': {str(date_ex)}")
                 
                 # Create the object with processed data
@@ -2119,7 +2122,7 @@ def import_model(request, model_name):
                             instance.catalogNumber = f"{year}-{locality_code}-{specimen_number}"
                             instance.save()
                             
-                            if debug_mode:
+                            if debug_mode and hasattr(request, '_import_context'):
                                 messages.info(request, f"Auto-generated catalogNumber '{instance.catalogNumber}' for row {idx+1}")
                 
                 imported_count += 1
@@ -2220,6 +2223,9 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
     Returns:
         Rendered template with paginated preview data
     """
+    # Ensure import context is set for debug messages
+    if not hasattr(request, '_import_context'):
+        request._import_context = True
     # Initialize context if not provided
     if context is None:
         context = {}

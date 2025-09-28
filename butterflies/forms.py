@@ -507,7 +507,7 @@ class SpecimenForm(forms.ModelForm):
         )
         if entry:
             if instance.modified:
-                instance.modified += f"; {entry}"
+                instance.modified = f"{instance.modified}; {entry}"
             else:
                 instance.modified = entry
         
@@ -543,7 +543,7 @@ class SpecimenForm(forms.ModelForm):
         )
         if entry:
             if instance.disposition:
-                instance.disposition += f"; {entry}"
+                instance.disposition = f"{instance.disposition}; {entry}"
             else:
                 instance.disposition = entry
         
@@ -650,17 +650,22 @@ class SpecimenEditForm(SpecimenForm):
             'dateIdentified_year', 'identificationReferences', 'identificationRemarks'
         ]
         
+        # All fields that should be excluded from the "other changes" check
+        excluded_from_other_changes = set(taxon_fields + identification_fields + ['catalogNumber'])
+        
         # Check for changes in different field groups
         has_taxon_changes = any(
             field in cleaned_data and cleaned_data[field] != self.initial_data.get(field)
             for field in taxon_fields if field in cleaned_data
         )
         
+        # Check for changes in fields that are NOT taxon or identification fields
+        # Only check fields that actually exist on the model instance
         has_other_changes = any(
-            field in cleaned_data and field not in taxon_fields and 
-            field not in identification_fields and field != 'catalogNumber' and
+            field in cleaned_data and field not in excluded_from_other_changes and
+            hasattr(self.instance, field) and
             cleaned_data[field] != self.initial_data.get(field)
-            for field in cleaned_data if hasattr(self.instance, field)
+            for field in cleaned_data
         )
         
         # Rule B: If editing any field except Taxon and Identification groups, require Modified entry

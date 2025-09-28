@@ -10,10 +10,8 @@ def get_specimen_image_urls(catalog_number):
     If not accessible, returns 'no data' for that image.
     """
     BASE_URL = getattr(settings, 'LEPIDOPTERA_ADULTS_IMAGES_URL', 'https://asadatabasestorage.blob.core.windows.net/lepidoptera-adults-images/')
-    SAS_TOKEN = os.environ.get('AZURE_BLOB_SAS_TOKEN', '')
-    suffix = f"?{SAS_TOKEN}" if SAS_TOKEN else ""
-    dorsal_url = f"{BASE_URL}{catalog_number}_dorsal.jpg{suffix}"
-    ventral_url = f"{BASE_URL}{catalog_number}_ventral.jpg{suffix}"
+    dorsal_url = f"{BASE_URL}{catalog_number}_d.jpg"
+    ventral_url = f"{BASE_URL}{catalog_number}_v.jpg"
     print(f"[DEBUG] Specimen image URLs for {catalog_number}:")
     print(f"  Dorsal:  {dorsal_url}")
     print(f"  Ventral: {ventral_url}")
