@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-25 20:47+0000\n"
-"PO-Revision-Date: 2025-08-26 10:27-0500\n"
+"POT-Creation-Date: 2025-09-28 16:27+0000\n"
+"PO-Revision-Date: 2025-09-28 10:02-0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -19,1645 +19,601 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.7\n"
 
-#: butterflies/templates/butterflies/_detail.html:3
+#: butterflies/templates/butterflies/_detail.html:5
 #, python-format
 msgid "%(model_name)s Details"
-msgstr ""
+msgstr "Detalles de %(model_name)s"
 
-#: butterflies/templates/butterflies/_detail.html:13
+#: butterflies/templates/butterflies/_detail.html:15
 msgid "Specimen Images"
-msgstr ""
+msgstr "Imágenes del Espécimen"
 
-#: butterflies/templates/butterflies/_detail.html:16
+#: butterflies/templates/butterflies/_detail.html:18
 msgid "Dorsal:"
-msgstr "SPANISH TEST"
+msgstr "Dorsal:"
 
-#: butterflies/templates/butterflies/_detail.html:20
-#: butterflies/templates/butterflies/_detail.html:28
+#: butterflies/templates/butterflies/_detail.html:22
+#: butterflies/templates/butterflies/_detail.html:30
 msgid "No data"
 msgstr "Sin datos"
 
-#: butterflies/templates/butterflies/_detail.html:24
+#: butterflies/templates/butterflies/_detail.html:26
 msgid "Ventral:"
-msgstr ""
+msgstr "Ventral:"
 
-#: butterflies/templates/butterflies/_detail.html:33
-#: butterflies/templates/butterflies/_table.html:31
+#: butterflies/templates/butterflies/_detail.html:35
+#: butterflies/templates/butterflies/_table.html:30
 msgid "Edit"
-msgstr ""
-
-#: butterflies/templates/butterflies/_detail.html:37
-#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:16
-msgid "Confirm Delete"
-msgstr ""
+msgstr "Editar"
 
 #: butterflies/templates/butterflies/_detail.html:39
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:20
-#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:17
+#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:18
+msgid "Confirm Delete"
+msgstr "Confirmar Eliminación"
+
+#: butterflies/templates/butterflies/_detail.html:41
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:22
+#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:19
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #: butterflies/templates/butterflies/_disposition_history.html:4
 msgid "Previous Disposition Entries:"
-msgstr ""
+msgstr "Entradas de Disposición Anteriores:"
 
-#: butterflies/templates/butterflies/_table.html:13
-msgid "Search..."
+#: butterflies/templates/butterflies/_pagination.html:6
+#, python-format
+msgid ""
+"\n"
+"        Showing %(start)s to %(end)s of %(total)s entries\n"
+"        "
 msgstr ""
+"\n"
+"        Mostrando %(start)s a %(end)s de %(total)s entradas\n"
+"        "
 
-#: butterflies/templates/butterflies/_table.html:17
-msgid "Search"
-msgstr ""
+#: butterflies/templates/butterflies/_pagination.html:13
+#: butterflies/templates/butterflies/_pagination.html:16
+msgid "first"
+msgstr "Inicio"
 
-#: butterflies/templates/butterflies/_table.html:34
-#: client/venv/lib/python3.12/site-packages/django/forms/formsets.py:499
+#: butterflies/templates/butterflies/_pagination.html:14
+#: butterflies/templates/butterflies/_pagination.html:17
+msgid "previous"
+msgstr "Anterior"
+
+#: butterflies/templates/butterflies/_pagination.html:29
+#: butterflies/templates/butterflies/_pagination.html:32
+msgid "next"
+msgstr "Siguiente"
+
+#: butterflies/templates/butterflies/_pagination.html:30
+#: butterflies/templates/butterflies/_pagination.html:33
+msgid "last"
+msgstr "Final"
+
+#: butterflies/templates/butterflies/_table.html:18
+#: butterflies/templates/butterflies/user_management/user_list.html:25
+msgid "Actions"
+msgstr "Acciones"
+
+#: butterflies/templates/butterflies/_table.html:33
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
-#: butterflies/templates/butterflies/_table.html:39
+#: butterflies/templates/butterflies/_table.html:38
 msgid "No records found."
-msgstr ""
+msgstr "No se Encontraron Registros."
 
-#: butterflies/templates/butterflies/all_list.html:3
+#: butterflies/templates/butterflies/all_list.html:4
 msgid "All Collections"
 msgstr ""
 
-#: butterflies/templates/butterflies/all_list.html:4
+#: butterflies/templates/butterflies/all_list.html:5
 msgid "Butterfly & Trap Collections"
 msgstr ""
 
-#: butterflies/templates/butterflies/all_list.html:9
+#: butterflies/templates/butterflies/all_list.html:10
 #, python-format
 msgid "Add New %(table.model_name)s"
-msgstr ""
+msgstr "Agregar Nuevo/a %(table.model_name)s"
 
-#: butterflies/templates/butterflies/all_list.html:16
+#: butterflies/templates/butterflies/all_list.html:17
 #, python-format
 msgid "View %(table.model_name)s List Only"
-msgstr ""
-
-#: butterflies/templates/butterflies/auth/access_denied.html:5
-msgid "Access Denied"
-msgstr ""
+msgstr "Ver Solo la Lista de %(table.model_name)s"
 
 #: butterflies/templates/butterflies/auth/access_denied.html:6
-msgid "Sorry, you don't have permission to access this page."
-msgstr ""
+msgid "Access Denied"
+msgstr "Acceso Denegado"
 
 #: butterflies/templates/butterflies/auth/access_denied.html:7
-msgid "This action requires additional privileges."
-msgstr ""
+msgid "Sorry, you don't have permission to access this page."
+msgstr "Lo sentimos, no tienes permiso para acceder a esta página."
 
 #: butterflies/templates/butterflies/auth/access_denied.html:8
+msgid "This action requires additional privileges."
+msgstr "Esta acción requiere privilegios adicionales."
+
+#: butterflies/templates/butterflies/auth/access_denied.html:9
 msgid "Return to dashboard"
-msgstr ""
+msgstr "Volver al Panel de Control"
 
-#: butterflies/templates/butterflies/auth/logged_out.html:5
+#: butterflies/templates/butterflies/auth/logged_out.html:8
 msgid "Logged Out"
-msgstr ""
+msgstr "Sesión Cerrada"
 
-#: butterflies/templates/butterflies/auth/logged_out.html:6
+#: butterflies/templates/butterflies/auth/logged_out.html:9
 msgid "You have been successfully logged out."
-msgstr ""
+msgstr "Has cerrado la sesión con éxito."
 
-#: butterflies/templates/butterflies/auth/logged_out.html:7
+#: butterflies/templates/butterflies/auth/logged_out.html:10
 msgid "Log in again"
-msgstr ""
+msgstr "Iniciar sesión de nuevo"
 
 #: butterflies/templates/butterflies/auth/login.html:5
 #: butterflies/templates/butterflies/auth/login.html:36
 msgid "Login"
-msgstr ""
+msgstr "Iniciar Sesión"
 
 #: butterflies/templates/butterflies/auth/login.html:9
 msgid "Your username and password didn't match. Please try again."
-msgstr ""
+msgstr "El nombre de usuario o la contraseña no coinciden. Inténtalo de nuevo."
 
 #: butterflies/templates/butterflies/auth/login.html:16
 msgid ""
 "Your account doesn't have access to this page. To proceed, please login with "
 "an account that has access."
 msgstr ""
+"Tu cuenta no tiene acceso a esta página. Para continuar, por favor inicia "
+"sesión con una cuenta que sí tenga acceso."
 
 #: butterflies/templates/butterflies/auth/login.html:20
 msgid "Please login to access this page."
-msgstr ""
+msgstr "Por favor, inicia sesión para acceder a esta página."
 
 #: butterflies/templates/butterflies/auth/login.html:28
-#: butterflies/templates/butterflies/user_management/user_form.html:15
+#: butterflies/templates/butterflies/user_management/user_form.html:17
 msgid "Username:"
-msgstr ""
+msgstr "Nombre de Usuario:"
 
 #: butterflies/templates/butterflies/auth/login.html:32
-#: butterflies/templates/butterflies/user_management/user_form.html:36
+#: butterflies/templates/butterflies/user_management/user_form.html:38
 msgid "Password:"
-msgstr ""
+msgstr "Contraseña:"
 
-#: butterflies/templates/butterflies/base.html:6
-msgid "Adult Specimens"
-msgstr ""
+#: butterflies/templates/butterflies/base.html:8
+#: butterflies/templates/butterflies/import_model.html:5
+#: butterflies/templates/butterflies/import_model_preview.html:5
+msgid "ASA Lepidoptera Adults"
+msgstr "ASA adultos de lepidópteros"
 
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:3
+#: butterflies/templates/butterflies/base.html:52
+msgid "Logged in as"
+msgstr "Sesión iniciada como"
+
+#: butterflies/templates/butterflies/base.html:54
+msgid "Superuser"
+msgstr "Superusuario"
+
+#: butterflies/templates/butterflies/base.html:55
+#: butterflies/templates/butterflies/base.html:58
+msgid "Manage Users"
+msgstr "Administrar Usuarios"
+
+#: butterflies/templates/butterflies/base.html:57
+msgid "Admin"
+msgstr "Administrador"
+
+#: butterflies/templates/butterflies/base.html:60
+msgid "Researcher"
+msgstr "Investigador/a"
+
+#: butterflies/templates/butterflies/base.html:63
+msgid "Log out"
+msgstr "Cerrar Sesión"
+
+#: butterflies/templates/butterflies/base.html:65
+msgid "Log in"
+msgstr "Iniciar Sesión"
+
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:5
 msgid "Confirm Bulk Delete"
-msgstr ""
-
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:7
-msgid "Debug Bulk Delete Confirmation"
-msgstr ""
+msgstr "Confirmar Eliminación Masiva"
 
 #: butterflies/templates/butterflies/bulk_delete_confirm.html:9
+msgid "Debug Bulk Delete Confirmation"
+msgstr "Confirmación de Eliminación Masiva"
+
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:11
 msgid ""
 "Warning! You are about to permanently delete {{ count }} specimen records. "
 "This action cannot be undone."
 msgstr ""
+"¡Advertencia! Está a punto de eliminar {{ count }} registros de especímenes "
+"permanentemente. Esta acción no se puede deshacer."
 
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:14
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:16
 msgid "To confirm, type 'DELETE' in the box below:"
-msgstr ""
+msgstr "Para confirmar, escriba 'DELETE' en el cuadro de abajo:"
 
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:19
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:21
 msgid "Confirm Deletion"
-msgstr ""
+msgstr "Confirmar Eliminación"
 
-#: butterflies/templates/butterflies/dynamic_list.html:2
-#: butterflies/templates/butterflies/dynamic_list.html:3
+#: butterflies/templates/butterflies/dynamic_list.html:5
+#: butterflies/templates/butterflies/dynamic_list.html:10
 #, python-format
-msgid "%(model_name)s List"
-msgstr ""
-
-#: butterflies/templates/butterflies/dynamic_list.html:7
-msgid "Export CSV"
-msgstr ""
-
-#: butterflies/templates/butterflies/dynamic_list.html:8
-msgid "Export Excel"
-msgstr ""
+msgid "Edit %(model_name)s Table"
+msgstr "Editar Tabla de %(model_name)s"
 
 #: butterflies/templates/butterflies/dynamic_list.html:12
-msgid "Import Data"
+msgid ""
+"Enter specimen catalog number or range and add additional filters (optional)."
 msgstr ""
+"Ingrese el número o rango de catálogo del espécimen y agregue filtros "
+"adicionales (opcional)."
 
-#: butterflies/templates/butterflies/dynamic_list.html:14
+#: butterflies/templates/butterflies/dynamic_list.html:17
+msgid "Export CSV"
+msgstr "Exportar CSV"
+
+#: butterflies/templates/butterflies/dynamic_list.html:18
+msgid "Export Excel"
+msgstr "Exportar Excel"
+
+#: butterflies/templates/butterflies/dynamic_list.html:22
 msgid ""
 "This is a debug feature. Are you sure you want to proceed to the bulk delete "
 "page?"
 msgstr ""
-
-#: butterflies/templates/butterflies/dynamic_list.html:17
-msgid "Debug Bulk Delete"
-msgstr ""
+"Esta es una función de depuración. ¿Está seguro de que desea proceder a la "
+"página de eliminación masiva?"
 
 #: butterflies/templates/butterflies/dynamic_list.html:25
+msgid "Debug Bulk Delete"
+msgstr "Depurar Eliminación Masiva"
+
+#: butterflies/templates/butterflies/dynamic_list.html:33
+msgid "Edit existing records"
+msgstr "Editar registros existentes"
+
+#: butterflies/templates/butterflies/dynamic_list.html:41
 msgid "Import Errors"
-msgstr ""
+msgstr "Errores de Importación"
 
-#: butterflies/templates/butterflies/dynamic_list.html:26
+#: butterflies/templates/butterflies/dynamic_list.html:42
 msgid "The following errors occurred during import:"
-msgstr ""
+msgstr "Los siguientes errores ocurrieron durante la importación:"
 
-#: butterflies/templates/butterflies/dynamic_list.html:36
-#, python-format
-msgid "Add New %(model_name)s"
-msgstr ""
+#: butterflies/templates/butterflies/dynamic_list.html:55
+#: butterflies/templates/butterflies/specimen_form.html:24
+msgid "Add Single Record"
+msgstr "Añadir Registro Único"
 
-#: butterflies/templates/butterflies/dynamic_list.html:37
-msgid "Back to Report Table"
-msgstr ""
+#: butterflies/templates/butterflies/dynamic_list.html:61
+msgid "Import Data"
+msgstr "Importar Datos"
 
-#: butterflies/templates/butterflies/import_model.html:3
+#: butterflies/templates/butterflies/dynamic_list.html:64
+msgid "CSV, Excel"
+msgstr "CSV, Excel"
+
+#: butterflies/templates/butterflies/import_model.html:5
+#: butterflies/templates/butterflies/import_model.html:8
 #, python-format
 msgid "Import %(model_name_plural)s"
-msgstr ""
+msgstr "Importar %(model_name_plural)s"
 
-#: butterflies/templates/butterflies/import_model.html:9
+#: butterflies/templates/butterflies/import_model.html:14
 msgid "Upload a CSV or Excel file with the following columns:"
-msgstr ""
+msgstr "Suba un archivo CSV o Excel con las siguientes columnas:"
 
-#: butterflies/templates/butterflies/import_model.html:20
+#: butterflies/templates/butterflies/import_model.html:25
 msgid "Select file:"
-msgstr ""
+msgstr "Seleccionar archivo:"
 
-#: butterflies/templates/butterflies/import_model.html:24
+#: butterflies/templates/butterflies/import_model.html:31
 msgid "Upload"
-msgstr ""
+msgstr "Subir"
 
-#: butterflies/templates/butterflies/import_model.html:29
+#: butterflies/templates/butterflies/import_model.html:37
 #, python-format
 msgid "Back to %(model_name)s List"
-msgstr ""
+msgstr "Volver a la Lista de %(model_name)s"
 
-#: butterflies/templates/butterflies/import_model_preview.html:3
+#: butterflies/templates/butterflies/import_model_preview.html:5
+#: butterflies/templates/butterflies/import_model_preview.html:8
 #, python-format
 msgid "Preview %(model_name_plural)s Import"
-msgstr ""
+msgstr "Previsualizar Importación de %(model_name_plural)s"
 
-#: butterflies/templates/butterflies/import_model_preview.html:7
+#: butterflies/templates/butterflies/import_model_preview.html:12
+msgid "Import Cannot Proceed"
+msgstr "No se Puede Continuar con la Importación"
+
+#: butterflies/templates/butterflies/import_model_preview.html:13
+msgid "There are errors that must be fixed before importing."
+msgstr "Hay errores que deben corregirse antes de importar."
+
+#: butterflies/templates/butterflies/import_model_preview.html:14
+#: butterflies/templates/butterflies/import_model_preview.html:23
+msgid ""
+"Fields with errors are highlighted in red. Please correct these values "
+"before trying to import."
+msgstr ""
+"Los campos con errores están resaltados en rojo. Por favor, corrija estos "
+"valores antes de intentar importar."
+
+#: butterflies/templates/butterflies/import_model_preview.html:16
+msgid "No errors on this page, but there are errors on other pages."
+msgstr "No hay errores en esta página, pero hay errores en otras páginas."
+
+#: butterflies/templates/butterflies/import_model_preview.html:21
+msgid "Page Has Errors"
+msgstr "Esta Página Contiene Errores"
+
+#: butterflies/templates/butterflies/import_model_preview.html:22
+#, python-format
+msgid ""
+"There are %(error_count)s error(s) on this page that must be fixed before "
+"importing."
+msgstr ""
+"Hay %(error_count)s error(es) en esta página que deben corregirse antes de "
+"importar."
+
+#: butterflies/templates/butterflies/import_model_preview.html:29
 msgid "Review the data before confirming import."
-msgstr ""
+msgstr "Revise los datos antes de confirmar la importación."
 
-#: butterflies/templates/butterflies/import_model_preview.html:7
-#: butterflies/templates/butterflies/specimen_form.html:16
+#: butterflies/templates/butterflies/import_model_preview.html:29
+#: butterflies/templates/butterflies/specimen_form.html:17
 msgid "Important:"
-msgstr ""
+msgstr "Importante:"
 
-#: butterflies/templates/butterflies/import_model_preview.html:9
+#: butterflies/templates/butterflies/import_model_preview.html:31
 #, python-format
 msgid ""
 "Duplicate records (with the same \"%(unique_field)s\") are highlighted in "
 "<span style=\"background-color: #ffeeee; padding: 2px 5px;\">pink</span>."
 msgstr ""
+"Los registros duplicados (con el mismo \"%(unique_field)s\") están "
+"resaltados en <span style=\"background-color: #ffeeee; padding: 2px 5px;"
+"\">rosa</span>."
 
-#: butterflies/templates/butterflies/import_model_preview.html:10
+#: butterflies/templates/butterflies/import_model_preview.html:32
 #, python-format
 msgid ""
 "For duplicates, we'll automatically modify the \"%(unique_field)s\" by "
 "adding a numbered suffix (e.g., \"ABC123-2\")."
 msgstr ""
+"Para los duplicados, modificaremos automáticamente el \"%(unique_field)s\" "
+"al agregar un sufijo numerado (ej. \"ABC123-2\")."
 
-#: butterflies/templates/butterflies/import_model_preview.html:11
+#: butterflies/templates/butterflies/import_model_preview.html:33
 msgid "You can edit any values before confirming the import."
-msgstr ""
+msgstr "Puede editar cualquier valor antes de confirmar la importación."
 
-#: butterflies/templates/butterflies/import_model_preview.html:15
+#: butterflies/templates/butterflies/import_model_preview.html:35
+msgid ""
+"Fields with errors are highlighted in red and must be fixed before import."
+msgstr ""
+"Los campos con errores están resaltados en rojo y deben corregirse antes de "
+"importar."
+
+#: butterflies/templates/butterflies/import_model_preview.html:40
 msgid ""
 "Review the data before confirming import. You can edit any values before "
 "confirming."
 msgstr ""
+"Revise los datos antes de confirmar la importación. Puede editar cualquier "
+"valor antes de confirmar."
 
-#: butterflies/templates/butterflies/import_model_preview.html:16
+#: butterflies/templates/butterflies/import_model_preview.html:41
 msgid ""
 "Note: No unique field was found for this model, so duplicate detection is "
 "not available."
 msgstr ""
+"Nota: No se encontró ningún campo único para este modelo, por lo que la "
+"detección de duplicados no está disponible."
 
-#: butterflies/templates/butterflies/import_model_preview.html:21
+#: butterflies/templates/butterflies/import_model_preview.html:46
 msgid "Important Field Guidelines for Specimens"
-msgstr ""
+msgstr "Pautas Importantes de Campo para Especímenes"
 
-#: butterflies/templates/butterflies/import_model_preview.html:23
+#: butterflies/templates/butterflies/import_model_preview.html:48
 msgid "Must be exactly 'TRUE' or 'FALSE' (case-sensitive, no quotes)"
 msgstr ""
+"Debe ser exactamente 'TRUE' o 'FALSE' (sensible a mayúsculas/minúsculas, sin "
+"comillas)"
 
-#: butterflies/templates/butterflies/import_model_preview.html:24
+#: butterflies/templates/butterflies/import_model_preview.html:49
 msgid "Must be 'male', 'female', or '.' (case-sensitive)"
-msgstr ""
+msgstr "Debe ser 'male', 'female', o '.' (sensible a mayúsculas/minúsculas)"
 
-#: butterflies/templates/butterflies/import_model_preview.html:25
-#: butterflies/templates/butterflies/import_model_preview.html:26
+#: butterflies/templates/butterflies/import_model_preview.html:50
+#: butterflies/templates/butterflies/import_model_preview.html:51
 msgid "Required for catalog number generation"
-msgstr ""
+msgstr "Requerido para la generación de número de catálogo"
 
-#: butterflies/templates/butterflies/import_model_preview.html:27
+#: butterflies/templates/butterflies/import_model_preview.html:52
 msgid "Must match an existing locality code"
-msgstr ""
+msgstr "Debe coincidir con un código de localidad existente"
 
-#: butterflies/templates/butterflies/import_model_preview.html:28
+#: butterflies/templates/butterflies/import_model_preview.html:53
 msgid "Must match existing initials"
-msgstr ""
+msgstr "Debe coincidir con las iniciales existentes"
 
-#: butterflies/templates/butterflies/initials_form.html:4
-#: butterflies/templates/butterflies/initials_form.html:7
+#: butterflies/templates/butterflies/initials_form.html:5
+#: butterflies/templates/butterflies/initials_form.html:8
 msgid "Add Initials"
-msgstr ""
+msgstr "Agregar Iniciales"
 
-#: butterflies/templates/butterflies/locality_form.html:4
-#: butterflies/templates/butterflies/locality_form.html:7
+#: butterflies/templates/butterflies/locality_form.html:6
+#: butterflies/templates/butterflies/locality_form.html:9
 msgid "Add Locality"
-msgstr ""
+msgstr "Agregar Localidad"
 
-#: butterflies/templates/butterflies/report_table.html:8
-msgid "Export Full Report Table"
-msgstr ""
+#: butterflies/templates/butterflies/report_table.html:11
+msgid "Export Full Specimen Report"
+msgstr "Exportar Informe Completo del Espécimen"
 
-#: butterflies/templates/butterflies/report_table.html:9
+#: butterflies/templates/butterflies/report_table.html:12
 msgid "CSV Format"
-msgstr ""
-
-#: butterflies/templates/butterflies/report_table.html:10
-msgid "Excel Format"
-msgstr ""
+msgstr "Formato CSV"
 
 #: butterflies/templates/butterflies/report_table.html:13
+msgid "Excel Format"
+msgstr "Formato Excel"
+
+#: butterflies/templates/butterflies/report_table.html:16
 msgid ""
 "These exports include all data shown in the table below, including related "
 "fields."
 msgstr ""
+"Estas exportaciones incluyen todos los datos que se muestran en la tabla a "
+"continuación, incluidos los campos relacionados."
 
-#: butterflies/templates/butterflies/report_table.html:14
+#: butterflies/templates/butterflies/report_table.html:17
 msgid ""
 "For individual table management, use the links at the bottom of the page."
 msgstr ""
+"Para la gestión de tablas individuales, use los enlaces al pie de la página."
 
-#: butterflies/templates/butterflies/report_table.html:17
-msgid "Specimen Report Table"
+#: butterflies/templates/butterflies/report_table.html:20
+msgid "Full Specimen Report"
+msgstr "Informe Completo del Espécimen"
+
+#: butterflies/templates/butterflies/report_table.html:123
+msgid "Showing the 20 most recent specimen records"
+msgstr "Mostrando los 20 registros de especímenes más recientes"
+
+#: butterflies/templates/butterflies/report_table.html:128
+msgid "Manage Specimen Records"
+msgstr "Administrar Registros de Especímenes"
+
+#: butterflies/templates/butterflies/report_table.html:129
+msgid "Edit Specimen Table"
+msgstr "Editar Tabla de Especímenes"
+
+#: butterflies/templates/butterflies/report_table.html:132
+msgid "Click to edit existing specimen records or add new records."
 msgstr ""
+"Haga clic para editar registros de especímenes existentes o agregar nuevos "
+"registros."
 
-#: butterflies/templates/butterflies/specimen_form.html:6
+#: butterflies/templates/butterflies/report_table.html:133
+msgid "The specimen table provides filtering and search capabilities."
+msgstr "La tabla de especímenes ofrece funcionalidades de filtrado y búsqueda."
+
+#: butterflies/templates/butterflies/report_table.html:139
+msgid "Other Reports"
+msgstr "Otros Informes"
+
+#: butterflies/templates/butterflies/report_table.html:141
+msgid "Full Locality Report"
+msgstr "Informe Completo de Localidades"
+
+#: butterflies/templates/butterflies/report_table.html:142
+msgid "Full Initials Report"
+msgstr "Informe Completo de Iniciales"
+
+#: butterflies/templates/butterflies/report_table.html:146
+msgid "Click on report to edit underlying table."
+msgstr "Haga clic en el informe para editar la tabla subyacente."
+
+#: butterflies/templates/butterflies/specimen_form.html:7
 msgid "Add Specimen"
-msgstr ""
+msgstr "Agregar Espécimen"
 
-#: butterflies/templates/butterflies/specimen_form.html:14
+#: butterflies/templates/butterflies/specimen_form.html:15
 msgid "Edit Specimen Record"
-msgstr ""
+msgstr "Editar Registro de Espécimen"
 
-#: butterflies/templates/butterflies/specimen_form.html:16
+#: butterflies/templates/butterflies/specimen_form.html:17
 msgid "When editing this specimen:"
-msgstr ""
+msgstr "Al editar este espécimen:"
 
-#: butterflies/templates/butterflies/specimen_form.html:18
+#: butterflies/templates/butterflies/specimen_form.html:19
 msgid ""
 "If you change any fields except those in the Taxon (5) or Identification (6) "
 "groups, you must add a new Modified entry."
 msgstr ""
+"Si cambia cualquier campo, excepto los de los grupos Taxón (5) o "
+"Identificación (6), debe agregar una nueva entrada Modificada."
 
-#: butterflies/templates/butterflies/specimen_form.html:19
+#: butterflies/templates/butterflies/specimen_form.html:20
 msgid ""
 "If you change any Taxon fields (5), you must update the Identification "
 "information (6)."
 msgstr ""
+"Si cambia cualquier campo de Taxón (5), debe actualizar la información de "
+"Identificación (6)."
 
-#: butterflies/templates/butterflies/specimen_form.html:23
-msgid "Add Single Record"
-msgstr "Añadir Registro Único"
+#: butterflies/templates/butterflies/specimen_form.html:26
+msgid "Note:"
+msgstr "Nota:"
 
-#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:3
-#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:7
-msgid "Delete User"
+#: butterflies/templates/butterflies/specimen_form.html:26
+msgid "All fields are required unless hidden or disabled."
 msgstr ""
+"Todos los campos son obligatorios a menos que estén ocultos o deshabilitados."
 
-#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:10
+#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:5
+#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:9
+msgid "Delete User"
+msgstr "Eliminar Usuario"
+
+#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:12
 #, python-format
 msgid "Are you sure you want to delete the user \"%(object.username)s\"?"
 msgstr ""
+"¿Está seguro/a de que desea eliminar al usuario \"%(object.username)s\"?"
 
-#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:11
+#: butterflies/templates/butterflies/user_management/user_confirm_delete.html:13
 msgid "This action cannot be undone."
-msgstr ""
+msgstr "Esta acción no se puede deshacer."
 
-#: butterflies/templates/butterflies/user_management/user_form.html:4
-#: butterflies/templates/butterflies/user_management/user_form.html:9
+#: butterflies/templates/butterflies/user_management/user_form.html:6
+#: butterflies/templates/butterflies/user_management/user_form.html:11
 msgid "Edit User"
-msgstr ""
+msgstr "Editar Usuario"
 
-#: butterflies/templates/butterflies/user_management/user_form.html:4
-#: butterflies/templates/butterflies/user_management/user_form.html:9
-#: butterflies/templates/butterflies/user_management/user_list.html:12
+#: butterflies/templates/butterflies/user_management/user_form.html:6
+#: butterflies/templates/butterflies/user_management/user_form.html:11
+#: butterflies/templates/butterflies/user_management/user_list.html:13
 msgid "Add User"
-msgstr ""
+msgstr "Agregar Usuario"
 
-#: butterflies/templates/butterflies/user_management/user_form.html:25
+#: butterflies/templates/butterflies/user_management/user_form.html:27
 msgid "Email:"
-msgstr ""
+msgstr "Email:"
 
-#: butterflies/templates/butterflies/user_management/user_list.html:4
-#: butterflies/templates/butterflies/user_management/user_list.html:8
+#: butterflies/templates/butterflies/user_management/user_list.html:5
+#: butterflies/templates/butterflies/user_management/user_list.html:9
 msgid "User Management"
-msgstr ""
-
-#: butterflies/templates/butterflies/user_management/user_list.html:19
-msgid "Username"
-msgstr ""
+msgstr "Administración de Usuarios"
 
 #: butterflies/templates/butterflies/user_management/user_list.html:20
-msgid "Email"
-msgstr ""
+msgid "Username"
+msgstr "Nombre de Usuario"
 
 #: butterflies/templates/butterflies/user_management/user_list.html:21
-msgid "Role"
-msgstr ""
+msgid "Email"
+msgstr "Email"
 
 #: butterflies/templates/butterflies/user_management/user_list.html:22
-msgid "Status"
-msgstr ""
+msgid "Role"
+msgstr "Rol"
 
 #: butterflies/templates/butterflies/user_management/user_list.html:23
-msgid "Admin Panel"
-msgstr ""
+msgid "Status"
+msgstr "Estado"
 
 #: butterflies/templates/butterflies/user_management/user_list.html:24
-msgid "Actions"
-msgstr ""
+msgid "Admin Panel"
+msgstr "Panel de Administración"
 
-#: butterflies/templates/butterflies/user_management/user_list.html:36
+#: butterflies/templates/butterflies/user_management/user_list.html:37
 msgid "No role"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/contrib/messages/apps.py:16
-msgid "Messages"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/contrib/sitemaps/apps.py:8
-msgid "Site Maps"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/contrib/staticfiles/apps.py:9
-msgid "Static Files"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/contrib/syndication/apps.py:7
-msgid "Syndication"
-msgstr ""
-
-#. Translators: String used to replace omitted page numbers in elided page
-#. range generated by paginators, e.g. [1, 2, '…', 5, 6, 7, '…', 9, 10].
-#: client/venv/lib/python3.12/site-packages/django/core/paginator.py:30
-msgid "…"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/paginator.py:32
-msgid "That page number is not an integer"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/paginator.py:33
-msgid "That page number is less than 1"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/paginator.py:34
-msgid "That page contains no results"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:22
-msgid "Enter a valid value."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:70
-msgid "Enter a valid domain name."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:153
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:775
-msgid "Enter a valid URL."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:200
-msgid "Enter a valid integer."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:211
-msgid "Enter a valid email address."
-msgstr ""
-
-#. Translators: "letters" means latin letters: a-z and A-Z.
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:289
-msgid ""
-"Enter a valid “slug” consisting of letters, numbers, underscores or hyphens."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:297
-msgid ""
-"Enter a valid “slug” consisting of Unicode letters, numbers, underscores, or "
-"hyphens."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:309
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:318
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:332
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2220
-#, python-format
-msgid "Enter a valid %(protocol)s address."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:311
-msgid "IPv4"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:320
-#: client/venv/lib/python3.12/site-packages/django/utils/ipv6.py:43
-msgid "IPv6"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:334
-msgid "IPv4 or IPv6"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:375
-msgid "Enter only digits separated by commas."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:381
-#, python-format
-msgid "Ensure this value is %(limit_value)s (it is %(show_value)s)."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:416
-#, python-format
-msgid "Ensure this value is less than or equal to %(limit_value)s."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:425
-#, python-format
-msgid "Ensure this value is greater than or equal to %(limit_value)s."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:434
-#, python-format
-msgid "Ensure this value is a multiple of step size %(limit_value)s."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:441
-#, python-format
-msgid ""
-"Ensure this value is a multiple of step size %(limit_value)s, starting from "
-"%(offset)s, e.g. %(offset)s, %(valid_value1)s, %(valid_value2)s, and so on."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:473
-#, python-format
-msgid ""
-"Ensure this value has at least %(limit_value)d character (it has "
-"%(show_value)d)."
-msgid_plural ""
-"Ensure this value has at least %(limit_value)d characters (it has "
-"%(show_value)d)."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:491
-#, python-format
-msgid ""
-"Ensure this value has at most %(limit_value)d character (it has "
-"%(show_value)d)."
-msgid_plural ""
-"Ensure this value has at most %(limit_value)d characters (it has "
-"%(show_value)d)."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:514
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:366
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:405
-msgid "Enter a number."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:516
-#, python-format
-msgid "Ensure that there are no more than %(max)s digit in total."
-msgid_plural "Ensure that there are no more than %(max)s digits in total."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:521
-#, python-format
-msgid "Ensure that there are no more than %(max)s decimal place."
-msgid_plural "Ensure that there are no more than %(max)s decimal places."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:526
-#, python-format
-msgid ""
-"Ensure that there are no more than %(max)s digit before the decimal point."
-msgid_plural ""
-"Ensure that there are no more than %(max)s digits before the decimal point."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:597
-#, python-format
-msgid ""
-"File extension “%(extension)s” is not allowed. Allowed extensions are: "
-"%(allowed_extensions)s."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/core/validators.py:659
-msgid "Null characters are not allowed."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/base.py:1600
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:908
-msgid "and"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/base.py:1602
-#, python-format
-msgid "%(model_name)s with this %(field_labels)s already exists."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/constraints.py:22
-#, python-format
-msgid "Constraint “%(name)s” is violated."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:134
-#, python-format
-msgid "Value %(value)r is not a valid choice."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:135
-msgid "This field cannot be null."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:136
-msgid "This field cannot be blank."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:137
-#, python-format
-msgid "%(model_name)s with this %(field_label)s already exists."
-msgstr ""
-
-#. Translators: The 'lookup_type' is one of 'date', 'year' or
-#. 'month'. Eg: "Title must be unique for pub_date year"
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:141
-#, python-format
-msgid ""
-"%(field_label)s must be unique for %(date_field_label)s %(lookup_type)s."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:180
-#, python-format
-msgid "Field of type: %(field_type)s"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1162
-#, python-format
-msgid "“%(value)s” value must be either True or False."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1163
-#, python-format
-msgid "“%(value)s” value must be either True, False, or None."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1165
-msgid "Boolean (Either True or False)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1215
-#, python-format
-msgid "String (up to %(max_length)s)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1217
-msgid "String (unlimited)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1326
-msgid "Comma-separated integers"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1427
-#, python-format
-msgid ""
-"“%(value)s” value has an invalid date format. It must be in YYYY-MM-DD "
-"format."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1431
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1566
-#, python-format
-msgid ""
-"“%(value)s” value has the correct format (YYYY-MM-DD) but it is an invalid "
-"date."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1435
-msgid "Date (without time)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1562
-#, python-format
-msgid ""
-"“%(value)s” value has an invalid format. It must be in YYYY-MM-DD "
-"HH:MM[:ss[.uuuuuu]][TZ] format."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1570
-#, python-format
-msgid ""
-"“%(value)s” value has the correct format (YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
-"[TZ]) but it is an invalid date/time."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1575
-msgid "Date (with time)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1702
-#, python-format
-msgid "“%(value)s” value must be a decimal number."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1704
-msgid "Decimal number"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1864
-#, python-format
-msgid ""
-"“%(value)s” value has an invalid format. It must be in [DD] "
-"[[HH:]MM:]ss[.uuuuuu] format."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1868
-msgid "Duration"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1920
-msgid "Email address"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:1945
-msgid "File path"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2023
-#, python-format
-msgid "“%(value)s” value must be a float."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2025
-msgid "Floating point number"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2065
-#, python-format
-msgid "“%(value)s” value must be an integer."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2067
-msgid "Integer"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2163
-msgid "Big (8 byte) integer"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2180
-msgid "Small integer"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2188
-msgid "IPv4 address"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2219
-msgid "IP address"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2310
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2311
-#, python-format
-msgid "“%(value)s” value must be either None, True or False."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2313
-msgid "Boolean (Either True, False or None)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2364
-msgid "Positive big integer"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2379
-msgid "Positive integer"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2394
-msgid "Positive small integer"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2410
-#, python-format
-msgid "Slug (up to %(max_length)s)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2446
-msgid "Text"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2526
-#, python-format
-msgid ""
-"“%(value)s” value has an invalid format. It must be in HH:MM[:ss[.uuuuuu]] "
-"format."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2530
-#, python-format
-msgid ""
-"“%(value)s” value has the correct format (HH:MM[:ss[.uuuuuu]]) but it is an "
-"invalid time."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2534
-msgid "Time"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2642
-msgid "URL"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2666
-msgid "Raw binary data"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2731
-#, python-format
-msgid "“%(value)s” is not a valid UUID."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/__init__.py:2733
-msgid "Universally unique identifier"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/files.py:244
-msgid "File"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/files.py:420
-msgid "Image"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/json.py:24
-msgid "A JSON object"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/json.py:26
-msgid "Value must be valid JSON."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/related.py:978
-#, python-format
-msgid "%(model)s instance with %(field)s %(value)r is not a valid choice."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/related.py:981
-msgid "Foreign Key (type determined by related field)"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/related.py:1275
-msgid "One-to-one relationship"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/related.py:1332
-#, python-format
-msgid "%(from)s-%(to)s relationship"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/related.py:1334
-#, python-format
-msgid "%(from)s-%(to)s relationships"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/db/models/fields/related.py:1382
-msgid "Many-to-many relationship"
-msgstr ""
-
-#. Translators: If found as last label character, these punctuation
-#. characters will prevent the default label_suffix to be appended to the label
-#: client/venv/lib/python3.12/site-packages/django/forms/boundfield.py:185
-msgid ":?.!"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:95
-msgid "This field is required."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:315
-msgid "Enter a whole number."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:486
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:1267
-msgid "Enter a valid date."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:509
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:1268
-msgid "Enter a valid time."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:536
-msgid "Enter a valid date/time."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:570
-msgid "Enter a valid duration."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:571
-#, python-brace-format
-msgid "The number of days must be between {min_days} and {max_days}."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:640
-msgid "No file was submitted. Check the encoding type on the form."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:641
-msgid "No file was submitted."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:642
-msgid "The submitted file is empty."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:644
-#, python-format
-msgid "Ensure this filename has at most %(max)d character (it has %(length)d)."
-msgid_plural ""
-"Ensure this filename has at most %(max)d characters (it has %(length)d)."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:649
-msgid "Please either submit a file or check the clear checkbox, not both."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:717
-msgid ""
-"Upload a valid image. The file you uploaded was either not an image or a "
-"corrupted image."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:889
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:975
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:1592
-#, python-format
-msgid "Select a valid choice. %(value)s is not one of the available choices."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:977
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:1096
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:1590
-msgid "Enter a list of values."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:1097
-msgid "Enter a complete value."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:1339
-msgid "Enter a valid UUID."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/fields.py:1369
-msgid "Enter a valid JSON."
-msgstr ""
-
-#. Translators: This is the default suffix added to form field labels
-#: client/venv/lib/python3.12/site-packages/django/forms/forms.py:97
-msgid ":"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/forms.py:239
-#, python-format
-msgid "(Hidden field %(name)s) %(error)s"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/formsets.py:61
-#, python-format
-msgid ""
-"ManagementForm data is missing or has been tampered with. Missing fields: "
-"%(field_names)s. You may need to file a bug report if the issue persists."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/formsets.py:65
-#, python-format
-msgid "Please submit at most %(num)d form."
-msgid_plural "Please submit at most %(num)d forms."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/formsets.py:70
-#, python-format
-msgid "Please submit at least %(num)d form."
-msgid_plural "Please submit at least %(num)d forms."
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/formsets.py:484
-#: client/venv/lib/python3.12/site-packages/django/forms/formsets.py:491
-msgid "Order"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:901
-#, python-format
-msgid "Please correct the duplicate data for %(field)s."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:906
-#, python-format
-msgid "Please correct the duplicate data for %(field)s, which must be unique."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:913
-#, python-format
-msgid ""
-"Please correct the duplicate data for %(field_name)s which must be unique "
-"for the %(lookup)s in %(date_field)s."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:922
-msgid "Please correct the duplicate values below."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:1359
-msgid "The inline value did not match the parent instance."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:1450
-msgid "Select a valid choice. That choice is not one of the available choices."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/models.py:1594
-#, python-format
-msgid "“%(pk)s” is not a valid value."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/utils.py:229
-#, python-format
-msgid ""
-"%(datetime)s couldn’t be interpreted in time zone %(current_timezone)s; it "
-"may be ambiguous or it may not exist."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/widgets.py:527
-msgid "Clear"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/widgets.py:528
-msgid "Currently"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/widgets.py:529
-msgid "Change"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/widgets.py:866
-msgid "Unknown"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/widgets.py:867
-msgid "Yes"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/forms/widgets.py:868
-msgid "No"
-msgstr ""
-
-#. Translators: Please do not add spaces around commas.
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:873
-msgid "yes,no,maybe"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:903
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:920
-#, python-format
-msgid "%(size)d byte"
-msgid_plural "%(size)d bytes"
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:922
-#, python-format
-msgid "%s KB"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:924
-#, python-format
-msgid "%s MB"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:926
-#, python-format
-msgid "%s GB"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:928
-#, python-format
-msgid "%s TB"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/template/defaultfilters.py:930
-#, python-format
-msgid "%s PB"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dateformat.py:74
-msgid "p.m."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dateformat.py:75
-msgid "a.m."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dateformat.py:80
-msgid "PM"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dateformat.py:81
-msgid "AM"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dateformat.py:153
-msgid "midnight"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dateformat.py:155
-msgid "noon"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:7
-msgid "Monday"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:8
-msgid "Tuesday"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:9
-msgid "Wednesday"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:10
-msgid "Thursday"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:11
-msgid "Friday"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:12
-msgid "Saturday"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:13
-msgid "Sunday"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:16
-msgid "Mon"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:17
-msgid "Tue"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:18
-msgid "Wed"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:19
-msgid "Thu"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:20
-msgid "Fri"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:21
-msgid "Sat"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:22
-msgid "Sun"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:25
-msgid "January"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:26
-msgid "February"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:27
-msgid "March"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:28
-msgid "April"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:29
-msgid "May"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:30
-msgid "June"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:31
-msgid "July"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:32
-msgid "August"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:33
-msgid "September"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:34
-msgid "October"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:35
-msgid "November"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:36
-msgid "December"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:39
-msgid "jan"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:40
-msgid "feb"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:41
-msgid "mar"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:42
-msgid "apr"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:43
-msgid "may"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:44
-msgid "jun"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:45
-msgid "jul"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:46
-msgid "aug"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:47
-msgid "sep"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:48
-msgid "oct"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:49
-msgid "nov"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:50
-msgid "dec"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:53
-msgctxt "abbrev. month"
-msgid "Jan."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:54
-msgctxt "abbrev. month"
-msgid "Feb."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:55
-msgctxt "abbrev. month"
-msgid "March"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:56
-msgctxt "abbrev. month"
-msgid "April"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:57
-msgctxt "abbrev. month"
-msgid "May"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:58
-msgctxt "abbrev. month"
-msgid "June"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:59
-msgctxt "abbrev. month"
-msgid "July"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:60
-msgctxt "abbrev. month"
-msgid "Aug."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:61
-msgctxt "abbrev. month"
-msgid "Sept."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:62
-msgctxt "abbrev. month"
-msgid "Oct."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:63
-msgctxt "abbrev. month"
-msgid "Nov."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:64
-msgctxt "abbrev. month"
-msgid "Dec."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:67
-msgctxt "alt. month"
-msgid "January"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:68
-msgctxt "alt. month"
-msgid "February"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:69
-msgctxt "alt. month"
-msgid "March"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:70
-msgctxt "alt. month"
-msgid "April"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:71
-msgctxt "alt. month"
-msgid "May"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:72
-msgctxt "alt. month"
-msgid "June"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:73
-msgctxt "alt. month"
-msgid "July"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:74
-msgctxt "alt. month"
-msgid "August"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:75
-msgctxt "alt. month"
-msgid "September"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:76
-msgctxt "alt. month"
-msgid "October"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:77
-msgctxt "alt. month"
-msgid "November"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/dates.py:78
-msgctxt "alt. month"
-msgid "December"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/ipv6.py:20
-msgid "This is not a valid IPv6 address."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/text.py:76
-#, python-format
-msgctxt "String to return when truncating text"
-msgid "%(truncated_text)s…"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/text.py:287
-msgid "or"
-msgstr ""
-
-#. Translators: This string is used as a separator between list elements
-#: client/venv/lib/python3.12/site-packages/django/utils/text.py:306
-#: client/venv/lib/python3.12/site-packages/django/utils/timesince.py:135
-msgid ", "
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/timesince.py:8
-#, python-format
-msgid "%(num)d year"
-msgid_plural "%(num)d years"
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/timesince.py:9
-#, python-format
-msgid "%(num)d month"
-msgid_plural "%(num)d months"
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/timesince.py:10
-#, python-format
-msgid "%(num)d week"
-msgid_plural "%(num)d weeks"
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/timesince.py:11
-#, python-format
-msgid "%(num)d day"
-msgid_plural "%(num)d days"
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/timesince.py:12
-#, python-format
-msgid "%(num)d hour"
-msgid_plural "%(num)d hours"
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/utils/timesince.py:13
-#, python-format
-msgid "%(num)d minute"
-msgid_plural "%(num)d minutes"
-msgstr[0] ""
-msgstr[1] ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:29
-msgid "Forbidden"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:30
-msgid "CSRF verification failed. Request aborted."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:34
-msgid ""
-"You are seeing this message because this HTTPS site requires a “Referer "
-"header” to be sent by your web browser, but none was sent. This header is "
-"required for security reasons, to ensure that your browser is not being "
-"hijacked by third parties."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:40
-msgid ""
-"If you have configured your browser to disable “Referer” headers, please re-"
-"enable them, at least for this site, or for HTTPS connections, or for “same-"
-"origin” requests."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:45
-msgid ""
-"If you are using the <meta name=\"referrer\" content=\"no-referrer\"> tag or "
-"including the “Referrer-Policy: no-referrer” header, please remove them. The "
-"CSRF protection requires the “Referer” header to do strict referer checking. "
-"If you’re concerned about privacy, use alternatives like <a "
-"rel=\"noreferrer\" …> for links to third-party sites."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:54
-msgid ""
-"You are seeing this message because this site requires a CSRF cookie when "
-"submitting forms. This cookie is required for security reasons, to ensure "
-"that your browser is not being hijacked by third parties."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:60
-msgid ""
-"If you have configured your browser to disable cookies, please re-enable "
-"them, at least for this site, or for “same-origin” requests."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/csrf.py:66
-msgid "More information is available with DEBUG=True."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:44
-msgid "No year specified"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:64
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:115
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:214
-msgid "Date out of range"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:94
-msgid "No month specified"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:147
-msgid "No day specified"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:194
-msgid "No week specified"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:353
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:384
-#, python-format
-msgid "No %(verbose_name_plural)s available"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:680
-#, python-format
-msgid ""
-"Future %(verbose_name_plural)s not available because "
-"%(class_name)s.allow_future is False."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/dates.py:720
-#, python-format
-msgid "Invalid date string “%(datestr)s” given format “%(format)s”"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/detail.py:56
-#, python-format
-msgid "No %(verbose_name)s found matching the query"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/list.py:70
-msgid "Page is not “last”, nor can it be converted to an int."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/list.py:77
-#, python-format
-msgid "Invalid page (%(page_number)s): %(message)s"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/generic/list.py:173
-#, python-format
-msgid "Empty list and “%(class_name)s.allow_empty” is False."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/static.py:49
-msgid "Directory indexes are not allowed here."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/static.py:51
-#, python-format
-msgid "“%(path)s” does not exist"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/static.py:68
-#: client/venv/lib/python3.12/site-packages/django/views/templates/directory_index.html:8
-#: client/venv/lib/python3.12/site-packages/django/views/templates/directory_index.html:11
-#, python-format
-msgid "Index of %(directory)s"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:7
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:204
-msgid "The install worked successfully! Congratulations!"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:206
-#, python-format
-msgid ""
-"View <a href=\"https://docs.djangoproject.com/en/%(version)s/releases/\" "
-"target=\"_blank\" rel=\"noopener\">release notes</a> for Django %(version)s"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:208
-#, python-format
-msgid ""
-"You are seeing this page because <a href=\"https://docs.djangoproject.com/en/"
-"%(version)s/ref/settings/#debug\" target=\"_blank\" "
-"rel=\"noopener\">DEBUG=True</a> is in your settings file and you have not "
-"configured any URLs."
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:217
-msgid "Django Documentation"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:218
-msgid "Topics, references, &amp; how-to’s"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:226
-msgid "Tutorial: A Polling App"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:227
-msgid "Get started with Django"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:235
-msgid "Django Community"
-msgstr ""
-
-#: client/venv/lib/python3.12/site-packages/django/views/templates/default_urlconf.html:236
-msgid "Connect, get help, or contribute"
-msgstr ""
+msgstr "Sin rol"

@@ -1,49 +1,169 @@
 {% extends "butterflies/base.html" %}
 {% load i18n %}
+{% load static %}
 {% load butterfly_extras butterfly_display %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'butterflies/css/detail.css' %}">
+{% endblock %}
+
 {% block content %}
-<h2>{% blocktrans %}{{ model_name }} Details{% endblocktrans %}</h2>
-<table border="1">
-    {% for field in fields %}
-    <tr>
-        <th>{{ field.verbose_name }}</th>
-        <td>{{ object|get_field_value:field.name|dot_if_none }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% if image_urls %}
-<h3>{% trans "Specimen Images" %}</h3>
-<div style="display: flex; gap: 2em; margin-bottom: 1em;">
-    <div>
-        <strong>{% trans "Dorsal:" %}</strong><br>
-        {% if image_urls.dorsal != 'no data' %}
-            <img src="{{ image_urls.dorsal }}" alt="Dorsal image" style="max-width:300px; max-height:300px; border:1px solid #ccc;">
-        {% else %}
-            <span style="display:inline-block; margin-top:1em; border:1px dashed #ccc; padding:1em; background:#f9f9f9; font-family:inherit; font-size:inherit; color:inherit;">{% trans "No data" %}</span>
+<div class="detail-container">
+    <!-- Header with title and action buttons -->
+    <header class="detail-header">
+        <h2 class="detail-title">{% blocktrans %}{{ model_name }} Details{% endblocktrans %}</h2>
+        <div class="detail-actions">
+            <a href="{% url 'dynamic_edit' object.model_name_internal object.pk %}" class="btn btn-primary">
+                {% trans "Edit" %}
+            </a>
+            {% if delete_confirm %}
+                <form method="post" class="delete-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">{% trans "Confirm Delete" %}</button>
+                </form>
+                <a href="{% url 'dynamic_detail' object.model_name_internal object.pk %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+            {% else %}
+                {% load auth_tags %}
+                {% if user.is_superuser or user|has_group:'Admin' %}
+                    <a href="{% url 'dynamic_delete' object.model_name_internal object.pk %}" class="btn btn-outline-primary">Delete</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="detail-content">
+        <!-- Main information card -->
+        <div class="detail-info-card">
+            <div class="detail-info-header">
+                {% trans "Specimen Information" %}
+            </div>
+            <table class="detail-table">
+                {% for field in fields %}
+                <tr{% if field.name == 'specimenNumber' or field.name == 'catalogNumber' %} class="important-field"{% endif %}>
+                    <th>{{ field.verbose_name }}</th>
+                    <td>
+                        {% if field.name == 'modified' %}
+                            <span class="field-value-long">{{ object.modified|dot_if_none }}</span>
+                        {% elif field.name == 'locality' %}
+                            {{ object.locality|dot_if_none }}
+                        {% elif field.name == 'recordedBy' %}
+                            {{ object.recordedBy|dot_if_none }}
+                        {% elif field.name == 'georeferencedBy' %}
+                            {{ object.georeferencedBy|dot_if_none }}
+                        {% elif field.name == 'identifiedBy' %}
+                            {{ object.identifiedBy|dot_if_none }}
+                        {% elif field.name == 'catalogNumber' %}
+                            <span class="field-value-code">{{ object.catalogNumber|dot_if_none }}</span>
+                        {% elif field.name == 'specimenNumber' %}
+                            <span class="field-value-code">{{ object.specimenNumber|dot_if_none }}</span>
+                        {% elif field.name == 'decimalLatitude' %}
+                            {{ object.decimalLatitude|dot_if_none }}
+                        {% elif field.name == 'decimalLongitude' %}
+                            {{ object.decimalLongitude|dot_if_none }}
+                        {% elif field.name == 'exact_loc' %}
+                            {{ object.exact_loc|dot_if_none }}
+                        {% elif field.name == 'coordinateUncertaintyInMeters' %}
+                            {{ object.coordinateUncertaintyInMeters|dot_if_none }}
+                        {% elif field.name == 'minimumElevationInMeters' %}
+                            {{ object.minimumElevationInMeters|dot_if_none }}
+                        {% elif field.name == 'maximumElevationInMeters' %}
+                            {{ object.maximumElevationInMeters|dot_if_none }}
+                        {% elif field.name == 'sex' %}
+                            {{ object.sex|dot_if_none }}
+                        {% elif field.name == 'behavior' %}
+                            <span class="field-value-long">{{ object.behavior|dot_if_none }}</span>
+                        {% elif field.name == 'occurrenceRemarks' %}
+                            <span class="field-value-long">{{ object.occurrenceRemarks|dot_if_none }}</span>
+                        {% elif field.name == 'disposition' %}
+                            <span class="field-value-long">{{ object.disposition|dot_if_none }}</span>
+                        {% elif field.name == 'year' %}
+                            {{ object.year|dot_if_none }}
+                        {% elif field.name == 'month' %}
+                            {{ object.month|dot_if_none }}
+                        {% elif field.name == 'day' %}
+                            {{ object.day|dot_if_none }}
+                        {% elif field.name == 'eventTime' %}
+                            {{ object.eventTime|dot_if_none }}
+                        {% elif field.name == 'eventDate' %}
+                            {{ object.eventDate|dot_if_none }}
+                        {% elif field.name == 'habitatNotes' %}
+                            <span class="field-value-long">{{ object.habitatNotes|dot_if_none }}</span>
+                        {% elif field.name == 'samplingProtocol' %}
+                            <span class="field-value-long">{{ object.samplingProtocol|dot_if_none }}</span>
+                        {% elif field.name == 'family' %}
+                            {{ object.family|dot_if_none }}
+                        {% elif field.name == 'subfamily' %}
+                            {{ object.subfamily|dot_if_none }}
+                        {% elif field.name == 'tribe' %}
+                            {{ object.tribe|dot_if_none }}
+                        {% elif field.name == 'subtribe' %}
+                            {{ object.subtribe|dot_if_none }}
+                        {% elif field.name == 'genus' %}
+                            {{ object.genus|dot_if_none }}
+                        {% elif field.name == 'specificEpithet' %}
+                            {{ object.specificEpithet|dot_if_none }}
+                        {% elif field.name == 'infraspecificEpithet' %}
+                            {{ object.infraspecificEpithet|dot_if_none }}
+                        {% elif field.name == 'dateIdentified' %}
+                            {{ object.dateIdentified|dot_if_none }}
+                        {% elif field.name == 'identificationReferences' %}
+                            <span class="field-value-long">{{ object.identificationReferences|dot_if_none }}</span>
+                        {% elif field.name == 'identificationRemarks' %}
+                            <span class="field-value-long">{{ object.identificationRemarks|dot_if_none }}</span>
+                        {% else %}
+                            <!-- Fallback for any other fields -->
+                            {% if object|get_field_value:field.name %}
+                                {{ object|get_field_value:field.name|dot_if_none }}
+                            {% else %}
+                                .
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <!-- Images section -->
+        {% if image_urls %}
+        <div class="images-section">
+            <div class="images-header">
+                {% trans "Specimen Images" %}
+            </div>
+            <div class="images-grid">
+                <div class="image-item">
+                    <div class="image-label">{% trans "Dorsal" %}</div>
+                    {% if image_urls.dorsal != 'no data' %}
+                        <img src="{{ image_urls.dorsal }}" alt="{% trans 'Dorsal view' %}" class="specimen-image">
+                    {% else %}
+                        <div class="no-data-placeholder">
+                            {% trans "No dorsal image available" %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="image-item">
+                    <div class="image-label">{% trans "Ventral" %}</div>
+                    {% if image_urls.ventral != 'no data' %}
+                        <img src="{{ image_urls.ventral }}" alt="{% trans 'Ventral view' %}" class="specimen-image">
+                    {% else %}
+                        <div class="no-data-placeholder">
+                            {% trans "No ventral image available" %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
         {% endif %}
     </div>
-    <div>
-        <strong>{% trans "Ventral:" %}</strong><br>
-        {% if image_urls.ventral != 'no data' %}
-            <img src="{{ image_urls.ventral }}" alt="Ventral image" style="max-width:300px; max-height:300px; border:1px solid #ccc;">
-        {% else %}
-            <span style="display:inline-block; margin-top:1em; border:1px dashed #ccc; padding:1em; background:#f9f9f9; font-family:inherit; font-size:inherit; color:inherit;">{% trans "No data" %}</span>
-        {% endif %}
-    </div>
+
+    <!-- Footer navigation -->
+    <footer class="detail-footer">
+        <a href="{% url 'report_table' %}" class="back-link">
+            {% trans "Back to Report Table" %}
+        </a>
+        <div class="text-muted font-sm">
+            {% trans "Last updated:" %} {{ object.modified|default:"N/A" }}
+        </div>
+    </footer>
 </div>
-{% endif %}
-<a href="{% url 'dynamic_edit' object.model_name_internal object.pk %}">{% trans "Edit" %}</a>
-{% if delete_confirm %}
-    <form method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit">{% trans "Confirm Delete" %}</button>
-    </form>
-    <a href="{% url 'dynamic_detail' object.model_name_internal object.pk %}">{% trans "Cancel" %}</a>
-{% else %}
-    {% load auth_tags %}
-    {% if user.is_superuser or user|has_group:'Admin' %}
-        <a href="{% url 'dynamic_delete' object.model_name_internal object.pk %}">Delete</a>
-    {% endif %}
-{% endif %}
-<a href="{% url 'report_table' %}">Back to Report Table</a>
 {% endblock %}

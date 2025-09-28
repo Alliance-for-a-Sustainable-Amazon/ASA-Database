@@ -1,0 +1,285 @@
+/* Detail page styles for ASA Database */
+
+/* Main detail container */
+.detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Detail page header */
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #ddd;
+}
+
+.detail-title {
+    font-size: 1.5rem;
+    color: #333;
+    margin: 0;
+    font-weight: bold;
+}
+
+/* Action buttons container */
+/* Action buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: normal;
+    background: #f8f9fa;
+    color: #333;
+}
+
+.action-buttons .btn:hover {
+    background: #e9ecef;
+}
+
+.action-buttons .btn-primary {
+    background: #81b53e;
+    color: white;
+    border-color: #81b53e;
+}
+
+.action-buttons .btn-primary:hover {
+    background: #6d9435;
+}
+
+/* Detail content layout */
+.detail-content {
+    display: block;
+}
+
+/* Main information card */
+.detail-info-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 1.5rem;
+}
+
+.detail-info-header {
+    background: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Specimen details table */
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.detail-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.detail-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.detail-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: bold;
+    color: #333;
+    background-color: #f2f2f2;
+    border: 1px solid #ddd;
+    width: 25%;
+    vertical-align: top;
+}
+
+.detail-table td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    vertical-align: top;
+    word-wrap: break-word;
+}
+
+/* Images section */
+.images-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-top: 1.5rem;
+}
+
+.images-header {
+    background: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    color: #333;
+}
+
+.images-grid {
+    display: flex;
+    gap: 2rem;
+    padding: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.image-item {
+    text-align: center;
+}
+
+.image-label {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.specimen-image {
+    max-width: 300px;
+    max-height: 300px;
+    border: 1px solid #ccc;
+    display: block;
+}
+
+.specimen-image:hover {
+    border-color: #81b53e;
+}
+
+/* No data placeholder */
+.no-data-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    border: 2px dashed #ccc;
+    border-radius: 6px;
+    background: #f9f9f9;
+    color: #666;
+    font-style: italic;
+    min-height: 150px;
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+}
+
+/* Navigation footer */
+.detail-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.back-link {
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s ease;
+}
+
+.back-link:hover {
+    color: #81b53e; /* ASA green on hover */
+    text-decoration: none;
+}
+
+.back-link::before {
+    content: "←";
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Delete confirmation styles */
+.delete-form {
+    display: inline-block;
+}
+
+.btn-danger {
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Field value formatting */
+.field-value-long {
+    max-width: 400px;
+    word-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.5;
+}
+
+.field-value-code {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Keep important fields bold but without highlighting */
+.detail-table .important-field th {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .detail-container {
+        padding: 0.5rem;
+    }
+    
+    .detail-header {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .images-grid {
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .specimen-image {
+        max-width: 250px;
+        max-height: 250px;
+    }
+    
+    .action-buttons {
+        gap: 0.5rem;
+    }
+    
+    .action-buttons .btn {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .detail-table th,
+    .detail-table td {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .detail-title {
+        font-size: 1.5rem;
+    }
+}
