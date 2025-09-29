@@ -40,7 +40,7 @@ from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
 from .utils import dot_if_none
 from butterflies.utils.image_utils import get_specimen_image_urls
-from .auth_utils import admin_required
+from .auth_utils import admin_required, guest_allowed, is_guest_mode
 from .filter_utils import FilterBuilder, apply_model_filters
 
 
@@ -210,12 +210,13 @@ def format_date_value(value):
 
 # Filter application function moved to filter_utils.py
 
+@guest_allowed
 def dynamic_list(request, model_name):
     """
     Generic dynamic list view for any model.
     Displays all objects for the specified model with filtering capabilities.
     Includes pagination for better performance.
-    Requires user authentication.
+    Allows guest access for read-only viewing.
     
     Parameters:
         request: HTTP request object
@@ -303,10 +304,12 @@ def dynamic_list(request, model_name):
         'page_obj': page_obj,
     })
 
+@guest_allowed
 def dynamic_detail(request, model_name, object_id):
     """
     Generic detail view for any model.
     Shows detailed information for a specific object.
+    Allows guest access for read-only viewing.
     
     Parameters:
         request: HTTP request object
@@ -530,7 +533,7 @@ def create_initials(request):
 
 # --- Report Views ---
 
-@login_required
+@guest_allowed
 def report_table(request):
     """
     Shows a paginated table of specimens based on eventDate and eventTime.
@@ -2600,11 +2603,54 @@ def custom_logout(request):
     """
     Custom logout view that supports both GET and POST requests.
     Logs out the user and redirects to the logged_out template.
+    Also clears guest mode if active.
     
     Parameters:
         request: HTTP request object
     Returns:
         Rendered logged_out template
     """
+    # Clear guest mode if active
+    if 'guest_mode' in request.session:
+        del request.session['guest_mode']
     logout(request)
     return render(request, 'butterflies/auth/logged_out.html')
+
+def guest_login(request):
+    """
+    View to enable guest mode for read-only access.
+    Sets a session flag to allow access without authentication.
+    
+    Parameters:
+        request: HTTP request object
+    Returns:
+        Redirect to next page or home page
+    """
+    # Set guest mode in session
+    request.session['guest_mode'] = True
+    
+    # Get the next URL from request or default to home
+    next_url = request.GET.get('next', '/')
+    
+    # Add a message to inform user about guest limitations
+    messages.info(request, 
+        'You are now browsing as a guest. You can view all data but cannot make any changes. '
+        'To edit data, please log in with your credentials.')
+    
+    return redirect(next_url)
+
+def guest_logout(request):
+    """
+    View to disable guest mode and return to login page.
+    
+    Parameters:
+        request: HTTP request object
+    Returns:
+        Redirect to login page
+    """
+    # Clear guest mode
+    if 'guest_mode' in request.session:
+        del request.session['guest_mode']
+    
+    messages.info(request, 'Guest session ended.')
+    return redirect('/accounts/login/')

@@ -37,6 +37,8 @@ urlpatterns = [
     
     # Authentication routes
     path('accounts/logout/', views.custom_logout, name='custom_logout'),
+    path('accounts/guest/', views.guest_login, name='guest_login'),
+    path('accounts/guest/logout/', views.guest_logout, name='guest_logout'),
     
     # User management routes
     path('users/', views_user_management.UserListView.as_view(), name='user_list'),
