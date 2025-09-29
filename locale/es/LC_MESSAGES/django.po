@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-28 16:27+0000\n"
-"PO-Revision-Date: 2025-09-28 10:02-0700\n"
+"POT-Creation-Date: 2025-09-29 05:19+0000\n"
+"PO-Revision-Date: 2025-09-28 22:28-0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -19,43 +19,66 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.7\n"
 
-#: butterflies/templates/butterflies/_detail.html:5
+#: butterflies/templates/butterflies/_detail.html:14
 #, python-format
 msgid "%(model_name)s Details"
 msgstr "Detalles de %(model_name)s"
 
-#: butterflies/templates/butterflies/_detail.html:15
-msgid "Specimen Images"
-msgstr "Imágenes del Espécimen"
-
-#: butterflies/templates/butterflies/_detail.html:18
-msgid "Dorsal:"
-msgstr "Dorsal:"
-
-#: butterflies/templates/butterflies/_detail.html:22
-#: butterflies/templates/butterflies/_detail.html:30
-msgid "No data"
-msgstr "Sin datos"
-
-#: butterflies/templates/butterflies/_detail.html:26
-msgid "Ventral:"
-msgstr "Ventral:"
-
-#: butterflies/templates/butterflies/_detail.html:35
+#: butterflies/templates/butterflies/_detail.html:17
 #: butterflies/templates/butterflies/_table.html:30
 msgid "Edit"
 msgstr "Editar"
 
-#: butterflies/templates/butterflies/_detail.html:39
+#: butterflies/templates/butterflies/_detail.html:22
 #: butterflies/templates/butterflies/user_management/user_confirm_delete.html:18
 msgid "Confirm Delete"
 msgstr "Confirmar Eliminación"
 
-#: butterflies/templates/butterflies/_detail.html:41
+#: butterflies/templates/butterflies/_detail.html:24
 #: butterflies/templates/butterflies/bulk_delete_confirm.html:22
 #: butterflies/templates/butterflies/user_management/user_confirm_delete.html:19
 msgid "Cancel"
 msgstr "Cancelar"
+
+#: butterflies/templates/butterflies/_detail.html:38
+msgid "Specimen Information"
+msgstr "Información del Espécimen"
+
+#: butterflies/templates/butterflies/_detail.html:131
+msgid "Specimen Images"
+msgstr "Imágenes del Espécimen"
+
+#: butterflies/templates/butterflies/_detail.html:135
+msgid "Dorsal"
+msgstr "Dorsal"
+
+#: butterflies/templates/butterflies/_detail.html:137
+msgid "Dorsal view"
+msgstr "Vista dorsal:"
+
+#: butterflies/templates/butterflies/_detail.html:140
+msgid "No dorsal image available"
+msgstr "No hai imagen dorsal disponible"
+
+#: butterflies/templates/butterflies/_detail.html:145
+msgid "Ventral"
+msgstr "Ventral"
+
+#: butterflies/templates/butterflies/_detail.html:147
+msgid "Ventral view"
+msgstr "Vista ventral:"
+
+#: butterflies/templates/butterflies/_detail.html:150
+msgid "No ventral image available"
+msgstr "No hay imagen ventral disponible"
+
+#: butterflies/templates/butterflies/_detail.html:162
+msgid "Back to Report Table"
+msgstr "Volver a la Tabla de Informes"
+
+#: butterflies/templates/butterflies/_detail.html:165
+msgid "Last updated:"
+msgstr "Última actualización"
 
 #: butterflies/templates/butterflies/_disposition_history.html:4
 msgid "Previous Disposition Entries:"
@@ -181,6 +204,19 @@ msgstr "Nombre de Usuario:"
 #: butterflies/templates/butterflies/user_management/user_form.html:38
 msgid "Password:"
 msgstr "Contraseña:"
+
+#: butterflies/templates/butterflies/auth/login.html:41
+msgid "Don't have an account?"
+msgstr "¿No tienes una cuenta?"
+
+#: butterflies/templates/butterflies/auth/login.html:44
+msgid "Continue as Guest"
+msgstr "Continúe como invitado"
+
+#: butterflies/templates/butterflies/auth/login.html:47
+msgid "Guest access allows you to view data but not make changes"
+msgstr ""
+"El acceso de invitado le permite ver los datos pero no realizar cambios"
 
 #: butterflies/templates/butterflies/base.html:8
 #: butterflies/templates/butterflies/import_model.html:5
@@ -617,3 +653,6 @@ msgstr "Panel de Administración"
 #: butterflies/templates/butterflies/user_management/user_list.html:37
 msgid "No role"
 msgstr "Sin rol"
+
+#~ msgid "No data"
+#~ msgstr "Sin datos"
