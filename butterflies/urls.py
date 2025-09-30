@@ -34,6 +34,7 @@ urlpatterns = [
     
     # Debug and utility routes
     path('specimen/debug-bulk-delete/', views.debug_bulk_delete_specimen, name='debug_bulk_delete_specimen'),
+    path('specimen/debug-bulk-delete-filtered/', views.debug_bulk_delete_specimen_filtered, name='debug_bulk_delete_specimen_filtered'),
     
     # Authentication routes
     path('accounts/logout/', views.custom_logout, name='custom_logout'),

@@ -24,6 +24,13 @@
            onclick="return confirm('{{ bulk_delete_confirm_msg }}')">
           {% trans "Debug Bulk Delete" %}
         </a>
+        <span class="mx-2">|</span>
+        {% with bulk_delete_filtered_msg=_("This is a debug feature. Proceed to delete all currently filtered specimens?") %}
+          <a href="{% url 'debug_bulk_delete_specimen_filtered' %}?{{ request.META.QUERY_STRING }}" class="text-danger"
+             onclick="return confirm('{{ bulk_delete_filtered_msg }}')">
+            {% trans "Debug Bulk Delete Filtered" %}
+          </a>
+        {% endwith %}
       {% endwith %}
     {% endif %}
   {% endif %}

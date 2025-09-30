@@ -2500,6 +2500,51 @@ def debug_bulk_delete_specimen(request):
     }
     return render(request, 'butterflies/bulk_delete_confirm.html', context)
 
+@admin_required
+def debug_bulk_delete_specimen_filtered(request):
+    """
+    Debug feature to bulk delete ONLY the currently filtered specimen records.
+    Reuses the same filtering logic as dynamic_list via apply_model_filters.
+    Shows a confirmation screen that preserves the current query parameters and
+    requires typing "DELETE" to confirm.
+    """
+    from .filter_utils import apply_model_filters
+
+    # Build filtered queryset exactly like dynamic_list does
+    model = Specimen
+    queryset = model.objects.all()
+
+    special_filters = {
+        'catalogNumber': {'field': 'catalogNumber', 'range_support': True},
+        'locality': {'field': 'locality__localityCode', 'range_support': False},
+        'specimenNumber': {'field': 'specimenNumber', 'range_support': True},
+        'year': {'field': 'year', 'range_support': True},
+    }
+
+    filtered_qs = apply_model_filters(queryset, model, request, special_filters)
+
+    if request.method == 'POST':
+        confirm_text = request.POST.get('confirm_text', '')
+        if confirm_text == 'DELETE':
+            count = filtered_qs.count()
+            filtered_qs.delete()
+            messages.success(request, f"Successfully deleted {count} filtered specimen records.")
+            return redirect('dynamic_list', model_name='specimen')
+        else:
+            messages.error(request, "Confirmation text did not match. Deletion canceled.")
+            return redirect('dynamic_list', model_name='specimen')
+
+    # GET request - show confirmation page with count and preserve filters
+    count = filtered_qs.count()
+    # Keep the original query string to round-trip on the form action
+    query_string = request.META.get('QUERY_STRING', '')
+    context = {
+        'count': count,
+        'query_string': query_string,
+        'filtered': True,
+    }
+    return render(request, 'butterflies/bulk_delete_confirm.html', context)
+
 def all_list(request):
     """
     Display objects from all models in the butterflies app.

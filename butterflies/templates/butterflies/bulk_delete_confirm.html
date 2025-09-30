@@ -6,11 +6,23 @@
 
 {% block content %}
 <div class="container">
-    <h1>{% trans "Debug Bulk Delete Confirmation" %}</h1>
+    <h1>
+        {% if filtered %}
+            {% trans "Debug Bulk Delete Filtered Confirmation" %}
+        {% else %}
+            {% trans "Debug Bulk Delete Confirmation" %}
+        {% endif %}
+    </h1>
     
-        <div class="alert alert-danger">{% trans "Warning! You are about to permanently delete {{ count }} specimen records. This action cannot be undone." %}</div>
+        <div class="alert alert-danger">
+            {% if filtered %}
+                {% blocktrans %}Warning! You are about to permanently delete {{ count }} currently filtered specimen records. This action cannot be undone.{% endblocktrans %}
+            {% else %}
+                {% blocktrans %}Warning! You are about to permanently delete {{ count }} specimen records. This action cannot be undone.{% endblocktrans %}
+            {% endif %}
+        </div>
     
-    <form method="post">
+    <form method="post" action="{% if query_string %}?{{ query_string }}{% endif %}">
         {% csrf_token %}
         <div class="form-group">
             <label for="confirmText">{% trans "To confirm, type 'DELETE' in the box below:" %}</label>
