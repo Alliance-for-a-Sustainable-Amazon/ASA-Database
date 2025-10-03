@@ -120,16 +120,16 @@ def get_specimen_image_urls_batch(catalog_numbers):
         else:
             uncached_numbers.append(catalog_number)
     
-    # Process uncached numbers
     if uncached_numbers:
         try:
-            with ThreadPoolExecutor(max_workers=8, thread_name_prefix='batch_image_check') as executor:
+            with ThreadPoolExecutor(max_workers=6, thread_name_prefix='batch_image_check') as executor:
                 future_to_catalog = {
                     executor.submit(get_specimen_image_urls, catalog_number): catalog_number 
                     for catalog_number in uncached_numbers
                 }
                 
-                for future in as_completed(future_to_catalog, timeout=10):
+                # Process all futures
+                for future in as_completed(future_to_catalog):
                     catalog_number = future_to_catalog[future]
                     try:
                         result = future.result()
