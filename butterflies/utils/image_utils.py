@@ -40,7 +40,7 @@ def check_image_url_fast(url):
     
     try:
         session = get_session()
-        response = session.head(url, timeout=5.0)
+        response = session.head(url, timeout=15.0)
         exists = response.status_code == 200
         
         # Cache individual URL results for 4 hours
@@ -87,7 +87,7 @@ def get_specimen_image_urls(catalog_number):
             future_to_url = {executor.submit(check_image_url_fast, url): (url, image_type) for url, image_type in possible_urls}
             
             # Collect results as they complete
-            for future in as_completed(future_to_url, timeout=3):  # 3 second total timeout
+            for future in as_completed(future_to_url, timeout=60):
                 result = future.result()
                 if result:
                     url, image_type = future_to_url[future]
