@@ -1,19 +1,10 @@
 # views.py
-# Consolidated view functions for butterfly collections using the organized form approach.
-# All forms now use the organized layout for better usability.
-#
-# Date Handling Strategy:
-# - In the database: Dates are stored as strings in format "DD Month, YYYY" (e.g. "15 November, 2025")
-# - During input: Various formats are accepted and automatically converted using format_date_value()
-# - During display: Dates are shown in their string representation directly from the database
-# - During sorting/filtering: Dates are parsed to datetime objects using dateutil.parser
-# - The format_date_value() function is the central point for date standardization
 
 # --- Imports ---
 from django.apps import apps
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.forms import modelform_factory
 from django.contrib import messages
 from django.urls import reverse
@@ -21,6 +12,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.db import models
+from django.template.loader import get_template
+
 import csv
 import io
 import openpyxl
@@ -35,6 +28,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
 import pickle
 import base64
+import logging
+
 # App-specific imports
 from .models import Specimen, Locality, Initials
 from .forms import SpecimenForm, SpecimenEditForm, LocalityForm, InitialsForm
@@ -42,6 +37,7 @@ from .utils import dot_if_none
 from butterflies.utils.image_utils import get_specimen_image_urls
 from .auth_utils import admin_required, guest_allowed, is_guest_mode
 from .filter_utils import FilterBuilder, apply_model_filters
+from .utils.image_utils import get_specimen_image_urls_batch
 
 
 # --- Utility Functions ---
@@ -54,8 +50,7 @@ def model_list():
 def parse_date_value(value):
     """
     Parse a value into a date object.
-    This is the complement to format_date_value() - use this when you need a date object
-    for calculations, sorting, or comparisons.
+    Complement to format_date_value()
     
     Parameters:
         value: Date value in any format (string, date, datetime)
@@ -92,7 +87,6 @@ def parse_date_value(value):
         return datetime.datetime.fromisoformat(str(value)).date()
             
     except Exception as e:
-        import logging
         logging.warning(f"Date parsing error for '{value}' ({type(value)}): {str(e)}")
         return None
 
@@ -196,19 +190,12 @@ def format_date_value(value):
                     pass
                 
     except Exception as e:
-        import logging
         logging.warning(f"Date conversion error for value '{value}': {str(e)}")
         
     # If all conversions fail, return the original value if it's a string
     return str(value) if value is not None else None
 
 # --- Generic CRUD Views ---
-    # Using FilterUtils class - functionality moved to filter_utils.py
-    pass
-
-# Filter-related functions moved to filter_utils.py
-
-# Filter application function moved to filter_utils.py
 
 @guest_allowed
 def dynamic_list(request, model_name):
@@ -216,6 +203,7 @@ def dynamic_list(request, model_name):
     Generic dynamic list view for any model.
     Displays all objects for the specified model with filtering capabilities.
     Includes pagination for better performance.
+    Supports both table and grid view modes for specimens.
     Allows guest access for read-only viewing.
     
     Parameters:
@@ -223,10 +211,7 @@ def dynamic_list(request, model_name):
         model_name: String name of the model to list
     Returns:
         Rendered template with paginated and filtered objects
-    """
-    from django.core.paginator import Paginator
-    from .filter_utils import apply_model_filters
-    
+    """    
     model = None
     for m in model_list():
         if m._meta.model_name == model_name:
@@ -234,6 +219,20 @@ def dynamic_list(request, model_name):
             break
     if not model:
         raise Http404("Model not found")
+    
+    # Handle view mode toggle for specimen model
+    view_mode = 'table'  # default view mode
+    if model_name == 'specimen':
+        # Check if view mode is being changed
+        if request.method == 'POST' and 'toggle_view_mode' in request.POST:
+            new_view_mode = request.POST.get('view_mode', 'table')
+            request.session[f'{model_name}_view_mode'] = new_view_mode
+            request.session.modified = True
+            # Redirect to avoid form resubmission on refresh
+            return HttpResponseRedirect(request.get_full_path())
+        
+        # Get view mode from session or default to table
+        view_mode = request.session.get(f'{model_name}_view_mode', 'table')
     
     # Base queryset
     objects = model.objects.all()
@@ -264,11 +263,30 @@ def dynamic_list(request, model_name):
         obj.model_name_internal = model._meta.model_name
         obj_list.append(obj)
     
-    # Pagination
+    # Pagination - before loading images for efficiency
     items_per_page = 20  # Set the number of items per page
     paginator = Paginator(obj_list, items_per_page)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
+    
+    # Only load images for the current page objects
+    if model_name == 'specimen' and view_mode == 'grid':
+        # Get catalog numbers for batch processing
+        catalog_numbers = [obj.catalogNumber for obj in page_obj if obj.catalogNumber]
+        
+        # Use batch loading for grid view
+        batch_image_results = get_specimen_image_urls_batch(catalog_numbers)
+        
+        for obj in page_obj:
+            obj.primary_image_url = None
+            if obj.catalogNumber in batch_image_results:
+                image_dict = batch_image_results[obj.catalogNumber]
+                
+                # Get primary image (prefer dorsal, fallback to ventral)
+                if image_dict.get('dorsal') and image_dict['dorsal'] != 'no data':
+                    obj.primary_image_url = image_dict['dorsal']
+                elif image_dict.get('ventral') and image_dict['ventral'] != 'no data':
+                    obj.primary_image_url = image_dict['ventral']
     
     # Check for import errors in session
     import_errors = None
@@ -302,6 +320,8 @@ def dynamic_list(request, model_name):
         'import_errors': import_errors,  # Pass import errors to the template
         'paginator': paginator,
         'page_obj': page_obj,
+        'view_mode': view_mode,  # Pass current view mode to template
+        'supports_grid_view': model_name == 'specimen',  # Only specimen supports grid view
     })
 
 @guest_allowed
@@ -453,7 +473,6 @@ def dynamic_create_edit(request, model_name, object_id=None):
         # Use model-specific template if it exists
         template_name = f'butterflies/{model._meta.model_name}_form.html'
         try:
-            from django.template.loader import get_template
             get_template(template_name)
         except:
             # Fall back to generic form template
@@ -2587,32 +2606,6 @@ def all_list(request):
         'request': request,
     })
 
-# --- Legacy/Deprecated Views ---
-
-def showdetails(request, template, model=None):
-    """
-    Legacy view to show details for all objects of a model.
-    
-    Parameters:
-        request: HTTP request object
-        template: Template to render
-        model: Django model class (must be provided)
-    Returns:
-        Rendered template with objects and their fields
-    
-    Note: This function requires 'model' to be passed as a parameter,
-    otherwise it will raise an error. Consider using dynamic_list instead.
-    """
-    if model is None:
-        raise ValueError("Model parameter is required")
-        
-    objects = model.objects.all()
-    
-    for object in objects:
-        object.fields = dict((field.name, field.value_to_string(object))
-                            for field in object._meta.fields)
-    
-# --- Authentication Views ---
 # --- Session Serialization Helpers ---
 def serialize_dataframe(df):
     """

@@ -1,180 +1,279 @@
-# ASA-Database: Butterfly Specimen Management System
 
-## Overview
+# ASA Database
 
-ASA-Database is a comprehensive Django web application designed for the Alliance for a Sustainable Amazon (ASA) to manage their butterfly specimen collections. This application follows Darwin Core standards for biodiversity data, enabling researchers and field workers to record, track, and manage detailed information about butterfly specimens collected during field research.
+---
 
-## Documentation
+## Table of Contents
 
-**Comprehensive documentation** is available in [ASA_DATABASE_DOCUMENTATION.md](ASA_DATABASE_DOCUMENTATION.md)
+1. [Project Overview](#project-overview)
+2. [Key Features](#key-features)
+3. [System Architecture](#system-architecture)
+4. [Installation and Setup](#installation-and-setup)
+5. [Database Structure](#database-structure)
+6. [Authentication & Authorization](#authentication--authorization)
+7. [Core Functionality](#core-functionality)
+8. [User Interface](#user-interface)
+9. [Internationalization (i18n) & Translation](#internationalization-i18n--translation)
+10. [Deployment](#deployment)
+11. [Troubleshooting & Maintenance](#troubleshooting--maintenance)
+12. [Code Structure](#code-structure)
+13. [Documentation & Readme Status](#documentation--readme-status)
+14. [Future Enhancements](#future-enhancements)
+15. [References](#references)
 
-## Quick Start
+---
 
-### Docker Setup
+## Project Overview
 
-For easy deployment, the application can be run using Docker:
+ASA Database is a Django-based web application for the Alliance for a Sustainable Amazon (ASA) to manage butterfly specimen collections. It follows Darwin Core standards for biodiversity data, supporting researchers and field workers in recording, tracking, and managing specimen information.
 
-```bash
-# Clone the repository
-git clone https://github.com/Alliance-for-a-Sustainable-Amazon/ASA-Database.git
-cd ASA-Database
-
-# Build and start the containers
-docker-compose up -d
-
-# Run migrations and create user groups
-docker-compose exec web python manage.py migrate
-docker-compose exec web python manage.py setup_groups
-
-# Create an admin user
-docker-compose exec web python manage.py createsuperuser
-```
-
-Access the application at `http://localhost:8000`
-
-### Local Development Setup
-
-For local development without Docker:
-
-```bash
-# Clone the repository
-git clone https://github.com/Alliance-for-a-Sustainable-Amazon/ASA-Database.git
-cd ASA-Database
-
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run migrations and create user groups
-python manage.py migrate
-python manage.py setup_groups
-
-# Create an admin user
-python manage.py createsuperuser
-
-# Start the development server
-python manage.py runserver
-```
-
-Access the application at `http://localhost:8000`
-
-### Azure Deployment
-
-For Azure deployment instructions, refer to the [comprehensive documentation](ASA_DATABASE_DOCUMENTATION.md#azure-deployment).
+---
 
 ## Key Features
 
-- **Natural Key System**: Uses human-readable natural keys for identification
-- **Role-Based Access**: Distinguishes between Admin and Researcher roles
-- **Data Import/Export**: Supports CSV and Excel for both import and export
-- **Organized Data Collection**: Forms organized by Darwin Core standards
-- **Azure Cloud Deployment**: Configured for Microsoft Azure App Services
+- **Natural Key System:** Human-readable identifiers for specimens, localities, and people.
+- **Role-Based Access:** Admin and Researcher roles with distinct permissions.
+- **Data Import/Export:** CSV/Excel support for bulk operations.
+- **Organized Data Collection:** Forms structured by Darwin Core standards.
+- **Azure Cloud Deployment:** Optimized for Microsoft Azure App Services.
+- **Internationalization (i18n):** Global English/Spanish language switch.
 
-## License
+---
 
-This project is licensed under the terms of the MIT license.
+## System Architecture
 
+### Technology Stack
+- **Backend:** Django 5.2.4
+- **Database:** SQLite (development), PostgreSQL on Azure (production)
+- **Frontend:** HTML, CSS, JavaScript, Django templates
+- **Deployment:** Azure App Service, Docker support
 
-3. **Initials**: Researchers and collectors who work with the specimens.
+### Main Components
+- **Core Application:** Django project with `butterflies` app
+- **Authentication:** Django auth with custom user management
+- **Admin Interface:** Custom admin panel and Django admin
+- **Import/Export:** Custom CSV/Excel import/export
+- **User Management:** Web interface for user administration
 
-### Relationships
+---
 
-- Each **Specimen** is linked to a **Locality** (where it was found)
-- Each **Specimen** is linked to various **Initials** records representing different roles (collector, identifier, etc.)
-- History tracking fields use a standardized format for maintaining modification records
+## Installation and Setup
+
+### Local Development Setup
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Alliance-for-a-Sustainable-Amazon/ASA-Database.git
+   cd ASA-Database
+   ```
+2. **Set up a virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Run migrations**:
+   ```bash
+   python manage.py migrate
+   ```
+5. **Create user groups**:
+   ```bash
+   python manage.py setup_groups
+   ```
+6. **Create a superuser**:
+   ```bash
+   python manage.py createsuperuser
+   ```
+7. **Run the development server**:
+   ```bash
+   python manage.py runserver
+   ```
+
+### Docker Setup
+1. **Build and run with Docker Compose**:
+   ```bash
+   docker-compose up -d
+   ```
+2. **Run migrations inside the container**:
+   ```bash
+   docker-compose exec web python manage.py migrate
+   ```
+3. **Create user groups**:
+   ```bash
+   docker-compose exec web python manage.py setup_groups
+   ```
+4. **Create a superuser**:
+   ```bash
+   docker-compose exec web python manage.py createsuperuser
+   ```
+
+---
+
+## Database Structure
+
+### Key Models
+- **Specimen:** The core model for butterfly specimens with catalogNumber as the primary key (Format: `YEAR-LOCALITYCODE-SPECIMENNUMBER`, e.g., `2025-ACEER-123`)
+- **Locality:** Represents collection locations with localityCode as the primary key (e.g., `ACEER`)
+- **Initials:** Stores information about collectors, researchers, etc. with initials as the primary key (e.g., `JDK`)
+
+### Natural Keys Implementation
+- Natural keys are used for better human readability and data portability:
+  - **Specimen:** catalogNumber
+  - **Locality:** localityCode
+  - **Initials:** initials
+
+### Model Relationships
+- **Specimen** → **Locality:** Many specimens can be collected at one locality
+- **Specimen** → **Initials:** Multiple relationships for different roles (recordedBy, identifiedBy, georeferencedBy)
+
+---
+
+## Authentication & Authorization
+
+### User Roles
+- **Admin:** Full access to all features, user management, import/export, bulk operations, Django admin access
+- **Researcher:** Data entry/viewing, limited permissions
+
+### Permissions System
+- Enforced via:
+  - Function decorators (`@login_required`, `@admin_required`)
+  - Class-based view mixins (`AdminOrSuperUserRequiredMixin`)
+  - Template conditionals (`{% if user|has_group:'Admin' %}`)
+
+### Managing Users
+- Custom web interface at `/users/` for listing, creating, editing, deleting users
+
+### Creating Admin User via Environment Variables
+- Automated admin creation for deployments:
+  - `DJANGO_ADMIN_PASSWORD` (required)
+  - `DJANGO_ADMIN_USERNAME` (optional, defaults to 'admin')
+  - `DJANGO_ADMIN_EMAIL` (optional, defaults to 'admin@example.com')
+  - Management command: `python manage.py create_default_admin`
+  - Azure deployment script auto-creates admin if password is set
 
 ---
 
 ## Core Functionality
 
 ### Specimen Management
-
-The application provides comprehensive tools for managing butterfly specimens:
-
-- **Create new specimens** with detailed taxonomic, location, and collection information
-- **Edit existing specimens** with full audit trail of changes
-- **View specimen details** in various formats
-- **Track specimen disposition** as they move through the research process
-- **Link specimens** to localities, collectors, and identifiers
+- Add/Edit specimens via forms; catalogNumber auto-generated
+- Forms organized by Darwin Core categories:
+  1. Record-level Information
+  2. Location Information
+  3. Occurrence Information
+  4. Event Information
+  5. Taxon Information
+  6. Identification Information
 
 ### Locality Management
-
-Manage the geographic locations where specimens were collected:
-
-- **Create and edit localities** with detailed information
-- **Georeference** locations with latitude, longitude, and precision data
-- **Track uncertainty** in geographic coordinates
-- **Record elevation** information
+- Admin-only creation/editing of localities
+- List, edit, delete via dedicated views
 
 ### People Management (Initials)
-
-Track and manage people involved in the collection and identification process:
-
-- **Maintain a database of researchers** with their initials as unique identifiers
-- **Associate people** with specimens in various roles
-- **Track contributions** to the specimen collection process
-
-### Import/Export
-
-The system supports importing and exporting data:
-
-- **Export data** in CSV format for use in other systems
-- **Import data** from structured formats
-- **Backup and restore** functionality
+- Admin-only creation/editing of initials
+- List, edit, delete via dedicated views
 
 ---
 
+## Data Import/Export
 
-- Coordinate uncertainty
-- Elevation data
-- Georeferencing information
+### Importing Data
+- Admin-only import via CSV/Excel with duplicate detection and validation
+- Preview screen for duplicates and validation issues
+- Auto-suffixing duplicates (e.g., "ACEER-2")
+- Foreign key resolution for relationships
 
-### Occurrence Information
+### Exporting Data
+- Export filtered data to CSV/Excel from dashboards and list views
 
-- Specimen numbering
-- Recorder information
-- Sex determination
-- Behavioral observations
-- Specimen disposition tracking
-
-### Event Information
-
-- Collection date (year, month, day)
-- Collection time
-- Habitat notes
-- Sampling protocol information
-
-### Taxon Information
-
-- Taxonomic hierarchy (family, subfamily, tribe, etc.)
-- Genus and species information
-- Infraspecific taxonomic details
-
-### Identification Information
-
-- Identifier information
-- Identification date
-- Reference materials used
-- Identification remarks
+### Bulk Operations
+- Bulk delete for specimens (admin only, double confirmation)
 
 ---
 
-## Admin Interface
+## User Interface
 
-The Django admin interface provides advanced management capabilities:
-
-- **User management** for controlling access
-- **Bulk operations** for efficient data handling
-- **Advanced filtering** options
-- **Import/export** functionality
-- **Data validation** and integrity checks
+- **Dashboard:** Table of specimens, search/filter, edit/export links
+- **Forms:** Logical grouping, clear labeling, help text, validation feedback
+- **Search/Filtering:** Quick search, advanced filters, model-specific search
 
 ---
 
-## Reports and Data Export
+## Deployment
 
-Generate reports and export data:
+### Azure
+- Prerequisites: Azure account, Azure CLI, Git, Python 3.8+
+- Environment variables:
+  - `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_SETTINGS_MODULE`, `POSTGRES_DATABASE`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`, `DJANGO_ADMIN_USERNAME`, `DJANGO_ADMIN_EMAIL`, `DJANGO_ADMIN_PASSWORD`
+- Steps:
+  1. Create resources (resource group, app service plan, PostgreSQL server, database, web app)
+  2. Configure environment variables
+  3. Deploy code via Git
+  4. Authentication setup: migration, group creation, admin creation, permission setup
+- Database: Azure PostgreSQL Flexible Server (connection pooling, SSL, env-based config)
 
+---
+
+## Troubleshooting & Maintenance
+
+- Database connection: Check connection string, firewall settings
+- Authentication: Verify groups, admin user creation
+- Form errors: Check validation, natural key format
+- Import/Export: Verify CSV format, encoding (UTF-8)
+- Logs: Azure Portal → App Service → Logs; local logs with `DEBUG=True`
+- Migration issues, database resets, deployment errors: See troubleshooting guides and scripts
+
+---
+
+## Code Structure
+
+- `butterflies/`: Main app (models, views, forms, admin, templates, static, management commands)
+- `research_data_app/`: Project settings (development and Azure)
+
+### Coding Standards
+- **PEP 8**: Python style guidelines
+- **Django Best Practices**: App organization, view structure
+- **Documentation**: Docstrings for all functions and classes
+
+---
+
+## Internationalization (i18n) & Translation
+
+### System
+- Uses Django's built-in i18n system
+- All user-facing text uses `{% trans %}` or `{% blocktrans %}` in templates
+- Language dropdown in header (in `base.html`) posts to `/i18n/setlang/`
+- Selected language persists via cookie (`LANGUAGE_CODE` in templates)
+- Translations managed via `.po` files in `locale/` directory
+
+### Workflow
+1. Mark text for translation in templates and Python code
+2. Extract messages: `python manage.py makemessages -l es`
+3. Edit `.po` files for Spanish translations
+4. Compile: `python manage.py compilemessages`
+5. Test switching via dropdown
+
+### Best Practices
+- Always use translation tags for user-facing text
+- Do not hardcode language in templates/views
+- Keep translations up to date after new features
+- Add `{% load i18n %}` in every template with translation tags
+
+### Troubleshooting
+- Missing translation: Ensure text is marked and `.po` files are updated/compiled
+- Dropdown not persisting: Check `LANGUAGE_CODE` context and middleware
+- TemplateSyntaxError: Ensure `{% load i18n %}` is present and tags are correct
+
+### Reference
+See `TRANSLATION_GUIDE.md` for full details.
+
+---
+
+## References
+
+- [Django i18n documentation](https://docs.djangoproject.com/en/5.2/topics/i18n/translation/)
+- [Django makemessages](https://docs.djangoproject.com/en/5.2/ref/django-admin/#makemessages)
+- [Django compilemessages](https://docs.djangoproject.com/en/5.2/ref/django-admin/#compilemessages)
+- ASA Database maintainers and official Django documentation

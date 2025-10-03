@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-29 05:19+0000\n"
-"PO-Revision-Date: 2025-09-28 22:28-0700\n"
+"POT-Creation-Date: 2025-10-03 03:53+0000\n"
+"PO-Revision-Date: 2025-10-02 20:58-0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -35,7 +35,7 @@ msgid "Confirm Delete"
 msgstr "Confirmar Eliminación"
 
 #: butterflies/templates/butterflies/_detail.html:24
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:22
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:34
 #: butterflies/templates/butterflies/user_management/user_confirm_delete.html:19
 msgid "Cancel"
 msgstr "Cancelar"
@@ -83,6 +83,24 @@ msgstr "Última actualización"
 #: butterflies/templates/butterflies/_disposition_history.html:4
 msgid "Previous Disposition Entries:"
 msgstr "Entradas de Disposición Anteriores:"
+
+#: butterflies/templates/butterflies/_grid.html:15
+msgid "Specimen"
+msgstr "Espécimen"
+
+#: butterflies/templates/butterflies/_grid.html:24
+msgid "No Image Available"
+msgstr "Imagen no disponible"
+
+#: butterflies/templates/butterflies/_grid.html:36
+msgid "Unidentified"
+msgstr ""
+
+#: butterflies/templates/butterflies/_grid.html:56
+#, fuzzy
+#| msgid "No records found."
+msgid "No specimens found."
+msgstr "No se Encontraron Registros."
 
 #: butterflies/templates/butterflies/_pagination.html:6
 #, python-format
@@ -257,48 +275,62 @@ msgstr "Iniciar Sesión"
 msgid "Confirm Bulk Delete"
 msgstr "Confirmar Eliminación Masiva"
 
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:9
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:11
+msgid "Debug Bulk Delete Filtered Confirmation"
+msgstr "Confirmación Filtrada de Eliminación Masiva"
+
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:13
 msgid "Debug Bulk Delete Confirmation"
 msgstr "Confirmación de Eliminación Masiva"
 
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:11
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:19
+#, python-format
 msgid ""
-"Warning! You are about to permanently delete {{ count }} specimen records. "
-"This action cannot be undone."
+"Warning! You are about to permanently delete %(count)s currently filtered "
+"specimen records. This action cannot be undone."
 msgstr ""
-"¡Advertencia! Está a punto de eliminar {{ count }} registros de especímenes "
+"¡Advertencia! Está a punto de eliminar %(count)s registros de especímenes "
 "permanentemente. Esta acción no se puede deshacer."
 
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:16
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:21
+#, python-format
+msgid ""
+"Warning! You are about to permanently delete %(count)s specimen records. "
+"This action cannot be undone."
+msgstr ""
+"¡Advertencia! Está a punto de eliminar %(count)s registros de especímenes "
+"permanentemente. Esta acción no se puede deshacer."
+
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:28
 msgid "To confirm, type 'DELETE' in the box below:"
 msgstr "Para confirmar, escriba 'DELETE' en el cuadro de abajo:"
 
-#: butterflies/templates/butterflies/bulk_delete_confirm.html:21
+#: butterflies/templates/butterflies/bulk_delete_confirm.html:33
 msgid "Confirm Deletion"
 msgstr "Confirmar Eliminación"
 
 #: butterflies/templates/butterflies/dynamic_list.html:5
-#: butterflies/templates/butterflies/dynamic_list.html:10
+#: butterflies/templates/butterflies/dynamic_list.html:14
 #, python-format
 msgid "Edit %(model_name)s Table"
 msgstr "Editar Tabla de %(model_name)s"
 
-#: butterflies/templates/butterflies/dynamic_list.html:12
+#: butterflies/templates/butterflies/dynamic_list.html:16
 msgid ""
 "Enter specimen catalog number or range and add additional filters (optional)."
 msgstr ""
 "Ingrese el número o rango de catálogo del espécimen y agregue filtros "
 "adicionales (opcional)."
 
-#: butterflies/templates/butterflies/dynamic_list.html:17
+#: butterflies/templates/butterflies/dynamic_list.html:21
 msgid "Export CSV"
 msgstr "Exportar CSV"
 
-#: butterflies/templates/butterflies/dynamic_list.html:18
+#: butterflies/templates/butterflies/dynamic_list.html:22
 msgid "Export Excel"
 msgstr "Exportar Excel"
 
-#: butterflies/templates/butterflies/dynamic_list.html:22
+#: butterflies/templates/butterflies/dynamic_list.html:26
 msgid ""
 "This is a debug feature. Are you sure you want to proceed to the bulk delete "
 "page?"
@@ -306,32 +338,61 @@ msgstr ""
 "Esta es una función de depuración. ¿Está seguro de que desea proceder a la "
 "página de eliminación masiva?"
 
-#: butterflies/templates/butterflies/dynamic_list.html:25
+#: butterflies/templates/butterflies/dynamic_list.html:29
 msgid "Debug Bulk Delete"
 msgstr "Depurar Eliminación Masiva"
 
-#: butterflies/templates/butterflies/dynamic_list.html:33
+#: butterflies/templates/butterflies/dynamic_list.html:32
+#, fuzzy
+#| msgid ""
+#| "This is a debug feature. Are you sure you want to proceed to the bulk "
+#| "delete page?"
+msgid ""
+"This is a debug feature. Proceed to delete all currently filtered specimens?"
+msgstr ""
+"Esta es una función de depuración. ¿Está seguro de que desea proceder a la "
+"página de eliminación masiva?"
+
+#: butterflies/templates/butterflies/dynamic_list.html:35
+#, fuzzy
+#| msgid "Debug Bulk Delete"
+msgid "Debug Bulk Delete Filtered"
+msgstr "Depurar Eliminación Masiva"
+
+#: butterflies/templates/butterflies/dynamic_list.html:45
+msgid "View:"
+msgstr "Ver:"
+
+#: butterflies/templates/butterflies/dynamic_list.html:54
+msgid "Table"
+msgstr "Tabla"
+
+#: butterflies/templates/butterflies/dynamic_list.html:61
+msgid "Grid"
+msgstr "Cuadrícula"
+
+#: butterflies/templates/butterflies/dynamic_list.html:68
 msgid "Edit existing records"
 msgstr "Editar registros existentes"
 
-#: butterflies/templates/butterflies/dynamic_list.html:41
+#: butterflies/templates/butterflies/dynamic_list.html:76
 msgid "Import Errors"
 msgstr "Errores de Importación"
 
-#: butterflies/templates/butterflies/dynamic_list.html:42
+#: butterflies/templates/butterflies/dynamic_list.html:77
 msgid "The following errors occurred during import:"
 msgstr "Los siguientes errores ocurrieron durante la importación:"
 
-#: butterflies/templates/butterflies/dynamic_list.html:55
+#: butterflies/templates/butterflies/dynamic_list.html:94
 #: butterflies/templates/butterflies/specimen_form.html:24
 msgid "Add Single Record"
 msgstr "Añadir Registro Único"
 
-#: butterflies/templates/butterflies/dynamic_list.html:61
+#: butterflies/templates/butterflies/dynamic_list.html:100
 msgid "Import Data"
 msgstr "Importar Datos"
 
-#: butterflies/templates/butterflies/dynamic_list.html:64
+#: butterflies/templates/butterflies/dynamic_list.html:103
 msgid "CSV, Excel"
 msgstr "CSV, Excel"
 

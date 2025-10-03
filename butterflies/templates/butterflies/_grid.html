@@ -1,0 +1,62 @@
+{# _grid.html - Grid view for specimen images #}
+
+{% load i18n %}
+{% load butterfly_extras butterfly_display query_utils %}
+{% load static %}
+{% load auth_tags %}
+
+{% if objects %}
+<div class="specimen-grid">
+    {% for obj in objects %}
+    <a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}" class="specimen-grid-item">
+        <div class="specimen-image-container">
+            {% if obj.primary_image_url %}
+                <img src="{{ obj.primary_image_url }}" 
+                     alt="{% trans 'Specimen' %} {{ obj.catalogNumber }}" 
+                     class="specimen-image"
+                     loading="lazy"
+                     decoding="async">
+            {% else %}
+                <div class="specimen-no-image">
+                    <svg class="specimen-no-image-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    </svg>
+                    <div class="specimen-no-image-text">{% trans "No Image Available" %}</div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="specimen-grid-info">
+            <h4 class="specimen-grid-title">{{ obj.catalogNumber|dot_if_none }}</h4>
+            <p class="specimen-grid-subtitle">
+                {% if obj.genus and obj.specificEpithet %}
+                    <em>{{ obj.genus }} {{ obj.specificEpithet }}</em>
+                {% elif obj.genus %}
+                    <em>{{ obj.genus }}</em> sp.
+                {% else %}
+                    {% trans "Unidentified" %}
+                {% endif %}
+            </p>
+            <div class="specimen-grid-details">
+                {% if obj.locality %}
+                    {{ obj.locality.localityCode|dot_if_none }}
+                {% endif %}
+                {% if obj.eventDate %}
+                    {% if obj.locality %} • {% endif %}{{ obj.eventDate|dot_if_none }}
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="specimen-grid-empty">
+    <svg class="specimen-grid-empty-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+    </svg>
+    <p>{% trans "No specimens found." %}</p>
+</div>
+{% endif %}
+
+{% if paginator %}
+    {% include 'butterflies/_pagination.html' %}
+{% endif %}

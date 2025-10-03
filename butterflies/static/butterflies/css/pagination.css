@@ -35,9 +35,9 @@
 }
 
 .page-link.active {
-    background-color: #28a745;
+    background-color: #81b53e;
     color: white;
-    border-color: #28a745;
+    border-color: #81b53e;
 }
 
 .page-link.disabled {
