@@ -40,7 +40,7 @@ def check_image_url_fast(url):
     
     try:
         session = get_session()
-        response = session.head(url, timeout=1.0)  # Reduced timeout even further
+        response = session.head(url, timeout=5.0)
         exists = response.status_code == 200
         
         # Cache individual URL results for 4 hours
