@@ -10,12 +10,25 @@
     {% for obj in objects %}
     <a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}" class="specimen-grid-item">
         <div class="specimen-image-container">
-            {% if obj.primary_image_url %}
-                <img src="{{ obj.primary_image_url }}" 
-                     alt="{% trans 'Specimen' %} {{ obj.catalogNumber }}" 
-                     class="specimen-image"
-                     loading="lazy"
-                     decoding="async">
+            {% if obj.dorsal_image_url or obj.ventral_image_url %}
+                {% if obj.dorsal_image_url %}
+                    <div class="specimen-image-wrapper">
+                        <img src="{{ obj.dorsal_image_url }}" 
+                             alt="{% trans 'Dorsal view' %} {{ obj.catalogNumber }}" 
+                             class="specimen-image specimen-image-dorsal"
+                             loading="lazy"
+                             decoding="async">
+                    </div>
+                {% endif %}
+                {% if obj.ventral_image_url %}
+                    <div class="specimen-image-wrapper">
+                        <img src="{{ obj.ventral_image_url }}" 
+                             alt="{% trans 'Ventral view' %} {{ obj.catalogNumber }}" 
+                             class="specimen-image specimen-image-ventral"
+                             loading="lazy"
+                             decoding="async">
+                    </div>
+                {% endif %}
             {% else %}
                 <div class="specimen-no-image">
                     <svg class="specimen-no-image-icon" viewBox="0 0 24 24" fill="currentColor">

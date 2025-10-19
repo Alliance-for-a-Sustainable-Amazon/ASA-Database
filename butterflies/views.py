@@ -278,15 +278,16 @@ def dynamic_list(request, model_name):
         batch_image_results = get_specimen_image_urls_batch(catalog_numbers)
         
         for obj in page_obj:
-            obj.primary_image_url = None
+            obj.dorsal_image_url = None
+            obj.ventral_image_url = None
             if obj.catalogNumber in batch_image_results:
                 image_dict = batch_image_results[obj.catalogNumber]
                 
-                # Get primary image (prefer dorsal, fallback to ventral)
+                # Get both dorsal and ventral images
                 if image_dict.get('dorsal') and image_dict['dorsal'] != 'no data':
-                    obj.primary_image_url = image_dict['dorsal']
-                elif image_dict.get('ventral') and image_dict['ventral'] != 'no data':
-                    obj.primary_image_url = image_dict['ventral']
+                    obj.dorsal_image_url = image_dict['dorsal']
+                if image_dict.get('ventral') and image_dict['ventral'] != 'no data':
+                    obj.ventral_image_url = image_dict['ventral']
     
     # Check for import errors in session
     import_errors = None

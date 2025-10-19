@@ -82,27 +82,74 @@
 .specimen-image-container {
     position: relative;
     width: 100%;
-    height: 200px;
+    height: 280px; /* Increased height to accommodate full images */
     background: #f8f9fa;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     overflow: hidden;
     /* Performance optimizations */
     contain: layout style paint;
 }
 
+.specimen-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+}
+
+.specimen-image-wrapper:first-child {
+    border-bottom: 1px solid #dee2e6;
+}
+
 .specimen-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain; /* Changed to contain to show full images */
+    object-position: center;
     transition: transform 0.1s ease;
     /* Performance optimization */
     transform: translateZ(0);
 }
 
+.specimen-image-label {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 1;
+}
+
+.dorsal-label {
+    background: rgba(40, 167, 69, 0.8);
+}
+
+.ventral-label {
+    background: rgba(220, 53, 69, 0.8);
+}
+
+/* When only one image is present, it takes full height */
+.specimen-image-container .specimen-image-wrapper:only-child {
+    height: 100%;
+    border-bottom: none;
+}
+
 .specimen-grid-item:hover .specimen-image {
-    transform: scale(1.05) translateZ(0);
+    transform: scale(1.02) translateZ(0);
+}
+
+.specimen-grid-item:hover .specimen-image-label {
+    background: rgba(0, 0, 0, 0.9);
 }
 
 .specimen-no-image {
@@ -161,6 +208,10 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 15px;
     }
+    
+    .specimen-image-container {
+        height: 260px; /* Slightly smaller but still shows full images */
+    }
 }
 
 @media (max-width: 900px) {
@@ -170,7 +221,7 @@
     }
     
     .specimen-image-container {
-        height: 180px;
+        height: 240px;
     }
 }
 
@@ -181,7 +232,7 @@
     }
     
     .specimen-image-container {
-        height: 250px;
+        height: 320px; /* Larger for mobile to show both images clearly */
     }
 }
 
