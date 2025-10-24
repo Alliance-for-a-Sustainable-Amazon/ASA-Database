@@ -35,6 +35,7 @@ echo "Checking for admin credentials..."
 
 if [ -n "$DJANGO_ADMIN_USERNAME" ] && [ -n "$DJANGO_ADMIN_PASSWORD" ]; then
     echo "Creating/updating admin user..."
+django.setup()
     python -c "
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'research_data_app.settings')
@@ -48,8 +49,10 @@ if User.objects.filter(username=username).exists():
     user = User.objects.get(username=username)
     user.set_password(password)
     user.email = email
+    user.is_superuser = True
+    user.is_staff = True
     user.save()
-    print(f'Updated existing admin user: {username}')
+    print(f'Updated existing admin user: {username} (superuser/staff set)')
 else:
     User.objects.create_superuser(username=username, email=email, password=password)
     print(f'Created new admin user: {username}')
