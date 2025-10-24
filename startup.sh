@@ -49,7 +49,7 @@ if User.objects.filter(username=username).exists():
     user.set_password(password)
     user.email = email
     user.is_superuser = True
-    user.is_staff = True
+    # user.is_staff = True
     user.save()
     print(f'Updated existing admin user: {username} (superuser/staff set)')
 else:
