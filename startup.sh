@@ -35,7 +35,6 @@ echo "Checking for admin credentials..."
 
 if [ -n "$DJANGO_ADMIN_USERNAME" ] && [ -n "$DJANGO_ADMIN_PASSWORD" ]; then
     echo "Creating/updating admin user..."
-django.setup()
     python -c "
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'research_data_app.settings')
