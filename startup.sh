@@ -37,7 +37,7 @@ if [ -n "$DJANGO_ADMIN_USERNAME" ] && [ -n "$DJANGO_ADMIN_PASSWORD" ]; then
     echo "Creating/updating admin user..."
     python -c "
 import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'research_data_app.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE')
 import django
 django.setup()
 from django.contrib.auth.models import User
