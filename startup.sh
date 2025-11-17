@@ -67,4 +67,7 @@ fi
 echo "Starting Gunicorn server..."
 
 
-gunicorn --bind=0.0.0.0:8000 --timeout 600 research_data_app.wsgi:application
+# Use 2 workers + 2 threads per worker for better concurrency
+# --preload loads app once and shares across workers (saves memory)
+# --timeout 600 allows long-running requests
+gunicorn --bind=0.0.0.0:8000 --workers 2 --threads 2 --preload --timeout 600 research_data_app.wsgi:application

@@ -177,40 +177,40 @@ class SpecimenForm(forms.ModelForm):
     # 2. locality
     locality = forms.ModelChoiceField(
         queryset=Locality.objects.all(),
-        required=False,
+        required=True,
         label="Locality"
     )
     # 3. decimalLatitude
     decimalLatitude = forms.CharField(
         max_length=20,
-        required=False,
+        required=True,
         label="Decimal Latitude"
     )
     
     # 4. decimalLongitude
     decimalLongitude = forms.CharField(
         max_length=20,
-        required=False,
+        required=True,
         label="Decimal Longitude"
     )
     
     # 5. exact_loc?
     exact_loc = forms.ChoiceField(
         choices=BOOLEAN_CHOICES,
-        required=False,
+        required=True,
         label="Exact Location?"
     )
     # 6. coordinateUncertaintyInMeters
     coordinateUncertaintyInMeters = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Coordinate Uncertainty (meters)"
     )
     
     # 7. georeferencedBy
     georeferencedBy = forms.ModelChoiceField(
         queryset=Initials.objects.all(),
-        required=False,
+        required=True,
         label="Georeferenced By"
     )
     
@@ -233,20 +233,21 @@ class SpecimenForm(forms.ModelForm):
     
     # 9. georeferenceProtocol
     georeferenceProtocol = create_textarea_field(
-        label="Georeference Protocol"
+        label="Georeference Protocol",
+        required=True
     )
     
     # 10. minimumElevationInMeters
     minimumElevationInMeters = forms.CharField(
         max_length=20,
-        required=False,
+        required=True,
         label="Minimum Elevation (meters)"
     )
     
     # 11. maximumElevationInMeters
     maximumElevationInMeters = forms.CharField(
         max_length=20,
-        required=False,
+        required=True,
         label="Maximum Elevation (meters)"
     )
     
@@ -258,7 +259,7 @@ class SpecimenForm(forms.ModelForm):
     # 12. specimenNumber
     specimenNumber = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Specimen Number"
     )
     
@@ -272,25 +273,27 @@ class SpecimenForm(forms.ModelForm):
     # 13. recordedBy
     recordedBy = forms.ModelChoiceField(
         queryset=Initials.objects.all(),
-        required=False,
+        required=True,
         label="Recorded By"
     )
     
     # 14. sex
     sex = forms.ChoiceField(
         choices=[('', ''), ('male', 'male'), ('female', 'female'), ('.', '.')],
-        required=False,
+        required=True,
         label="Sex"
     )
     
     # 15. behavior
     behavior = create_textarea_field(
-        label="Behavior"
+        label="Behavior",
+        required=True
     )
     
     # 16. occurrenceRemarks
     occurrenceRemarks = create_textarea_field(
-        label="Occurrence Remarks"
+        label="Occurrence Remarks",
+        required=True
     )
 
     # ----------------------------------
@@ -299,13 +302,13 @@ class SpecimenForm(forms.ModelForm):
     # 18. year
     year = forms.ChoiceField(
         choices=YEAR_CHOICES,
-        required=False,
+        required=True,
         label="Year"
     )
     # 19. month - using a custom widget to display named months but store as is
     month = forms.ChoiceField(
         choices=MONTH_CHOICES_NAMED,
-        required=False,
+        required=True,
         label="Month",
         widget=forms.Select(attrs={
             'class': 'month-field',
@@ -315,13 +318,13 @@ class SpecimenForm(forms.ModelForm):
     # 20. day
     day = forms.ChoiceField(
         choices=DAY_CHOICES,
-        required=False,
+        required=True,
         label="Day"
     )
     
     # 21. eventTime (using 24-hour format with custom widget, now supporting ranges)
     eventTime = forms.CharField(
-        required=False,
+        required=True,
         label="Event Time",
         max_length=15,
         widget=MilitaryTimeInput(),
@@ -332,12 +335,14 @@ class SpecimenForm(forms.ModelForm):
     
     # 22. habitatNotes
     habitatNotes = create_textarea_field(
-        label="Habitat Notes"
+        label="Habitat Notes",
+        required=True
     )
     
     # 23. samplingProtocol
     samplingProtocol = create_textarea_field(
-        label="Sampling Protocol"
+        label="Sampling Protocol",
+        required=True
     )
 
     # ----------------------------------
@@ -346,48 +351,48 @@ class SpecimenForm(forms.ModelForm):
     # 24. family
     family = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Family"
     )
     # 25. subfamily
     subfamily = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Subfamily"
     )
     
     # 26. tribe
     tribe = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Tribe"
     )
     
     # 27. subtribe
     subtribe = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Subtribe"
     )
     
     # 28. genus
     genus = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Genus"
     )
     
     # 29. specificEpithet
     specificEpithet = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Specific Epithet"
     )
     
     # 30. infraspecificEpithet
     infraspecificEpithet = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Infraspecific Epithet"
     )
 
@@ -397,35 +402,37 @@ class SpecimenForm(forms.ModelForm):
     # 31. identifiedBy
     identifiedBy = forms.ModelChoiceField(
         queryset=Initials.objects.all(),
-        required=False,
+        required=True,
         label="Identified By"
     )
     
     # 32. dateIdentified - split into separate day/month/year fields
     dateIdentified_day = forms.ChoiceField(
         choices=DAY_CHOICES,
-        required=False,
+        required=True,
         label="Date Identified Day"
     )
     dateIdentified_month = forms.ChoiceField(
         choices=MONTH_CHOICES_NAMED,
-        required=False,
+        required=True,
         label="Date Identified Month"
     )
     dateIdentified_year = forms.ChoiceField(
         choices=YEAR_CHOICES,
-        required=False,
+        required=True,
         label="Date Identified Year"
     )
     
     # 33. identificationReferences
     identificationReferences = create_textarea_field(
-        label="Identification References"
+        label="Identification References",
+        required=True
     )
     
     # 34. identificationRemarks
     identificationRemarks = create_textarea_field(
-        label="Identification Remarks"
+        label="Identification Remarks",
+        required=True
     )
 
     class Meta:
@@ -487,11 +494,20 @@ class SpecimenForm(forms.ModelForm):
         
     def clean(self):
         """
-        Clean all form fields at once
-        This allows us to handle interdependent fields correctly
+        Clean all form fields at once.
+        
+        All visible fields are now required at the field definition level (required=True).
+        Users must explicitly enter "." for fields where they don't have information.
+        
+        This method validates sex field values for data quality.
         """
         cleaned_data = super().clean()
-        # No special event date processing needed anymore
+        
+        # Validate sex field if provided (should always be provided since it's required)
+        sex_value = cleaned_data.get('sex')
+        if sex_value and sex_value not in ['male', 'female', '.']:
+            self.add_error('sex', f"Invalid sex: '{sex_value}'. Must be 'male', 'female', or '.'")
+        
         return cleaned_data
 
     def save(self, commit=True):

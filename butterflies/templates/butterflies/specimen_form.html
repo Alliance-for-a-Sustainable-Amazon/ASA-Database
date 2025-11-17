@@ -6,10 +6,6 @@
 
 {% block title %}{% trans "Add Specimen" %}{% endblock %}
 
-{% block extra_head %}
-<script src="{% static 'butterflies/js/required-fields.js' %}"></script>
-{% endblock %}
-
 {% block content %}
 {% if form.instance.pk %}
 <h2>{% trans "Edit Specimen Record" %}</h2>
@@ -23,7 +19,10 @@
 {% else %}
 <h2>{% trans "Add Single Record" %}</h2>
 <div class="info-box" style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
-    <p style="margin:0; color:#555; font-size:1em;"><strong>{% trans "Note:" %}</strong> {% trans "All fields are required unless hidden or disabled." %}</p>
+    <p style="margin:0; color:#555; font-size:1em;">
+        <strong>{% trans "All fields are required." %}</strong> 
+        {% trans "If you don't have information for a field, enter a period (.) to indicate it's intentionally left empty." %}
+    </p>
 </div>
 {% endif %}
 
