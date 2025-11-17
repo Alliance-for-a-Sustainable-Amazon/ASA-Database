@@ -1,6 +1,7 @@
 # views.py
 
 # --- Imports ---
+from xml.parsers.expat import model
 from django.apps import apps
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
@@ -235,7 +236,11 @@ def dynamic_list(request, model_name):
         view_mode = request.session.get(f'{model_name}_view_mode', 'table')
     
     # Base queryset
-    objects = model.objects.all()
+    # objects = model.objects.all()
+    if model._meta.model_name == 'specimen':
+        objects = model.objects.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy').all()
+    else:
+        objects = model.objects.all()
     
     # Define special filters for specimen model
     special_filters = None

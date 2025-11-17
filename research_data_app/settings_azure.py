@@ -59,8 +59,21 @@ DATABASES = {
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
         'HOST': os.environ.get('POSTGRES_HOST', ''),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'CONN_MAX_AGE': 600,  # Reuse connections for 10 minutes
         'OPTIONS': {
             'sslmode': 'require',
+        }
+    }
+}
+
+# Cache configuration for production
+# Using local memory cache (upgrade to Redis/Memcached for multi-instance deployments)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'asa-production-cache',
+        'OPTIONS': {
+            'MAX_ENTRIES': 2000,
         }
     }
 }

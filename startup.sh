@@ -37,7 +37,8 @@ if [ -n "$DJANGO_ADMIN_USERNAME" ] && [ -n "$DJANGO_ADMIN_PASSWORD" ]; then
     echo "Creating/updating admin user..."
     python -c "
 import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE')
+# Ensure DJANGO_SETTINGS_MODULE has a sensible default when running this script
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings_azure.py')
 import django
 django.setup()
 from django.contrib.auth.models import User
