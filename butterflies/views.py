@@ -620,6 +620,7 @@ def report_table(request):
 def export_model_csv(request, model_name):
     """
     Generic function to export any model data as a CSV file.
+    Optimized for large datasets using chunked processing.
     
     Parameters:
         request: HTTP request object
@@ -645,8 +646,9 @@ def export_model_csv(request, model_name):
     headers = [field['name'] for field in exportable_fields]
     writer.writerow(headers)
     
-    # Export all objects
-    for obj in model.objects.all():
+    # Export all objects using iterator for memory efficiency
+    CHUNK_SIZE = 1000
+    for obj in model.objects.all().iterator(chunk_size=CHUNK_SIZE):
         row = []
         for field_info in exportable_fields:
             row.append(get_field_value_for_export(obj, field_info))
@@ -657,6 +659,7 @@ def export_model_csv(request, model_name):
 def export_model_excel(request, model_name):
     """
     Generic function to export any model data as an Excel file.
+    Optimized for large datasets using chunked processing.
     
     Parameters:
         request: HTTP request object
@@ -682,12 +685,26 @@ def export_model_excel(request, model_name):
     headers = [field['name'] for field in exportable_fields]
     ws.append(headers)
     
-    # Export all objects
-    for obj in model.objects.all():
+    # Export all objects in chunks to reduce memory usage
+    CHUNK_SIZE = 1000
+    batch_rows = []
+    
+    for obj in model.objects.all().iterator(chunk_size=CHUNK_SIZE):
         row = []
         for field_info in exportable_fields:
             row.append(get_field_value_for_export(obj, field_info))
-        ws.append(row)
+        batch_rows.append(row)
+        
+        # Write in batches for better performance
+        if len(batch_rows) >= CHUNK_SIZE:
+            for batch_row in batch_rows:
+                ws.append(batch_row)
+            batch_rows = []
+    
+    # Write any remaining rows
+    if batch_rows:
+        for batch_row in batch_rows:
+            ws.append(batch_row)
     
     output = io.BytesIO()
     wb.save(output)
@@ -776,6 +793,7 @@ def get_field_value_for_export(obj, field_info):
 def export_report_csv(request):
     """
     Export the full report table (specimens with all related fields) as a CSV file.
+    Optimized for large datasets using chunked processing.
     
     Parameters:
         request: HTTP request object
@@ -793,10 +811,11 @@ def export_report_csv(request):
     headers = [field['name'] for field in exportable_fields]
     writer.writerow(headers)
     
-    # Get all specimens with related data
+    # Get all specimens with related data using iterator for memory efficiency
+    CHUNK_SIZE = 1000
     specimens = Specimen.objects.select_related(
         'locality', 'recordedBy', 'georeferencedBy', 'identifiedBy'
-    ).all()
+    ).iterator(chunk_size=CHUNK_SIZE)
     
     # Write each specimen row with all fields
     for specimen in specimens:
@@ -810,6 +829,7 @@ def export_report_csv(request):
 def export_report_excel(request):
     """
     Export the full report table (specimens with all related fields) as an Excel file.
+    Optimized for large datasets using chunked processing and efficient Excel writing.
     
     Parameters:
         request: HTTP request object
@@ -827,31 +847,40 @@ def export_report_excel(request):
     headers = [field['name'] for field in exportable_fields]
     ws.append(headers)
     
-    # Get all specimens with related data
+    # Process specimens in chunks to reduce memory usage
+    CHUNK_SIZE = 1000
+    batch_rows = []
+    
+    # Get all specimens with related data using iterator for memory efficiency
     specimens = Specimen.objects.select_related(
         'locality', 'recordedBy', 'georeferencedBy', 'identifiedBy'
-    ).all()
+    ).iterator(chunk_size=CHUNK_SIZE)
     
     # Write each specimen row with all fields
     for specimen in specimens:
         row = []
         for field_info in exportable_fields:
             row.append(get_field_value_for_export(specimen, field_info))
-        ws.append(row)
+        batch_rows.append(row)
+        
+        # Write in batches for better performance
+        if len(batch_rows) >= CHUNK_SIZE:
+            for batch_row in batch_rows:
+                ws.append(batch_row)
+            batch_rows = []
     
-    # Format the Excel file
-    for column in ws.columns:
-        max_length = 0
-        column_letter = openpyxl.utils.get_column_letter(column[0].column)
-        for cell in column:
-            if cell.value:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-        adjusted_width = (max_length + 2)
-        ws.column_dimensions[column_letter].width = min(adjusted_width, 50)  # Cap width at 50
+    # Write any remaining rows
+    if batch_rows:
+        for batch_row in batch_rows:
+            ws.append(batch_row)
+    
+    # Simplified column width adjustment (removed expensive iteration)
+    # Set reasonable default widths instead of calculating from all cells
+    for i, field_info in enumerate(exportable_fields, start=1):
+        column_letter = openpyxl.utils.get_column_letter(i)
+        # Set width based on header length with reasonable defaults
+        header_length = len(field_info['name'])
+        ws.column_dimensions[column_letter].width = min(max(header_length + 2, 15), 50)
     
     output = io.BytesIO()
     wb.save(output)
