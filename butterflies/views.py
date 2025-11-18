@@ -563,6 +563,7 @@ def report_table(request):
     """
     Shows a paginated table of specimens based on eventDate and eventTime.
     This is the main dashboard view with pagination for better performance.
+    Optimized to use database-level sorting instead of Python sorting.
     Requires user authentication.
     
     Parameters:
@@ -570,43 +571,20 @@ def report_table(request):
     Returns:
         Rendered template with paginated specimens
     """
-    from django.core.paginator import Paginator
+    from django.db.models import F
     
-    # Get all specimens with related objects
-    all_specimens = Specimen.objects.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy').all()
-    
-    # Prepare list for sorting
-    specimens_with_dates = []
-    for specimen in all_specimens:
-        # Default to minimum date if missing date information
-        parsed_date = datetime.datetime.min
-        
-        # Convert eventDate (now a DateField) to datetime for sorting
-        if specimen.eventDate:
-            # Convert the date to a datetime object
-            parsed_date = datetime.datetime.combine(specimen.eventDate, datetime.time.min)
-                
-        # Add time if available (format: "14:37")
-        if specimen.eventTime and isinstance(parsed_date, datetime.datetime):
-            try:
-                # Extract hours and minutes
-                match = re.match(r'(\d{1,2}):(\d{2})', specimen.eventTime)
-                if match:
-                    hours, minutes = map(int, match.groups())
-                    parsed_date = parsed_date.replace(hour=hours, minute=minutes)
-            except (ValueError, AttributeError):
-                # Keep date without time if parsing fails
-                pass
-                
-        # Add to list for sorting
-        specimens_with_dates.append((specimen, parsed_date))
-    
-    # Sort by datetime (most recent first)
-    specimens_with_dates.sort(key=itemgetter(1), reverse=True)
-    sorted_specimens = [item[0] for item in specimens_with_dates]
-    
-    # Take just the 20 most recent specimens (no pagination)
-    recent_specimens = sorted_specimens[:20]
+    # Get top 20 most recent specimens using database-level ordering
+    # This is MUCH faster than loading all 20k specimens and sorting in Python
+    recent_specimens = (
+        Specimen.objects
+        .select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy')
+        .order_by(
+            F('eventDate').desc(nulls_last=True),
+            F('eventTime').desc(nulls_last=True),
+            '-year',
+            '-catalogNumber'
+        )[:20]
+    )
     
     return render(request, 'butterflies/report_table.html', {
         'specimens': recent_specimens,

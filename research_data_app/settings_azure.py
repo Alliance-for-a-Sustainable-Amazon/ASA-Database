@@ -62,7 +62,9 @@ DATABASES = {
         'CONN_MAX_AGE': 600,  # Reuse connections for 10 minutes
         'OPTIONS': {
             'sslmode': 'require',
-        }
+            'connect_timeout': 10,
+            'options': '-c statement_timeout=30000',  # 30 second query timeout
+        },
     }
 }
 
@@ -73,7 +75,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'asa-production-cache',
         'OPTIONS': {
-            'MAX_ENTRIES': 2000,
+            'MAX_ENTRIES': 10000,
         }
     }
 }

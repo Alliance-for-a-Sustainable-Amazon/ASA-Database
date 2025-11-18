@@ -88,6 +88,11 @@ DATABASES = {
         'PASSWORD': 'asa_password',
         'HOST': 'localhost',
         'PORT': '5432',
+        'CONN_MAX_AGE': 600,  # Reuse connections for 10 minutes
+        'OPTIONS': {
+            'connect_timeout': 10,
+            'options': '-c statement_timeout=30000',  # 30 second query timeout
+        },
     }
 }
 
@@ -104,7 +109,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'unique-snowflake',
         'OPTIONS': {
-            'MAX_ENTRIES': 1000,
+            'MAX_ENTRIES': 5000,
         }
     }
 }
