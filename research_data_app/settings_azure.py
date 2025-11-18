@@ -69,16 +69,33 @@ DATABASES = {
 }
 
 # Cache configuration for production
-# Using local memory cache (upgrade to Redis/Memcached for multi-instance deployments)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'asa-production-cache',
-        'OPTIONS': {
-            'MAX_ENTRIES': 10000,
+# Uses Redis if REDIS_URL or AZURE_REDIS_HOST is set, otherwise falls back to local memory
+redis_url = os.environ.get('REDIS_URL')
+if not redis_url and os.environ.get('AZURE_REDIS_HOST'):
+    redis_url = f"rediss://:{os.environ.get('AZURE_REDIS_KEY')}@{os.environ.get('AZURE_REDIS_HOST')}:6380/0?ssl_cert_reqs=required"
+
+if redis_url:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': redis_url,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'IGNORE_EXCEPTIONS': True,
+            }
         }
     }
-}
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'asa-production-cache',
+            'OPTIONS': {
+                'MAX_ENTRIES': 10000,
+            }
+        }
+    }
 
 # Static files: Use Azure blob storage or the default filesystem
 MIDDLEWARE = [

@@ -104,15 +104,34 @@ AUTH_PASSWORD_VALIDATORS = []
 
 # Cache configuration
 # https://docs.djangoproject.com/en/5.2/topics/cache/
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'OPTIONS': {
-            'MAX_ENTRIES': 5000,
+import os
+
+redis_url = os.environ.get('REDIS_URL') or os.environ.get('AZURE_REDIS_HOST')
+if redis_url and not redis_url.startswith('redis'):
+    # Azure Redis format
+    redis_url = f"rediss://:{os.environ.get('AZURE_REDIS_KEY')}@{redis_url}:6380/0?ssl_cert_reqs=required"
+
+if redis_url:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': redis_url,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'IGNORE_EXCEPTIONS': True,  # Fallback if Redis fails
+            }
         }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'OPTIONS': {
+                'MAX_ENTRIES': 5000,
+            }
+        }
+    }
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

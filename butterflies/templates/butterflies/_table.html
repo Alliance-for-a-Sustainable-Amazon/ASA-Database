@@ -19,8 +19,7 @@
         <th>{% trans 'Actions' %}</th>
     </tr>
     {% for obj in objects %}
-    {# Cache each row for 5 minutes, vary by object pk and user admin status #}
-    {% cache 300 table_row obj.pk user.is_superuser user.groups.all.0.name %}
+
     <tr>
         {% for field in fields %}
             {% if forloop.first %}

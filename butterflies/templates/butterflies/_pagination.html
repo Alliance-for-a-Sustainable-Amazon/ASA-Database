@@ -3,9 +3,16 @@
 {# _pagination.html - Reusable pagination for all tables #}
 <div class="pagination">
     <span class="pagination-info">
-        {% blocktrans with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
-        Showing {{ start }} to {{ end }} of {{ total }} entries
-        {% endblocktrans %}
+         {# Avoid paginator.count as it triggers expensive COUNT(*) query #}
+        {% if page_obj.has_other_pages %}
+            {% blocktrans with start=page_obj.start_index end=page_obj.end_index %}
+            Showing {{ start }} to {{ end }}
+            {% endblocktrans %}
+        {% else %}
+            {% blocktrans with total=page_obj|length %}
+            Showing {{ total }} entries
+            {% endblocktrans %}
+        {% endif %}
     </span>
     
     <div class="pagination-controls">
