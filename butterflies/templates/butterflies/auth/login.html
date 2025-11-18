@@ -22,7 +22,7 @@
         {% endif %}
     {% endif %}
     
-    <form method="post" action="{% url 'login' %}">
+    <form method="post" action="{% url 'login' %}" data-allow-enter-submit="true">
         {% csrf_token %}
         <div style="margin-bottom: 15px;">
             <label for="id_username" style="display: block; margin-bottom: 5px; font-weight: bold;">{% trans "Username:" %}</label>
@@ -37,6 +37,20 @@
         </div>
         <input type="hidden" name="next" value="{{ next }}">
     </form>
+    <script>
+        // Allow Enter key to submit the login form
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.querySelector('form[data-allow-enter-submit="true"]');
+            if (loginForm) {
+                loginForm.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' || e.keyCode === 13) {
+                        e.stopPropagation();
+                        this.submit();
+                    }
+                }, true);
+            }
+        });
+    </script>
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center;">
     <p style="margin-bottom: 10px; color: #666;">{% trans "Don't have an account?" %}</p>
     <a href="{% url 'guest_login' %}{% if next %}?next={{ next }}{% endif %}" 
