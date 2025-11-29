@@ -74,19 +74,19 @@
       <!-- 4) Department (Locality.region) -->
       <div class="filter-group">
         <label for="filter_department">{% trans "Department" %}</label>
-        <input type="text" id="filter_department" name="department" value="{{ request.GET.department|default:'' }}" placeholder="e.g., Loreto">
+        <input type="text" id="filter_department" name="department" value="{{ request.GET.department|default:'' }}" placeholder="e.g., Madre de Dios">
       </div>
 
       <!-- 5) Province (Locality.province) -->
       <div class="filter-group">
         <label for="filter_province">{% trans "Province" %}</label>
-        <input type="text" id="filter_province" name="province" value="{{ request.GET.province|default:'' }}" placeholder="e.g., Maynas">
+        <input type="text" id="filter_province" name="province" value="{{ request.GET.province|default:'' }}" placeholder="e.g., Tambopata">
       </div>
 
       <!-- 6) District (Locality.district) -->
       <div class="filter-group">
         <label for="filter_district">{% trans "District" %}</label>
-        <input type="text" id="filter_district" name="district" value="{{ request.GET.district|default:'' }}" placeholder="e.g., Indiana">
+        <input type="text" id="filter_district" name="district" value="{{ request.GET.district|default:'' }}" placeholder="e.g., Las Piedras">
       </div>
 
       <!-- 7) Minimum elevation in m (text match on field) -->
