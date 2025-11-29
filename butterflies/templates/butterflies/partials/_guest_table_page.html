@@ -1,0 +1,64 @@
+{% load i18n %}
+{% load butterfly_extras %}
+
+{# Table rows for a single page + infinite scroll sentinel #}
+{% for specimen in page_obj.object_list %}
+<tr class="specimen-row" data-catalog="{{ specimen.catalogNumber }}">
+  <td title="{{ specimen.modified|dot_if_none }}">{{ specimen.modified|dot_if_none }}</td>
+  <td title="{{ specimen.specimenNumber|dot_if_none }}">{{ specimen.specimenNumber|dot_if_none }}</td>
+  <td title="{{ specimen.catalogNumber|dot_if_none }}" class="font-mono">{{ specimen.catalogNumber|dot_if_none }}</td>
+  <td title="{{ specimen.recordedBy|dot_if_none }}">{{ specimen.recordedBy|dot_if_none }}</td>
+  <td title="{{ specimen.sex|dot_if_none }}">{{ specimen.sex|dot_if_none }}</td>
+  <td title="{{ specimen.behavior|dot_if_none }}">{{ specimen.behavior|dot_if_none }}</td>
+  <td title="{{ specimen.disposition|dot_if_none }}">{{ specimen.disposition|dot_if_none }}</td>
+  <td title="{{ specimen.occurrenceRemarks|dot_if_none }}">{{ specimen.occurrenceRemarks|dot_if_none }}</td>
+  <td title="{{ specimen.eventDate|dot_if_none }}">{{ specimen.eventDate|dot_if_none }}</td>
+  <td title="{{ specimen.eventTime|dot_if_none }}">{{ specimen.eventTime|dot_if_none }}</td>
+  <td title="{{ specimen.year|dot_if_none }}">{{ specimen.year|dot_if_none }}</td>
+  <td title="{{ specimen.month|dot_if_none }}">{{ specimen.month|dot_if_none }}</td>
+  <td title="{{ specimen.day|dot_if_none }}">{{ specimen.day|dot_if_none }}</td>
+  <td title="{{ specimen.locality.habitat|dot_if_none }}">{{ specimen.locality.habitat|dot_if_none }}</td>
+  <td title="{{ specimen.habitatNotes|dot_if_none }}">{{ specimen.habitatNotes|dot_if_none }}</td>
+  <td title="{{ specimen.samplingProtocol|dot_if_none }}">{{ specimen.samplingProtocol|dot_if_none }}</td>
+  <td title="{{ specimen.locality.country|dot_if_none }}">{{ specimen.locality.country|dot_if_none }}</td>
+  <td title="{{ specimen.locality.region|dot_if_none }}">{{ specimen.locality.region|dot_if_none }}</td>
+  <td title="{{ specimen.locality.province|dot_if_none }}">{{ specimen.locality.province|dot_if_none }}</td>
+  <td title="{{ specimen.locality.district|dot_if_none }}">{{ specimen.locality.district|dot_if_none }}</td>
+  <td title="{{ specimen.locality|dot_if_none }}">{{ specimen.locality|dot_if_none }}</td>
+  <td title="{{ specimen.localityDescriptionNotes|dot_if_none }}">{{ specimen.localityDescriptionNotes|dot_if_none }}</td>
+  <td title="{{ specimen.minimumElevationInMeters|dot_if_none }}">{{ specimen.minimumElevationInMeters|dot_if_none }}</td>
+  <td title="{{ specimen.maximumElevationInMeters|dot_if_none }}">{{ specimen.maximumElevationInMeters|dot_if_none }}</td>
+  <td title="{{ specimen.decimalLatitude|dot_if_none }}">{{ specimen.decimalLatitude|dot_if_none }}</td>
+  <td title="{{ specimen.decimalLongitude|dot_if_none }}">{{ specimen.decimalLongitude|dot_if_none }}</td>
+  <td title="{{ specimen.exact_loc|dot_if_none }}">{{ specimen.exact_loc|dot_if_none }}</td>
+  <td title="{{ specimen.coordinateUncertaintyInMeters|dot_if_none }}">{{ specimen.coordinateUncertaintyInMeters|dot_if_none }}</td>
+  <td title="{{ specimen.georeferencedBy|dot_if_none }}">{{ specimen.georeferencedBy|dot_if_none }}</td>
+  <td title="{{ specimen.georeferencedDate|dot_if_none }}">{{ specimen.georeferencedDate|dot_if_none }}</td>
+  <td title="{{ specimen.georeferenceProtocol|dot_if_none }}">{{ specimen.georeferenceProtocol|dot_if_none }}</td>
+  <td title="{{ specimen.identifiedBy|dot_if_none }}">{{ specimen.identifiedBy|dot_if_none }}</td>
+  <td title="{{ specimen.dateIdentified|dot_if_none }}">{{ specimen.dateIdentified|dot_if_none }}</td>
+  <td title="{{ specimen.identificationReferences|dot_if_none }}">{{ specimen.identificationReferences|dot_if_none }}</td>
+  <td title="{{ specimen.identificationRemarks|dot_if_none }}">{{ specimen.identificationRemarks|dot_if_none }}</td>
+  <td title="{{ specimen.family|dot_if_none }}">{{ specimen.family|dot_if_none }}</td>
+  <td title="{{ specimen.subfamily|dot_if_none }}">{{ specimen.subfamily|dot_if_none }}</td>
+  <td title="{{ specimen.tribe|dot_if_none }}">{{ specimen.tribe|dot_if_none }}</td>
+  <td title="{{ specimen.subtribe|dot_if_none }}">{{ specimen.subtribe|dot_if_none }}</td>
+  <td title="{{ specimen.genus|dot_if_none }}">{{ specimen.genus|dot_if_none }}</td>
+  <td title="{{ specimen.specificEpithet|dot_if_none }}">{{ specimen.specificEpithet|dot_if_none }}</td>
+  <td title="{{ specimen.binomial|dot_if_none }}">{{ specimen.binomial|dot_if_none }}</td>
+  <td title="{{ specimen.infraspecificEpithet|dot_if_none }}">{{ specimen.infraspecificEpithet|dot_if_none }}</td>
+  <td>
+    <a href="{% url 'dynamic_detail' 'specimen' specimen.catalogNumber %}" class="btn btn-sm btn-info">{% trans "View" %}</a>
+  </td>
+</tr>
+{% endfor %}
+
+{% if page_obj.has_next %}
+<tr class="infinite-scroll-trigger"
+    hx-get="{% url 'guest_view' %}?page={{ page_obj.next_page_number }}"
+    hx-trigger="revealed"
+    hx-swap="outerHTML"
+    hx-include="#guestFilterForm">
+  <td colspan="50" class="text-center text-muted">{% trans "Loading more…" %}</td>
+</tr>
+{% endif %}

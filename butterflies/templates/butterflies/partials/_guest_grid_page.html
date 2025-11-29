@@ -1,0 +1,67 @@
+{# Grid items for a single page + infinite scroll sentinel #}
+{% load i18n %}
+{% load butterfly_extras %}
+
+{% for obj in page_obj.object_list %}
+<a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}" class="specimen-grid-item">
+  <div class="specimen-image-container">
+    {% if obj.dorsal_image_url or obj.ventral_image_url %}
+      {% if obj.dorsal_image_url %}
+        <div class="specimen-image-wrapper">
+          <img src="{{ obj.dorsal_image_url }}"
+               alt="{% trans 'Dorsal view' %} {{ obj.catalogNumber }}"
+               class="specimen-image specimen-image-dorsal"
+               loading="lazy"
+               decoding="async">
+        </div>
+      {% endif %}
+      {% if obj.ventral_image_url %}
+        <div class="specimen-image-wrapper">
+          <img src="{{ obj.ventral_image_url }}"
+               alt="{% trans 'Ventral view' %} {{ obj.catalogNumber }}"
+               class="specimen-image specimen-image-ventral"
+               loading="lazy"
+               decoding="async">
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="specimen-no-image">
+        <svg class="specimen-no-image-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+        </svg>
+        <div class="specimen-no-image-text">{% trans "No Image Available" %}</div>
+      </div>
+    {% endif %}
+  </div>
+  <div class="specimen-grid-info">
+    <h4 class="specimen-grid-title">{{ obj.catalogNumber|dot_if_none }}</h4>
+    <p class="specimen-grid-subtitle">
+      {% if obj.genus and obj.specificEpithet %}
+        <em>{{ obj.genus }} {{ obj.specificEpithet }}</em>
+      {% elif obj.genus %}
+        <em>{{ obj.genus }}</em> sp.
+      {% else %}
+        {% trans "Unidentified" %}
+      {% endif %}
+    </p>
+    <div class="specimen-grid-details">
+      {% if obj.locality %}
+        {{ obj.locality.localityCode|dot_if_none }}
+      {% endif %}
+      {% if obj.eventDate %}
+        {% if obj.locality %} • {% endif %}{{ obj.eventDate|dot_if_none }}
+      {% endif %}
+    </div>
+  </div>
+</a>
+{% endfor %}
+
+{% if page_obj.has_next %}
+<div class="infinite-scroll-trigger"
+     hx-get="{% url 'guest_view' %}?page={{ page_obj.next_page_number }}"
+     hx-trigger="revealed"
+     hx-swap="outerHTML"
+     hx-include="#guestFilterForm">
+  <div class="loading text-muted" style="padding: 12px; text-align: center; width: 100%;">{% trans "Loading more…" %}</div>
+</div>
+{% endif %}

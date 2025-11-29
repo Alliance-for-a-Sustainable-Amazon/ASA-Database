@@ -1,0 +1,313 @@
+{% extends "butterflies/base.html" %}
+{% load i18n %}
+{% load static %}
+{% load butterfly_extras butterfly_display query_utils %}
+
+{% block title %}{% trans "Browse Specimens" %}{% endblock %}
+
+{% block header %}
+<img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo" style="height: 50px;">
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'butterflies/css/utilities.css' %}">
+<link rel="stylesheet" href="{% static 'butterflies/css/table-styles.css' %}">
+<link rel="stylesheet" href="{% static 'butterflies/css/pagination.css' %}">
+{% if supports_grid_view %}
+<link rel="stylesheet" href="{% static 'butterflies/css/grid-view.css' %}">
+{% endif %}
+
+<div class="d-flex align-items-center mb-3">
+  <h2 class="mb-0">{% trans "Browse Specimens" %}</h2>
+  <div class="ml-3 text-muted" style="max-width: 400px;">
+    <p class="m-0">{% trans "Use filters to search, then scroll through all matching results." %}</p>
+  </div>
+</div>
+
+{% if supports_grid_view %}
+<div class="view-toggle">
+  <span class="text-muted">{% trans "View:" %}</span>
+  <form method="post" class="view-toggle-form" style="display: inline-flex; align-items: center; gap: 5px;">
+    {% csrf_token %}
+    <input type="hidden" name="toggle_view_mode" value="1">
+    <button type="submit" name="view_mode" value="table" 
+            class="view-toggle-button {% if view_mode == 'table' %}active{% endif %}">
+      <svg class="view-toggle-icon" viewBox="0 0 24 24">
+        <path d="M3 3h18v4H3V3zm0 6h18v4H3V9zm0 6h18v4H3v-4z"/>
+      </svg>
+      {% trans "Table" %}
+    </button>
+    <button type="submit" name="view_mode" value="grid" 
+            class="view-toggle-button {% if view_mode == 'grid' %}active{% endif %}">
+      <svg class="view-toggle-icon" viewBox="0 0 24 24">
+        <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
+      </svg>
+      {% trans "Grid" %}
+    </button>
+  </form>
+</div>
+{% endif %}
+
+{# Filter Form Section (Guest-specific minimal filters) #}
+<div class="mb-4">
+  <h3 class="mb-2">{% trans "Search and Filter" %}</h3>
+  <form method="get" class="filter-form" id="guestFilterForm">
+    <div class="guest-filters-grid">
+      <!-- 1) Family -->
+      <div class="filter-group">
+        <label for="filter_family">{% trans "Family" %}</label>
+        <input type="text" id="filter_family" name="family" value="{{ request.GET.family|default:'' }}" placeholder="e.g., Nymphalidae">
+      </div>
+
+      <!-- 2) Genus -->
+      <div class="filter-group">
+        <label for="filter_genus">{% trans "Genus" %}</label>
+        <input type="text" id="filter_genus" name="genus" value="{{ request.GET.genus|default:'' }}" placeholder="e.g., Heliconius">
+      </div>
+
+      <!-- 3) Species (specific epithet) -->
+      <div class="filter-group">
+        <label for="filter_species">{% trans "Species" %}</label>
+        <input type="text" id="filter_species" name="specificEpithet" value="{{ request.GET.specificEpithet|default:'' }}" placeholder="e.g., melpomene">
+      </div>
+
+      <!-- 4) Department (Locality.region) -->
+      <div class="filter-group">
+        <label for="filter_department">{% trans "Department" %}</label>
+        <input type="text" id="filter_department" name="department" value="{{ request.GET.department|default:'' }}" placeholder="e.g., Loreto">
+      </div>
+
+      <!-- 5) Province (Locality.province) -->
+      <div class="filter-group">
+        <label for="filter_province">{% trans "Province" %}</label>
+        <input type="text" id="filter_province" name="province" value="{{ request.GET.province|default:'' }}" placeholder="e.g., Maynas">
+      </div>
+
+      <!-- 6) District (Locality.district) -->
+      <div class="filter-group">
+        <label for="filter_district">{% trans "District" %}</label>
+        <input type="text" id="filter_district" name="district" value="{{ request.GET.district|default:'' }}" placeholder="e.g., Indiana">
+      </div>
+
+      <!-- 7) Minimum elevation in m (text match on field) -->
+      <div class="filter-group">
+        <label for="filter_min_elev">{% trans "Minimum elevation in m" %}</label>
+        <input type="text" id="filter_min_elev" name="minimumElevationInMeters" value="{{ request.GET.minimumElevationInMeters|default:'' }}" placeholder="e.g., 120">
+      </div>
+
+      <!-- 8) Maximum elevation in m (text match on field) -->
+      <div class="filter-group">
+        <label for="filter_max_elev">{% trans "Maximum elevation in m" %}</label>
+        <input type="text" id="filter_max_elev" name="maximumElevationInMeters" value="{{ request.GET.maximumElevationInMeters|default:'' }}" placeholder="e.g., 350">
+      </div>
+
+      <!-- 9) Year (supports ranges like 2020:2023) -->
+      <div class="filter-group">
+        <label for="filter_year">{% trans "Year" %}</label>
+        <input type="text" id="filter_year" name="year" value="{{ request.GET.year|default:'' }}" placeholder="e.g., 2023 or 2020:2023">
+      </div>
+
+      <!-- 10) Month -->
+      <div class="filter-group">
+        <label for="filter_month">{% trans "Month" %}</label>
+        <input type="text" id="filter_month" name="month" value="{{ request.GET.month|default:'' }}" placeholder="e.g., January">
+      </div>
+
+      <!-- 11) Day -->
+      <div class="filter-group">
+        <label for="filter_day">{% trans "Day" %}</label>
+        <input type="text" id="filter_day" name="day" value="{{ request.GET.day|default:'' }}" placeholder="e.g., 12">
+      </div>
+    </div>
+
+    <div class="filter-controls">
+      <button type="submit" class="btn btn-primary">{% trans "Apply Filters" %}</button>
+      <a href="?" class="btn btn-outline-secondary">{% trans "Clear Filters" %}</a>
+    </div>
+  </form>
+</div>
+
+{# Results Count #}
+{% if request.GET %}
+<div class="results-summary mb-3">
+  <p class="font-bold">
+    {% blocktrans count counter=total_count %}
+      Found {{ counter }} specimen
+    {% plural %}
+      Found {{ counter }} specimens
+    {% endblocktrans %}
+  </p>
+</div>
+{% endif %}
+
+{% if has_filters and total_count %}
+  {% if view_mode == 'grid' %}
+  <div class="specimen-grid" id="guestGrid">
+    {% include "butterflies/partials/_guest_grid_page.html" with page_obj=page_obj %}
+  </div>
+  {% else %}
+  <div class="specimen-list-container full-page">
+    <table class="concise-table table-hover">
+      <thead class="sticky-header">
+        <tr>
+          <th>modified</th>
+          <th>specimenNumber</th>
+          <th>catalogNumber</th>
+          <th>recordedBy</th>
+          <th>sex</th>
+          <th>behavior</th>
+          <th>disposition</th>
+          <th>occurrenceRemarks</th>
+          <th>eventDate</th>
+          <th>eventTime</th>
+          <th>year</th>
+          <th>month</th>
+          <th>day</th>
+          <th>habitat</th>
+          <th>habitatNotes</th>
+          <th>samplingProtocol</th>
+          <th>country</th>
+          <th>stateProvince</th>
+          <th>county</th>
+          <th>municipality</th>
+          <th>locality</th>
+          <th>localityDescriptionNotes</th>
+          <th>minimumElevationInMeters</th>
+          <th>maximumElevationInMeters</th>
+          <th>decimalLatitude</th>
+          <th>decimalLongitude</th>
+          <th>exact_loc.?</th>
+          <th>coordinateUncertaintyInMeters</th>
+          <th>georeferencedBy</th>
+          <th>georeferencedDate</th>
+          <th>georeferenceProtocol</th>
+          <th>identifiedBy</th>
+          <th>dateIdentified</th>
+          <th>identificationReferences</th>
+          <th>identificationRemarks</th>
+          <th>family</th>
+          <th>subfamily</th>
+          <th>tribe</th>
+          <th>subtribe</th>
+          <th>genus</th>
+          <th>specificEpithet</th>
+          <th>binomial</th>
+          <th>infraspecificEpithet</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="guestTableBody">
+        {% include "butterflies/partials/_guest_table_page.html" with page_obj=page_obj %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% else %}
+  <div class="no-results alert alert-info">
+    {% if has_filters %}
+      <p>{% trans "No specimens match your search criteria. Try adjusting your filters." %}</p>
+    {% else %}
+      <p>{% trans "Use the filters above to search for specimens." %}</p>
+    {% endif %}
+  </div>
+{% endif %}
+
+{# Styles for the guest view #}
+<style>
+  .specimen-list-container {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: white;
+    position: relative;
+  }
+  
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .sticky-header th {
+    border-top: none;
+    padding: 12px 8px;
+    font-weight: 600;
+  }
+  
+  .specimen-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .specimen-row:hover {
+    background-color: #f1f3f5 !important;
+  }
+  
+  .font-mono {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+  }
+  
+  .font-italic {
+    font-style: italic;
+  }
+  
+  .font-bold {
+    font-weight: bold;
+  }
+  
+  .results-summary {
+    padding: 10px;
+    background-color: #e7f3ff;
+    border-left: 4px solid #007bff;
+    border-radius: 4px;
+  }
+
+  /* Guest filter form layout */
+  .guest-filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    background: #f8f9fa;
+    padding: 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .filter-group label { font-weight: 600; display: block; margin-bottom: 4px; }
+  .filter-group input { width: 100%; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 4px; }
+  .filter-controls { display: flex; gap: 8px; }
+  
+  .no-results {
+    text-align: center;
+    padding: 40px;
+    margin: 20px 0;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    table { font-size: 0.9em; }
+    .sticky-header th { padding: 8px 4px; }
+    td { padding: 8px 4px; }
+  }
+  
+  /* Remove custom inner scrolling; page scrolls naturally */
+</style>
+
+{# HTMX and click-to-view functionality #}
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<script>
+  // Delegate click so it works for dynamically added rows
+  document.addEventListener('click', function(e) {
+    const row = e.target.closest('.specimen-row');
+    if (!row) return;
+    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+    const link = row.querySelector('a[href]');
+    if (link) {
+      window.location.href = link.href;
+    }
+  });
+</script>
+
+{% endblock %}

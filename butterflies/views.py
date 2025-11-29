@@ -268,11 +268,98 @@ def dynamic_list(request, model_name):
         obj.model_name_internal = model._meta.model_name
         obj_list.append(obj)
     
-    # Pagination - before loading images for efficiency
-    items_per_page = 20  # Set the number of items per page
-    paginator = Paginator(obj_list, items_per_page)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    # Cursor (keyset) pagination - before loading images for efficiency
+    class CursorPage:
+        def __init__(self, object_list, has_next, has_prev, next_cursor, prev_cursor):
+            self.object_list = object_list
+            self.has_next = has_next
+            self.has_previous = has_prev
+            self.next_cursor = next_cursor
+            self.prev_cursor = prev_cursor
+        # Compatibility with templates that iterate page_obj
+        def __iter__(self):
+            return iter(self.object_list)
+        def __len__(self):
+            return len(self.object_list)
+
+    # Choose a stable indexed ordering field for keyset pagination
+    # Prefer primary key; for Specimen, catalogNumber is also stable
+    if model._meta.model_name == 'specimen':
+        order_field = 'catalogNumber'
+    else:
+        order_field = model._meta.pk.name
+
+    items_per_page = 20
+    try:
+        current_offset = int(request.GET.get('offset', '0'))
+        if current_offset < 0:
+            current_offset = 0
+    except ValueError:
+        current_offset = 0
+    after = request.GET.get('after')  # cursor value (last seen key)
+    direction = request.GET.get('dir', 'forward')  # 'forward' or 'back'
+
+    # Build base queryset with ordering and apply cursor filter
+    if direction == 'back':
+        qs = objects.order_by(f'-{order_field}')
+        if after:
+            try:
+                qs = qs.filter(**{f"{order_field}__lt": after})
+            except Exception:
+                pass
+    else:
+        qs = objects.order_by(order_field)
+        if after:
+            try:
+                qs = qs.filter(**{f"{order_field}__gt": after})
+            except Exception:
+                pass
+
+    # Fetch one extra to determine has_next
+    page_items = list(qs[:items_per_page + 1])
+    has_next = len(page_items) > items_per_page
+    if has_next:
+        page_items = page_items[:items_per_page]
+    # If we fetched in reverse (back direction), flip to display ascending
+    if direction == 'back':
+        page_items = list(reversed(page_items))
+
+    # Determine prev/next cursors
+    next_cursor = None
+    prev_cursor = None
+    if page_items:
+        next_cursor = getattr(page_items[-1], order_field, None)
+        prev_cursor = getattr(page_items[0], order_field, None)
+
+    # Ensure objects have model_name_internal for URL generation in templates
+    for obj in page_items:
+        obj.model_name_internal = model._meta.model_name
+
+    page_obj = CursorPage(page_items, has_next=has_next, has_prev=bool(after), next_cursor=next_cursor, prev_cursor=prev_cursor)
+
+    # Total count for display
+    total_count = objects.count()
+
+    # Build clean next/prev URLs using Django QueryDict
+    def build_cursor_url(cursor_value, direction_value, new_offset):
+        params = request.GET.copy()
+        for key in ['after', 'dir', 'page']:
+            if key in params:
+                del params[key]
+        params['after'] = cursor_value
+        params['dir'] = direction_value
+        params['offset'] = str(new_offset)
+        return f"{request.path}?{params.urlencode()}"
+
+    # Compute start/end counters for display
+    start_index = current_offset + 1 if page_items else 0
+    end_index = current_offset + len(page_items)
+
+    next_offset = current_offset + len(page_items)
+    prev_offset = max(current_offset - len(page_items), 0)
+
+    next_url = build_cursor_url(next_cursor, 'forward', next_offset) if (has_next and next_cursor) else None
+    prev_url = build_cursor_url(prev_cursor, 'back', prev_offset) if (bool(after) and prev_cursor) else None
     
     # Only load images for the current page objects
     if model_name == 'specimen' and view_mode == 'grid':
@@ -324,10 +411,18 @@ def dynamic_list(request, model_name):
         'request': request,
         'home_url': 'report_table',
         'import_errors': import_errors,  # Pass import errors to the template
-        'paginator': paginator,
+        # Provide cursor pagination metadata for templates
         'page_obj': page_obj,
+        'cursor_order_field': order_field,
+        'cursor_next': getattr(page_obj, 'next_cursor', None),
+        'cursor_prev': getattr(page_obj, 'prev_cursor', None),
         'view_mode': view_mode,  # Pass current view mode to template
         'supports_grid_view': model_name == 'specimen',  # Only specimen supports grid view
+        'total_count': total_count,
+        'next_url': next_url,
+        'prev_url': prev_url,
+        'start_index': start_index,
+        'end_index': end_index,
     })
 
 @guest_allowed
@@ -591,6 +686,134 @@ def report_table(request):
         'export_csv_url': reverse('export_report_csv'),
         'export_excel_url': reverse('export_report_excel'),
         # Not passing paginator or page_obj to template
+    })
+
+@guest_allowed
+def guest_view(request):
+    """
+    Guest-friendly view that displays all filtered specimens in a scrollable list.
+    Non-paginated for simplicity - shows all matching results.
+    Optimized for performance with select_related and only() to minimize database queries.
+    
+    Parameters:
+        request: HTTP request object
+    Returns:
+        Rendered template with filtered specimens
+    """
+    # Start with an optimized base queryset
+    # Use select_related to avoid N+1 queries on foreign keys
+    # Use only() to fetch only the fields we need for display
+    # Handle view mode toggle (table/grid)
+    view_mode = request.session.get('guest_view_mode', 'table')
+    if request.method == 'POST' and 'toggle_view_mode' in request.POST:
+        new_view_mode = request.POST.get('view_mode', 'table')
+        request.session['guest_view_mode'] = new_view_mode
+        request.session.modified = True
+        return HttpResponseRedirect(request.get_full_path())
+
+    specimens = Specimen.objects.select_related(
+        'locality', 
+        'recordedBy', 
+        'georeferencedBy', 
+        'identifiedBy'
+    )
+    
+    # Define guest-specific special filters
+    # Keep this minimal: map guest form fields to actual model/related fields
+    special_filters = {
+        # Locality hierarchy (guest labels → related fields)
+        'department': {'field': 'locality__region', 'range_support': False},
+        'province': {'field': 'locality__province', 'range_support': False},
+        'district': {'field': 'locality__district', 'range_support': False},
+        # Year supports ranges like 2020:2023 or comma-separated values
+        'year': {'field': 'year', 'range_support': True},
+    }
+    
+    # Determine if any guest filters were provided; if not, don't show results
+    guest_filter_keys = [
+        'family','genus','specificEpithet',
+        'department','province','district',
+        'minimumElevationInMeters','maximumElevationInMeters',
+        'year','month','day'
+    ]
+    has_filters = any(request.GET.get(k, '').strip() for k in guest_filter_keys)
+
+    if has_filters:
+        # Apply all filters using the standardized filter utility
+        specimens = apply_model_filters(specimens, Specimen, request, special_filters)
+    else:
+        specimens = Specimen.objects.none()
+    
+    # Fields for display and filtering
+    fields = [
+        {'name': field.name, 'verbose_name': getattr(field, 'verbose_name', field.name)}
+        for field in Specimen._meta.fields
+        if field.name != 'id'
+    ]
+    
+    # Pagination (small initial payloads; faster perceived load)
+    per_page = 50 if view_mode == 'table' else 40
+    paginator = Paginator(specimens, per_page)
+    page = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages) if paginator.num_pages else paginator.page(1)
+
+    # Work only with current page for performance
+    page_list = list(page_obj.object_list)
+
+    # Add model_name_internal to each object for URL generation
+    for specimen in page_list:
+        specimen.model_name_internal = 'specimen'
+
+    # If grid view, batch-load dorsal/ventral image URLs only for current page
+    if view_mode == 'grid':
+        catalog_numbers = [s.catalogNumber for s in page_list if s.catalogNumber]
+        if catalog_numbers:
+            batch_image_results = get_specimen_image_urls_batch(catalog_numbers)
+        else:
+            batch_image_results = {}
+        for s in page_list:
+            s.dorsal_image_url = None
+            s.ventral_image_url = None
+            if s.catalogNumber in batch_image_results:
+                image_dict = batch_image_results[s.catalogNumber]
+                if image_dict.get('dorsal') and image_dict['dorsal'] != 'no data':
+                    s.dorsal_image_url = image_dict['dorsal']
+                if image_dict.get('ventral') and image_dict['ventral'] != 'no data':
+                    s.ventral_image_url = image_dict['ventral']
+
+    # Total count for summary
+    total_count = paginator.count
+
+    # HTMX partial responses for infinite scroll
+    is_htmx = request.headers.get('HX-Request', '').lower() == 'true'
+    if is_htmx:
+        template_name = (
+            'butterflies/partials/_guest_grid_page.html'
+            if view_mode == 'grid'
+            else 'butterflies/partials/_guest_table_page.html'
+        )
+        return render(request, template_name, {
+            'page_obj': page_obj,
+            'view_mode': view_mode,
+            'has_filters': has_filters,
+        })
+
+    # Full page response
+    return render(request, 'butterflies/guest_view.html', {
+        'fields': fields,
+        'model_name': 'Specimen',
+        'model_name_internal': 'specimen',
+        'total_count': total_count,
+        'request': request,
+        'view_mode': view_mode,
+        'supports_grid_view': True,
+        'has_filters': has_filters,
+        'page_obj': page_obj,
     })
 
 # --- Export Views ---
@@ -2680,8 +2903,9 @@ def guest_login(request):
     # Set guest mode in session
     request.session['guest_mode'] = True
     
-    # Get the next URL from request or default to home
-    next_url = request.GET.get('next', '/')
+    # Always redirect to guest_view (explicit requirement)
+    from django.urls import reverse
+    next_url = reverse('guest_view')
     
     # Add a message to inform user about guest limitations
     messages.info(request, 

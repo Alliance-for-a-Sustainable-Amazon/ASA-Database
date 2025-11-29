@@ -9,6 +9,7 @@ from . import views_user_management
 urlpatterns = [
     # Dashboard and main views
     path('', views.report_table, name='report_table'),
+    path('guest/', views.guest_view, name='guest_view'),
     
     # Model-specific creation routes
     path('specimen/add/', views.create_specimen, name='create_specimen'),

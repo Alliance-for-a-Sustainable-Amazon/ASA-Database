@@ -60,9 +60,11 @@
                         <span class="role-researcher">[{% trans "Researcher" %}]</span>
                     {% endif %}
                 </span>
+                <a href="{% url 'guest_view' %}" class="nav-link">{% trans "Guest View" %}</a> |
                 <a href="{% url 'custom_logout' %}">{% trans "Log out" %}</a>
             {% else %}
-                <a href="{% url 'login' %}">{% trans "Log in" %}</a>
+                <a href="{% url 'login' %}">{% trans "Log in" %}</a> |
+                <a href="{% url 'guest_login' %}?next={% url 'guest_view' %}" class="nav-link btn-guest">{% trans "Browse as Guest" %}</a>
             {% endif %}
         </div>
     </nav>

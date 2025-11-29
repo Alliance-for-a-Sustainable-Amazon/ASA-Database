@@ -89,6 +89,8 @@
   {% include "butterflies/_table.html" with objects=objects fields=fields field_names=field_names request=request %}
 {% endif %}
 
+{% include "butterflies/_pagination.html" %}
+
 <div class="mt-4 mb-4 d-flex align-items-center">
   <a href="{% url 'dynamic_create' model_name_internal %}" style="background-color: #81b53e; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;">
     {% trans "Add Single Record" %}
