@@ -104,6 +104,8 @@ MIDDLEWARE = [
     'csp.middleware.CSPMiddleware',  # Add CSP middleware for security headers
 ] + MIDDLEWARE
 
+MIDDLEWARE = [mw for mw in MIDDLEWARE if mw != 'django.middleware.clickjacking.XFrameOptionsMiddleware']
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Enable WhiteNoise compression and caching
@@ -131,7 +133,6 @@ LOGGING = {
     },
 }
 # X frame options
-X_FRAME_OPTIONS = None
 
 CSP_FRAME_ANCESTORS = [
     "'self'",

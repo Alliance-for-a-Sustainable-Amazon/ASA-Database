@@ -1,37 +1,20 @@
 #!/bin/bash
 
-
-
-
-
-
 # Collect static files
-
 
 echo "Collecting static files..."
 
-
 python manage.py collectstatic --noinput
-
-
-
-
 
 # Apply database migrations
 
-
 echo "Applying database migrations..."
-
 
 python manage.py migrate
 
-
-
 # Create admin user from environment variables
 
-
 echo "Checking for admin credentials..."
-
 
 if [ -n "$DJANGO_ADMIN_USERNAME" ] && [ -n "$DJANGO_ADMIN_PASSWORD" ]; then
     echo "Creating/updating admin user..."
@@ -59,13 +42,9 @@ else:
 "
 fi
 
-
-
 # Start Gunicorn server
 
-
 echo "Starting Gunicorn server..."
-
 
 # Use 2 workers + 2 threads per worker for better concurrency
 # --preload loads app once and shares across workers (saves memory)
