@@ -101,6 +101,7 @@ else:
 # Static files: Use Azure blob storage or the default filesystem
 MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for static files
+    'csp.middleware.CSPMiddleware',  # Add CSP middleware for security headers
 ] + MIDDLEWARE
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -129,6 +130,13 @@ LOGGING = {
         },
     },
 }
+# X frame options
+X_FRAME_OPTIONS = None
+
+CSP_FRAME_ANCESTORS = [
+    "'self'",
+    "https://scholtesjona.wixstudio.com",
+]
 
 # Disable Django tests in Azure - create a dummy runner that does nothing
 class DummyDiscoverRunner:

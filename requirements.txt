@@ -17,3 +17,6 @@ django-environ==0.11.2
 # Cache - Redis support (optional, falls back to memory cache)
 redis==5.0.1
 django-redis==5.4.0
+
+# Security headers
+django-csp
