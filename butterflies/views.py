@@ -690,7 +690,7 @@ def report_table(request):
     })
 
 @guest_allowed
-@csrf_exempt
+@method_decorator(csrf_exempt, name='dispatch')
 def guest_view(request):
     """
     Guest-friendly view that displays all filtered specimens in a scrollable list.
