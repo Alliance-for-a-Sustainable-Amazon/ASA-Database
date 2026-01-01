@@ -689,8 +689,8 @@ def report_table(request):
         # Not passing paginator or page_obj to template
     })
 
+@csrf_exempt
 @guest_allowed
-@method_decorator(csrf_exempt, name='dispatch')
 def guest_view(request):
     """
     Guest-friendly view that displays all filtered specimens in a scrollable list.
@@ -705,13 +705,12 @@ def guest_view(request):
     # Start with an optimized base queryset
     # Use select_related to avoid N+1 queries on foreign keys
     # Use only() to fetch only the fields we need for display
-    # Handle view mode toggle (table/grid)
-    view_mode = request.session.get('guest_view_mode', 'table')
+    # Handle view mode toggle (table/grid) - use GET param instead of session for iframe compatibility
+    view_mode = request.GET.get('view_mode', 'table')
     if request.method == 'POST' and 'toggle_view_mode' in request.POST:
         new_view_mode = request.POST.get('view_mode', 'table')
-        request.session['guest_view_mode'] = new_view_mode
-        request.session.modified = True
-        return HttpResponseRedirect(request.get_full_path())
+        # Redirect with view_mode as query parameter instead of session
+        return HttpResponseRedirect(f"{request.path}?view_mode={new_view_mode}")
 
     specimens = Specimen.objects.select_related(
         'locality', 
