@@ -10,6 +10,7 @@ from django.forms import modelform_factory
 from django.contrib import messages
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.db import models
@@ -689,6 +690,7 @@ def report_table(request):
     })
 
 @guest_allowed
+@csrf_exempt
 def guest_view(request):
     """
     Guest-friendly view that displays all filtered specimens in a scrollable list.

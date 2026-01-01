@@ -51,6 +51,22 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+# # CSRF settings for iframe embedding
+# CSRF_COOKIE_SAMESITE = 'None'
+# CSRF_TRUSTED_ORIGINS = [
+#     'https://asa-database.azurewebsites.net',
+#     'https://scholtesjona.wixstudio.com',
+# ]
+# SESSION_COOKIE_SAMESITE = 'None'
+
+# SESSION_COOKIE_HTTPONLY = True  # Already set by default, but make it explicit
+
+# # Additional security headers
+# SECURE_HSTS_SECONDS = 31536000  # Force HTTPS for 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SECURE_BROWSER_XSS_FILTER = True
+
 # Database: Use Azure PostgreSQL
 DATABASES = {
     'default': {
