@@ -691,7 +691,7 @@ def report_table(request):
         # Not passing paginator or page_obj to template
     })
 
-@csrf_exempt
+# @csrf_exempt
 # @never_cache # never cache to allow secure IFrame embedding
 @guest_allowed
 def guest_view(request):
