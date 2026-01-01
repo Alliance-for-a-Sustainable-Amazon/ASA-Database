@@ -692,7 +692,7 @@ def report_table(request):
     })
 
 @csrf_exempt
-@never_cache # never cache to allow secure IFrame embedding
+# @never_cache # never cache to allow secure IFrame embedding
 @guest_allowed
 def guest_view(request):
     """

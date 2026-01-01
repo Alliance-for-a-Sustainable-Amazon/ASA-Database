@@ -24,7 +24,7 @@
   </div>
 </div>
 
-<!-- {% if supports_grid_view %}
+{% if supports_grid_view %}
 <div class="view-toggle">
   <span class="text-muted">{% trans "View:" %}</span>
   <form method="post" class="view-toggle-form" style="display: inline-flex; align-items: center; gap: 5px;">
@@ -46,11 +46,11 @@
     </button>
   </form>
 </div>
-{% endif %} -->
+{% endif %}
 
-<!-- Above uses Post method which is incompatible with iframe embedding; replaced with GET method below. -->
+<!-- Below uses Get method which is compatable with iframe embedding; removed because of changed security settings -->
 
-{% if supports_grid_view %}
+<!-- {% if supports_grid_view %}
 <div class="view-toggle">
   <span class="text-muted">{% trans "View:" %}</span>
   <div style="display: inline-flex; align-items: center; gap: 5px;">
@@ -70,7 +70,7 @@
     </a>
   </div>
 </div>
-{% endif %}
+{% endif %} -->
 
 {# Filter Form Section (Guest-specific minimal filters) #}
 <div class="mb-4">
