@@ -24,7 +24,7 @@
   </div>
 </div>
 
-{% if supports_grid_view %}
+<!-- {% if supports_grid_view %}
 <div class="view-toggle">
   <span class="text-muted">{% trans "View:" %}</span>
   <form method="post" class="view-toggle-form" style="display: inline-flex; align-items: center; gap: 5px;">
@@ -45,6 +45,30 @@
       {% trans "Grid" %}
     </button>
   </form>
+</div>
+{% endif %} -->
+
+<!-- Above uses Post method which is incompatible with iframe embedding; replaced with GET method below. -->
+
+{% if supports_grid_view %}
+<div class="view-toggle">
+  <span class="text-muted">{% trans "View:" %}</span>
+  <div style="display: inline-flex; align-items: center; gap: 5px;">
+    <a href="?{% query_transform request view_mode='table' %}" 
+       class="view-toggle-button {% if view_mode == 'table' %}active{% endif %}">
+      <svg class="view-toggle-icon" viewBox="0 0 24 24">
+        <path d="M3 3h18v4H3V3zm0 6h18v4H3V9zm0 6h18v4H3v-4z"/>
+      </svg>
+      {% trans "Table" %}
+    </a>
+    <a href="?{% query_transform request view_mode='grid' %}" 
+       class="view-toggle-button {% if view_mode == 'grid' %}active{% endif %}">
+      <svg class="view-toggle-icon" viewBox="0 0 24 24">
+        <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
+      </svg>
+      {% trans "Grid" %}
+    </a>
+  </div>
 </div>
 {% endif %}
 

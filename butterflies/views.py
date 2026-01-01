@@ -10,11 +10,13 @@ from django.forms import modelform_factory
 from django.contrib import messages
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.db import models
 from django.template.loader import get_template
+
 
 import csv
 import io
@@ -690,6 +692,7 @@ def report_table(request):
     })
 
 @csrf_exempt
+@never_cache # never cache to allow secure IFrame embedding
 @guest_allowed
 def guest_view(request):
     """
