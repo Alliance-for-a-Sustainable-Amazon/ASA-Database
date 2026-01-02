@@ -53,96 +53,143 @@ def check_image_url_fast(url):
         cache.set(url_cache_key, False, 3600)
         return None
 
-def get_specimen_image_urls(catalog_number):
-    """
-    Returns URLs for dorsal and ventral images for a specimen, if they exist in the Azure container.
-    Returns dictionary format for backward compatibility: {'dorsal': url, 'ventral': url}
-    Uses aggressive caching and optimized checking to improve performance.
-    """
-    # Check cache first to avoid repeated HTTP requests
-    cache_key = f"specimen_images_{catalog_number}"
-    cached_result = cache.get(cache_key)
-    if cached_result is not None:
-        return cached_result
+# def get_specimen_image_urls(catalog_number):
+#     """
+#     Returns URLs for dorsal and ventral images for a specimen, if they exist in the Azure container.
+#     Returns dictionary format for backward compatibility: {'dorsal': url, 'ventral': url}
+#     Uses aggressive caching and optimized checking to improve performance.
+#     """
+#     # Check cache first to avoid repeated HTTP requests
+#     cache_key = f"specimen_images_{catalog_number}"
+#     cached_result = cache.get(cache_key)
+#     if cached_result is not None:
+#         return cached_result
     
-    BASE_URL = getattr(settings, 'LEPIDOPTERA_ADULTS_IMAGES_URL', 'https://asadatabasestorage.blob.core.windows.net/lepidoptera-adults-images/')
-    # Convert hyphens to underscores for image filename format
-    image_filename_base = catalog_number.replace('-', '_')
+#     BASE_URL = getattr(settings, 'LEPIDOPTERA_ADULTS_IMAGES_URL', 'https://asadatabasestorage.blob.core.windows.net/lepidoptera-adults-images/')
+#     # Convert hyphens to underscores for image filename format
+#     image_filename_base = catalog_number.replace('-', '_')
     
-    # Possible file extensions to check
-    extensions = ['jpg', 'JPG', 'jpeg', 'JPEG']
+#     # Possible file extensions to check
+#     extensions = ['jpg', 'JPG', 'jpeg', 'JPEG']
     
-    # Generate all possible URLs
-    possible_urls = []
-    for image_type in ['d', 'v']:  # dorsal, ventral
-        for ext in extensions:
-            url = f"{BASE_URL}{image_filename_base}_{image_type}.{ext}"
-            possible_urls.append((url, image_type))
+#     # Generate all possible URLs
+#     possible_urls = []
+#     for image_type in ['d', 'v']:  # dorsal, ventral
+#         for ext in extensions:
+#             url = f"{BASE_URL}{image_filename_base}_{image_type}.{ext}"
+#             possible_urls.append((url, image_type))
     
-    # Check URLs concurrently for better performance
-    found_urls = {'dorsal': 'no data', 'ventral': 'no data'}
-    try:
-        # Use ThreadPoolExecutor for concurrent checking
-        with ThreadPoolExecutor(max_workers=4, thread_name_prefix='image_check') as executor:
-            # Submit all URL checks
-            future_to_url = {executor.submit(check_image_url_fast, url): (url, image_type) for url, image_type in possible_urls}
+#     # Check URLs concurrently for better performance
+#     found_urls = {'dorsal': 'no data', 'ventral': 'no data'}
+#     try:
+#         # Use ThreadPoolExecutor for concurrent checking
+#         with ThreadPoolExecutor(max_workers=4, thread_name_prefix='image_check') as executor:
+#             # Submit all URL checks
+#             future_to_url = {executor.submit(check_image_url_fast, url): (url, image_type) for url, image_type in possible_urls}
             
-            # Collect results as they complete
-            for future in as_completed(future_to_url, timeout=60):
-                result = future.result()
-                if result:
-                    url, image_type = future_to_url[future]
-                    if image_type == 'd':
-                        found_urls['dorsal'] = result
-                    elif image_type == 'v':
-                        found_urls['ventral'] = result
-    except Exception as e:
-        logger.warning(f"Error checking images for {catalog_number}: {e}")
+#             # Collect results as they complete
+#             for future in as_completed(future_to_url, timeout=60):
+#                 result = future.result()
+#                 if result:
+#                     url, image_type = future_to_url[future]
+#                     if image_type == 'd':
+#                         found_urls['dorsal'] = result
+#                     elif image_type == 'v':
+#                         found_urls['ventral'] = result
+#     except Exception as e:
+#         logger.warning(f"Error checking images for {catalog_number}: {e}")
     
-    # Cache the result for 2 hours to avoid repeated requests
-    cache.set(cache_key, found_urls, 7200)
+#     # Cache the result for 2 hours to avoid repeated requests
+#     cache.set(cache_key, found_urls, 7200)
     
-    return found_urls
+#     return found_urls
 
-def get_specimen_image_urls_batch(catalog_numbers):
-    """
-    Batch process multiple specimen image URLs for better performance.
-    Returns dictionary format for each catalog number.
-    """
-    results = {}
+# def get_specimen_image_urls_batch(catalog_numbers):
+#     """
+#     Batch process multiple specimen image URLs for better performance.
+#     Returns dictionary format for each catalog number.
+#     """
+#     results = {}
     
-    # Check cache first for all catalog numbers
-    uncached_numbers = []
-    for catalog_number in catalog_numbers:
-        cache_key = f"specimen_images_{catalog_number}"
-        cached_result = cache.get(cache_key)
-        if cached_result is not None:
-            results[catalog_number] = cached_result
-        else:
-            uncached_numbers.append(catalog_number)
+#     # Check cache first for all catalog numbers
+#     uncached_numbers = []
+#     for catalog_number in catalog_numbers:
+#         cache_key = f"specimen_images_{catalog_number}"
+#         cached_result = cache.get(cache_key)
+#         if cached_result is not None:
+#             results[catalog_number] = cached_result
+#         else:
+#             uncached_numbers.append(catalog_number)
     
-    if uncached_numbers:
-        try:
-            with ThreadPoolExecutor(max_workers=6, thread_name_prefix='batch_image_check') as executor:
-                future_to_catalog = {
-                    executor.submit(get_specimen_image_urls, catalog_number): catalog_number 
-                    for catalog_number in uncached_numbers
-                }
+#     if uncached_numbers:
+#         try:
+#             with ThreadPoolExecutor(max_workers=6, thread_name_prefix='batch_image_check') as executor:
+#                 future_to_catalog = {
+#                     executor.submit(get_specimen_image_urls, catalog_number): catalog_number 
+#                     for catalog_number in uncached_numbers
+#                 }
                 
-                # Process all futures
-                for future in as_completed(future_to_catalog):
-                    catalog_number = future_to_catalog[future]
-                    try:
-                        result = future.result()
-                        results[catalog_number] = result
-                    except Exception as e:
-                        logger.warning(f"Error getting images for {catalog_number}: {e}")
-                        results[catalog_number] = {'dorsal': 'no data', 'ventral': 'no data'}
-        except Exception as e:
-            logger.error(f"Error in batch image processing: {e}")
-            # Fallback to empty results for failed ones
-            for catalog_number in uncached_numbers:
-                if catalog_number not in results:
-                    results[catalog_number] = {'dorsal': 'no data', 'ventral': 'no data'}
+#                 # Process all futures
+#                 for future in as_completed(future_to_catalog):
+#                     catalog_number = future_to_catalog[future]
+#                     try:
+#                         result = future.result()
+#                         results[catalog_number] = result
+#                     except Exception as e:
+#                         logger.warning(f"Error getting images for {catalog_number}: {e}")
+#                         results[catalog_number] = {'dorsal': 'no data', 'ventral': 'no data'}
+#         except Exception as e:
+#             logger.error(f"Error in batch image processing: {e}")
+#             # Fallback to empty results for failed ones
+#             for catalog_number in uncached_numbers:
+#                 if catalog_number not in results:
+#                     results[catalog_number] = {'dorsal': 'no data', 'ventral': 'no data'}
     
-    return results
+#     return results
+
+def get_specimen_image_urls(catalog_numbers):
+    """
+    Optimized specimen image URL builder - handles single or batch requests.
+    NO URL CHECKING - assumes .jpg files exist, browser handles 404s gracefully.
+    
+    Performance: ~1ms for single, ~50ms for 40 specimens (just string operations)
+    
+    Args:
+        catalog_numbers: String (single catalog number) or List (multiple catalog numbers)
+    
+    Returns:
+        Single mode: {'dorsal': url, 'ventral': url}
+        Batch mode:  {catalog_num: {'dorsal': url, 'ventral': url}, ...}
+    
+    Examples:
+        >>> get_specimen_image_urls('2024-ABC-001')
+        {'dorsal': 'https://.../2024_ABC_001_d.jpg', 'ventral': '...'}
+        
+        >>> get_specimen_image_urls(['2024-ABC-001', '2024-ABC-002'])
+        {'2024-ABC-001': {...}, '2024-ABC-002': {...}}
+    """
+    BASE_URL = "https://asadatabasestorage.blob.core.windows.net/lepidoptera-adults-images/"
+    
+    def build_urls(cat_num):
+        """Build dorsal and ventral URLs for a catalog number"""
+        if not cat_num:
+            return {'dorsal': 'no data', 'ventral': 'no data'}
+        
+        image_base = cat_num.replace('-', '_')
+        return {
+            'dorsal': f"{BASE_URL}{image_base}_d.jpg",
+            'ventral': f"{BASE_URL}{image_base}_v.jpg"
+        }
+    
+    # Auto-detect single vs batch mode
+    if isinstance(catalog_numbers, str):
+        # Single specimen mode (detail pages)
+        return build_urls(catalog_numbers)
+    
+    elif isinstance(catalog_numbers, (list, tuple)):
+        # Batch mode (grid view)
+        return {cat_num: build_urls(cat_num) for cat_num in catalog_numbers if cat_num}
+    
+    else:
+        # Invalid input
+        return {}

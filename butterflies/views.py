@@ -41,7 +41,6 @@ from .utils import dot_if_none
 from butterflies.utils.image_utils import get_specimen_image_urls
 from .auth_utils import admin_required, guest_allowed, is_guest_mode
 from .filter_utils import FilterBuilder, apply_model_filters
-from .utils.image_utils import get_specimen_image_urls_batch
 
 
 # --- Utility Functions ---
@@ -370,7 +369,7 @@ def dynamic_list(request, model_name):
         catalog_numbers = [obj.catalogNumber for obj in page_obj if obj.catalogNumber]
         
         # Use batch loading for grid view
-        batch_image_results = get_specimen_image_urls_batch(catalog_numbers)
+        batch_image_results = get_specimen_image_urls(catalog_numbers)
         
         for obj in page_obj:
             obj.dorsal_image_url = None
@@ -787,7 +786,7 @@ def guest_view(request):
     if view_mode == 'grid':
         catalog_numbers = [s.catalogNumber for s in page_list if s.catalogNumber]
         if catalog_numbers:
-            batch_image_results = get_specimen_image_urls_batch(catalog_numbers)
+            batch_image_results = get_specimen_image_urls(catalog_numbers)
         else:
             batch_image_results = {}
         for s in page_list:
