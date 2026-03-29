@@ -271,8 +271,7 @@ def apply_model_filters(queryset, model, request, special_filters=None):
             specimenNumber_as_int=Cast('specimenNumber_as_int', output_field=IntegerField())
         )
         
-        # Sort by catalogNumber ascending (format: YYYY-LOC-NNNN)
-        # This naturally orders by year, then locality code, then specimen number
-        queryset = queryset.order_by('catalogNumber')
+        # Sort by catalogNumber descending (format: YYYY-LOC-NNNN)
+        queryset = queryset.order_by('-catalogNumber')
     
     return queryset
