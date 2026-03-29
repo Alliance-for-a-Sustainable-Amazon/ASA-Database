@@ -263,6 +263,9 @@ def dynamic_list(request, model_name):
         for field in model._meta.fields
         if field.name != 'id'
     ]
+    # Move catalogNumber to the front for Specimen model
+    if model._meta.model_name == 'specimen':
+        fields = sorted(fields, key=lambda f: 0 if f['name'] == 'catalogNumber' else 1)
     
     # Add model_name_internal to each object for URL generation
     obj_list = []
@@ -692,7 +695,9 @@ def report_table(request):
 
 # @csrf_exempt
 # @never_cache # never cache to allow secure IFrame embedding
-@guest_allowed
+# No @guest_allowed — the guest page is always publicly accessible.
+# Auto-enable guest mode for unauthenticated visitors so other
+# @guest_allowed views (e.g. detail pages linked from results) also work.
 def guest_view(request):
     """
     Guest-friendly view that displays all filtered specimens in a scrollable list.
@@ -704,6 +709,12 @@ def guest_view(request):
     Returns:
         Rendered template with filtered specimens
     """
+    # Auto-enable guest mode for unauthenticated visitors so other
+    # @guest_allowed views (e.g. detail pages linked from results) also work.
+    if not request.user.is_authenticated and not is_guest_mode(request):
+        request.session['guest_mode'] = True
+        request.session.modified = True
+
     # Start with an optimized base queryset
     # Use select_related to avoid N+1 queries on foreign keys
     # Use only() to fetch only the fields we need for display
@@ -763,6 +774,8 @@ def guest_view(request):
         for field in Specimen._meta.fields
         if field.name != 'id'
     ]
+    # Move catalogNumber to the front
+    fields = sorted(fields, key=lambda f: 0 if f['name'] == 'catalogNumber' else 1)
     
     # Pagination (small initial payloads; faster perceived load)
     per_page = 50 if view_mode == 'table' else 40
@@ -2834,6 +2847,9 @@ def all_list(request):
             for field in model._meta.fields
             if field.name != 'id'
         ]
+        # Move catalogNumber to the front for Specimen model
+        if model._meta.model_name == 'specimen':
+            fields = sorted(fields, key=lambda f: 0 if f['name'] == 'catalogNumber' else 1)
         # Multi-field search for each model
         for field in fields:
             value = request.GET.get(field['name'])

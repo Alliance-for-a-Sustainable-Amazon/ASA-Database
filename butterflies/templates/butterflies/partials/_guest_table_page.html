@@ -4,9 +4,9 @@
 {# Table rows for a single page + infinite scroll sentinel #}
 {% for specimen in page_obj.object_list %}
 <tr class="specimen-row" data-catalog="{{ specimen.catalogNumber }}">
+  <td title="{{ specimen.catalogNumber|dot_if_none }}" class="font-mono">{{ specimen.catalogNumber|dot_if_none }}</td>
   <td title="{{ specimen.modified|dot_if_none }}">{{ specimen.modified|dot_if_none }}</td>
   <td title="{{ specimen.specimenNumber|dot_if_none }}">{{ specimen.specimenNumber|dot_if_none }}</td>
-  <td title="{{ specimen.catalogNumber|dot_if_none }}" class="font-mono">{{ specimen.catalogNumber|dot_if_none }}</td>
   <td title="{{ specimen.recordedBy|dot_if_none }}">{{ specimen.recordedBy|dot_if_none }}</td>
   <td title="{{ specimen.sex|dot_if_none }}">{{ specimen.sex|dot_if_none }}</td>
   <td title="{{ specimen.behavior|dot_if_none }}">{{ specimen.behavior|dot_if_none }}</td>
