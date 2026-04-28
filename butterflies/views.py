@@ -21,6 +21,7 @@ from django.template.loader import get_template
 import csv
 import io
 import openpyxl
+import xlsxwriter
 import os
 import pandas as pd
 import re
@@ -875,7 +876,10 @@ def export_model_csv(request, model_name):
     
     # Export all objects using iterator for memory efficiency
     CHUNK_SIZE = 1000
-    for obj in model.objects.all().iterator(chunk_size=CHUNK_SIZE):
+    qs = model.objects.all()
+    if model._meta.model_name == 'specimen':
+        qs = qs.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy')
+    for obj in qs.iterator(chunk_size=CHUNK_SIZE):
         row = []
         for field_info in exportable_fields:
             row.append(get_field_value_for_export(obj, field_info))
@@ -899,47 +903,33 @@ def export_model_excel(request, model_name):
         if m._meta.model_name == model_name:
             model = m
             break
-    
     if not model:
         raise Http404("Model not found")
-    
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = model._meta.verbose_name_plural.title()
-    
+    output = io.BytesIO()
+    wb = xlsxwriter.Workbook(output, {'constant_memory': True})
+    ws = wb.add_worksheet(model._meta.verbose_name_plural.title())
     # Get exportable fields for this model (without related fields)
     exportable_fields = get_exportable_fields(model, include_related=False)
     headers = [field['name'] for field in exportable_fields]
-    ws.append(headers)
-    
-    # Export all objects in chunks to reduce memory usage
+    # Write headers
+    for col, header in enumerate(headers):
+        ws.write(0, col, header)
+    # Stream rows directly — each row is flushed to disk immediately
     CHUNK_SIZE = 1000
-    batch_rows = []
-    
-    for obj in model.objects.all().iterator(chunk_size=CHUNK_SIZE):
-        row = []
-        for field_info in exportable_fields:
-            row.append(get_field_value_for_export(obj, field_info))
-        batch_rows.append(row)
-        
-        # Write in batches for better performance
-        if len(batch_rows) >= CHUNK_SIZE:
-            for batch_row in batch_rows:
-                ws.append(batch_row)
-            batch_rows = []
-    
-    # Write any remaining rows
-    if batch_rows:
-        for batch_row in batch_rows:
-            ws.append(batch_row)
-    
-    output = io.BytesIO()
-    wb.save(output)
+    row_num = 1
+    qs = model.objects.all()
+    # Preload FK relations to avoid N+1 queries
+    if model._meta.model_name == 'specimen':
+        qs = qs.select_related('locality', 'recordedBy', 'georeferencedBy', 'identifiedBy')
+    for obj in qs.iterator(chunk_size=CHUNK_SIZE):
+        for col, field_info in enumerate(exportable_fields):
+            value = get_field_value_for_export(obj, field_info)
+            ws.write(row_num, col, str(value) if value is not None else '')
+        row_num += 1
+    wb.close()
     output.seek(0)
-    
     response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename="{model_name}.xlsx"'
-    
     return response
 
 # Helper function to get exportable fields for a model
@@ -1063,59 +1053,32 @@ def export_report_excel(request):
     Returns:
         HttpResponse with Excel content for download
     """
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Specimen Report"
-    
+    output = io.BytesIO()
+    wb = xlsxwriter.Workbook(output, {'constant_memory': True})
+    ws = wb.add_worksheet('Specimen Report')
     # Get exportable fields
     exportable_fields = get_exportable_fields(Specimen)
-    
-    # Build headers from exportable fields
     headers = [field['name'] for field in exportable_fields]
-    ws.append(headers)
-    
-    # Process specimens in chunks to reduce memory usage
+    # Write headers with a reasonable column width
+    for col, header in enumerate(headers):
+        width = min(max(len(header) + 2, 15), 50)
+        ws.set_column(col, col, width)
+        ws.write(0, col, header)
+    # Stream rows — cursor closes as soon as iteration finishes
     CHUNK_SIZE = 1000
-    batch_rows = []
-    
-    # Get all specimens with related data using iterator for memory efficiency
+    row_num = 1
     specimens = Specimen.objects.select_related(
         'locality', 'recordedBy', 'georeferencedBy', 'identifiedBy'
     ).iterator(chunk_size=CHUNK_SIZE)
-    
-    # Write each specimen row with all fields
     for specimen in specimens:
-        row = []
-        for field_info in exportable_fields:
-            row.append(get_field_value_for_export(specimen, field_info))
-        batch_rows.append(row)
-        
-        # Write in batches for better performance
-        if len(batch_rows) >= CHUNK_SIZE:
-            for batch_row in batch_rows:
-                ws.append(batch_row)
-            batch_rows = []
-    
-    # Write any remaining rows
-    if batch_rows:
-        for batch_row in batch_rows:
-            ws.append(batch_row)
-    
-    # Simplified column width adjustment (removed expensive iteration)
-    # Set reasonable default widths instead of calculating from all cells
-    for i, field_info in enumerate(exportable_fields, start=1):
-        column_letter = openpyxl.utils.get_column_letter(i)
-        # Set width based on header length with reasonable defaults
-        header_length = len(field_info['name'])
-        ws.column_dimensions[column_letter].width = min(max(header_length + 2, 15), 50)
-    
-    output = io.BytesIO()
-    wb.save(output)
+        for col, field_info in enumerate(exportable_fields):
+            value = get_field_value_for_export(specimen, field_info)
+            ws.write(row_num, col, str(value) if value is not None else '')
+        row_num += 1
+    wb.close()
     output.seek(0)
-    
     response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="specimen_report.xlsx"'
-    
     return response
 
 # --- Import Views ---

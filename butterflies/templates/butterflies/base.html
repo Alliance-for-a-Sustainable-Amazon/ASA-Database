@@ -2,6 +2,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,14 +27,17 @@
         </form>
     </div>
 </head>
+
 <body>
     <div class="header-container">
-        <h1><a href="{% url 'report_table' %}" class="title-link">{% block header %}<img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo" style="height: 50px;">{% endblock %}</a></h1>
+        <h1><a href="{% url 'report_table' %}" class="title-link">{% block header %}<img
+                    src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo"
+                    style="height: 50px;">{% endblock %}</a></h1>
     </div>
     <div>
         {% block content %}{% endblock %}
     </div>
-    
+
     <!-- Navigation -->
     {% load auth_tags %}
     <nav class="main-nav">
@@ -48,42 +52,46 @@
         </div> -->
         <div>
             {% if user.is_authenticated %}
-                <span class="user-info">
-                    {% trans "Logged in as" %} <strong>{{ user.username }}</strong>
-                    {% if user.is_superuser %}
-                        <span class="role-superuser">[{% trans "Superuser" %}]</span> |
-                        <a href="{% url 'user_list' %}">{% trans "Manage Users" %}</a> |
-                    {% elif user|has_group:'Admin' %}
-                        <span class="role-admin">[{% trans "Admin" %}]</span> |
-                        <a href="{% url 'user_list' %}">{% trans "Manage Users" %}</a> |
-                    {% else %}
-                        <span class="role-researcher">[{% trans "Researcher" %}]</span>
-                    {% endif %}
-                </span>
-                <a href="{% url 'guest_view' %}" class="nav-link">{% trans "Guest View" %}</a> |
-                <a href="{% url 'custom_logout' %}">{% trans "Log out" %}</a>
+            <span class="user-info">
+                {% trans "Logged in as" %} <strong>{{ user.username }}</strong>
+                {% if user.is_superuser %}
+                <span class="role-superuser">[{% trans "Superuser" %}]</span> |
+                <a href="{% url 'user_list' %}">{% trans "Manage Users" %}</a> |
+                {% elif user|has_group:'Admin' %}
+                <span class="role-admin">[{% trans "Admin" %}]</span> |
+                <a href="{% url 'user_list' %}">{% trans "Manage Users" %}</a> |
+                {% else %}
+                <span class="role-researcher">[{% trans "Researcher" %}]</span>
+                {% endif %}
+            </span>
+            <a href="{% url 'guest_view' %}" class="nav-link">{% trans "Guest View" %}</a> |
+            <a href="{% url 'custom_logout' %}">{% trans "Log out" %}</a>
             {% else %}
-                <a href="{% url 'login' %}">{% trans "Log in" %}</a> |
-                <a href="{% url 'guest_login' %}?next={% url 'guest_view' %}" class="nav-link btn-guest">{% trans "Browse as Guest" %}</a>
+            <a href="{% url 'login' %}">{% trans "Log in" %}</a>
+            {% if request.resolver_match.url_name != 'guest_view' %}
+            | <a href="{% url 'guest_login' %}?next={% url 'guest_view' %}" class="nav-link btn-guest">{% trans "Browse
+                as Guest" %}</a>
+            {% endif %}
             {% endif %}
         </div>
     </nav>
-    
+
     <script>
-    // Custom dropdown functionality is now handled in the _form.html template
-    // This keeps the base template clean and simple
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Base template loaded successfully');
-        // Debug header logo styling
-        console.log('Header logo style check:');
-        const logo = document.querySelector('.header-logo');
-        if (logo) {
-            console.log('Logo found!', logo);
-            console.log('Computed style:', window.getComputedStyle(logo).height);
-        } else {
-            console.log('Logo element not found!');
-        }
-    });
+        // Custom dropdown functionality is now handled in the _form.html template
+        // This keeps the base template clean and simple
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Base template loaded successfully');
+            // Debug header logo styling
+            console.log('Header logo style check:');
+            const logo = document.querySelector('.header-logo');
+            if (logo) {
+                console.log('Logo found!', logo);
+                console.log('Computed style:', window.getComputedStyle(logo).height);
+            } else {
+                console.log('Logo element not found!');
+            }
+        });
     </script>
 </body>
+
 </html>

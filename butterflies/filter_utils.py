@@ -251,26 +251,7 @@ def apply_model_filters(queryset, model, request, special_filters=None):
                 # Standard field filtering - use contains for better usability
                 queryset = queryset.filter(**{f"{field.name}__icontains": value})
     
-    # Apply annotations for numeric sorting (if it's a Specimen model)
     if model.__name__ == 'Specimen':
-        numeric_annotations = {}
-        
-        # Annotate year as integer for sorting
-        year_annotation = FilterBuilder.create_annotation_for_numeric_sorting('year')
-        numeric_annotations.update(year_annotation)
-        
-        # Annotate specimenNumber as integer for sorting
-        specimen_annotation = FilterBuilder.create_annotation_for_numeric_sorting('specimenNumber')
-        numeric_annotations.update(specimen_annotation)
-        
-        queryset = queryset.annotate(**numeric_annotations)
-        
-        # Cast annotations to integers
-        queryset = queryset.annotate(
-            year_as_int=Cast('year_as_int', output_field=IntegerField()),
-            specimenNumber_as_int=Cast('specimenNumber_as_int', output_field=IntegerField())
-        )
-        
         # Sort by catalogNumber descending (format: YYYY-LOC-NNNN)
         queryset = queryset.order_by('-catalogNumber')
     

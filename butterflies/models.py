@@ -56,32 +56,35 @@ class Initials(models.Model):
 class Specimen(models.Model):
     class Meta:
         db_table = 'specimenTable'
-        # This ordering array specifies the conceptual field order
-        # Important fields come first, but this doesn't change the database schema
-        # It affects operations like model_to_dict() and form field ordering
-        ordering = [
-            # 1. Record-level Fields
-            'modified', 
+        # # This ordering array specifies the conceptual field order
+        # # Important fields come first, but this doesn't change the database schema
+        # # It affects operations like model_to_dict() and form field ordering
+        # ordering = [
+        #     # 1. Record-level Fields
+        #     'modified', 
             
-            # 2. Location Fields
-            'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc',
-            'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate',
-            'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
+        #     # 2. Location Fields
+        #     'locality', 'decimalLatitude', 'decimalLongitude', 'exact_loc',
+        #     'coordinateUncertaintyInMeters', 'georeferencedBy', 'georeferencedDate',
+        #     'georeferenceProtocol', 'minimumElevationInMeters', 'maximumElevationInMeters',
             
-            # 3. Occurrence Fields
-            'specimenNumber', 'catalogNumber', 'recordedBy', 'sex',
-            'behavior', 'occurrenceRemarks', 'disposition',
+        #     # 3. Occurrence Fields
+        #     'specimenNumber', 'catalogNumber', 'recordedBy', 'sex',
+        #     'behavior', 'occurrenceRemarks', 'disposition',
             
-            # 4. Event Fields
-            'year', 'month', 'day', 'eventTime', 'eventDate',
-            'habitatNotes', 'samplingProtocol',
+        #     # 4. Event Fields
+        #     'year', 'month', 'day', 'eventTime', 'eventDate',
+        #     'habitatNotes', 'samplingProtocol',
             
-            # 5. Taxon Fields
-            'family', 'subfamily', 'tribe', 'subtribe', 'genus',
-            'specificEpithet', 'infraspecificEpithet',
+        #     # 5. Taxon Fields
+        #     'family', 'subfamily', 'tribe', 'subtribe', 'genus',
+        #     'specificEpithet', 'infraspecificEpithet',
             
-            # 6. Identification Fields
-            'identifiedBy', 'dateIdentified', 'identificationReferences', 'identificationRemarks'
+        #     # 6. Identification Fields
+        #     'identifiedBy', 'dateIdentified', 'identificationReferences', 'identificationRemarks'
+        # ]
+        indexes = [
+            models.Index(fields=['-eventDate', '-eventTime', '-year', '-catalogNumber']),
         ]
 
     # ----------------------------------

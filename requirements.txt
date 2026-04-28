@@ -2,6 +2,7 @@
 psycopg2-binary
 Django>=4.0
 openpyxl
+xlsxwriter
 pandas
 requests
 python-dateutil>=2.8.2

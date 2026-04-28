@@ -13,7 +13,6 @@ Changes from base settings:
 import os
 from .settings import *
 
-# SECURITY: Use environment variables for sensitive settings
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', SECRET_KEY)
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
