@@ -3,6 +3,11 @@
 {% load static %}
 {% load butterfly_extras butterfly_display %}
 
+{# When accessed from guest view, lock down navigation #}
+{% block header_link %}{% if is_guest_origin %}<span class="title-link" style="cursor: default;">{% else %}<a href="{% url 'report_table' %}" class="title-link">{% endif %}{% endblock header_link %}
+{% block header_link_close %}{% if is_guest_origin %}</span>{% else %}</a>{% endif %}{% endblock header_link_close %}
+{% block nav %}{% if not is_guest_origin %}{{ block.super }}{% endif %}{% endblock nav %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'butterflies/css/detail.css' %}">
 {% endblock %}
@@ -12,6 +17,7 @@
     <!-- Header with title and action buttons -->
     <header class="detail-header">
         <h2 class="detail-title">{% blocktrans %}{{ model_name }} Details{% endblocktrans %}</h2>
+        {% if not is_guest_origin %}
         <div class="detail-actions">
             <a href="{% url 'dynamic_edit' object.model_name_internal object.pk %}" class="btn btn-primary">
                 {% trans "Edit" %}
@@ -29,6 +35,7 @@
                 {% endif %}
             {% endif %}
         </div>
+        {% endif %}
     </header>
 
     <div class="detail-content">
@@ -158,8 +165,8 @@
 
     <!-- Footer navigation -->
     <footer class="detail-footer">
-        <a href="{% url 'report_table' %}" class="back-link">
-            {% trans "Back to Report Table" %}
+        <a href="{{ back_url }}" class="back-link">
+            {% trans "Back" %}
         </a>
         <div class="text-muted font-sm">
             {% trans "Last updated:" %} {{ object.modified|default:"N/A" }}

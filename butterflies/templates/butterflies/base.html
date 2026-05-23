@@ -30,9 +30,9 @@
 
 <body>
     <div class="header-container">
-        <h1><a href="{% url 'report_table' %}" class="title-link">{% block header %}<img
+        <h1>{% block header_link %}<a href="{% url 'report_table' %}" class="title-link">{% endblock header_link %}{% block header %}<img
                     src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo"
-                    style="height: 50px;">{% endblock %}</a></h1>
+                    style="height: 50px;">{% endblock %}{% block header_link_close %}</a>{% endblock header_link_close %}</h1>
     </div>
     <div>
         {% block content %}{% endblock %}
@@ -40,6 +40,7 @@
 
     <!-- Navigation -->
     {% load auth_tags %}
+    {% block nav %}
     <nav class="main-nav">
         <!-- 
         <div>
@@ -47,7 +48,7 @@
             <a href="{% url 'dynamic_create' 'specimen' %}">New Specimen</a>
             {% if user.is_superuser or user|has_group:'Admin' %}
              | <a href="{% url 'dynamic_create' 'locality' %}">New Locality</a> |
-               <a href="{% url 'dynamic_create' 'initials' %}">New Initials</a>
+                <a href="{% url 'dynamic_create' 'initials' %}">New Initials</a>
             {% endif %}
         </div> -->
         <div>
@@ -75,6 +76,7 @@
             {% endif %}
         </div>
     </nav>
+    {% endblock nav %}
 
     <script>
         // Custom dropdown functionality is now handled in the _form.html template

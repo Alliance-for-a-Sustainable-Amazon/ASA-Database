@@ -5,9 +5,15 @@
 
 {% block title %}{% trans "Browse Specimens" %}{% endblock %}
 
+{# Make logo non-clickable on guest view so users cannot navigate away #}
+{% block header_link %}<span class="title-link" style="cursor: default;">{% endblock header_link %}
 {% block header %}
 <img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo" style="height: 50px;">
 {% endblock %}
+{% block header_link_close %}</span>{% endblock header_link_close %}
+
+{# Hide the entire nav bar (login button, etc.) on guest view #}
+{% block nav %}{% endblock nav %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'butterflies/css/utilities.css' %}">

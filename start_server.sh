@@ -16,4 +16,4 @@ python manage.py makemigrations
 python manage.py migrate
 
 # Start Django development server in debug mode
-python manage.py runserver --insecure
+python manage.py runserver 8001 --insecure

@@ -466,11 +466,16 @@ def dynamic_detail(request, model_name, object_id):
     image_urls = None
     if model._meta.model_name == 'specimen':
         image_urls = get_specimen_image_urls(obj.catalogNumber)
+    # Determine back URL: use ?from= query param if provided, else default to report_table
+    back_url = request.GET.get('from', reverse('report_table'))
+    is_guest_origin = 'guest' in back_url
     return render(request, 'butterflies/_detail.html', {
         'object': obj,
         'fields': fields,
         'model_name': model._meta.verbose_name.title(),
         'image_urls': image_urls,
+        'back_url': back_url,
+        'is_guest_origin': is_guest_origin,
     })
 
 @admin_required

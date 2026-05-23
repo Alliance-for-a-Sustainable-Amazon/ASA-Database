@@ -3,7 +3,7 @@
 {% load butterfly_extras %}
 
 {% for obj in page_obj.object_list %}
-<a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}" class="specimen-grid-item">
+<a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}?from={% url 'guest_view' %}{% if request.GET.urlencode %}%3F{{ request.GET.urlencode|urlencode }}{% endif %}" class="specimen-grid-item">
   <div class="specimen-image-container">
     {% if obj.dorsal_image_url or obj.ventral_image_url %}
       {% if obj.dorsal_image_url %}
