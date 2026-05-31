@@ -90,7 +90,7 @@
 {% if supports_grid_view and view_mode == 'grid' %}
   {% include "butterflies/_grid.html" with objects=objects %}
 {% else %}
-  {% include "butterflies/_table.html" with objects=objects fields=fields field_names=field_names request=request %}
+  {% include "butterflies/_table.html" with objects=objects fields=fields field_names=field_names request=request debug_nulls=debug_nulls %}
 {% endif %}
 
 {% include "butterflies/_pagination.html" %}

@@ -256,7 +256,8 @@ def dynamic_list(request, model_name):
         }
         
     # Apply debug filter for NULL values
-    if request.GET.get('debug_nulls') == 'true':
+    debug_nulls = request.GET.get('debug_nulls') == 'true'
+    if debug_nulls:
         null_q = models.Q()
         for field in model._meta.fields:
             if getattr(field, 'null', False):
@@ -438,6 +439,7 @@ def dynamic_list(request, model_name):
         'prev_url': prev_url,
         'start_index': start_index,
         'end_index': end_index,
+        'debug_nulls': debug_nulls,
     })
 
 @guest_allowed

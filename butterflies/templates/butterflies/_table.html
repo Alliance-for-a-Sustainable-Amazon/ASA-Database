@@ -22,10 +22,18 @@
 
     <tr>
         {% for field in fields %}
-            {% if forloop.first %}
-                <td title="{{ obj|get_field_value:field.name|dot_if_none }}"><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{{ obj|get_field_value:field.name|dot_if_none }}</a></td>
+            {% if debug_nulls %}
+                {% if forloop.first %}
+                    <td title="{{ obj|get_field_value:field.name }}"><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{% if obj|get_field_value:field.name is None %}[NULL]{% elif obj|get_field_value:field.name == '' %}[EMPTY]{% else %}{{ obj|get_field_value:field.name }}{% endif %}</a></td>
+                {% else %}
+                    <td title="{{ obj|get_field_value:field.name }}">{% if obj|get_field_value:field.name is None %}[NULL]{% elif obj|get_field_value:field.name == '' %}[EMPTY]{% else %}{{ obj|get_field_value:field.name }}{% endif %}</td>
+                {% endif %}
             {% else %}
-                <td title="{{ obj|get_field_value:field.name|dot_if_none }}">{{ obj|get_field_value:field.name|dot_if_none }}</td>
+                {% if forloop.first %}
+                    <td title="{{ obj|get_field_value:field.name|dot_if_none }}"><a href="{% url 'dynamic_detail' obj.model_name_internal obj.pk %}">{{ obj|get_field_value:field.name|dot_if_none }}</a></td>
+                {% else %}
+                    <td title="{{ obj|get_field_value:field.name|dot_if_none }}">{{ obj|get_field_value:field.name|dot_if_none }}</td>
+                {% endif %}
             {% endif %}
         {% endfor %}
         <td>
