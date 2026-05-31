@@ -10,6 +10,7 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'butterflies/css/detail.css' %}">
+<script src="{% static 'butterflies/js/detail.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -137,11 +138,14 @@
             <div class="images-header">
                 {% trans "Specimen Images" %}
             </div>
+            <p class="images-instruction text-muted" style="margin: 10px 15px; font-style: italic;">
+                {% trans "Click on an image to view it full screen." %}
+            </p>
             <div class="images-grid">
                 <div class="image-item">
                     <div class="image-label">{% trans "Dorsal" %}</div>
                     {% if image_urls.dorsal != 'no data' %}
-                        <img src="{{ image_urls.dorsal }}" alt="{% trans 'Dorsal view' %}" class="specimen-image">
+                        <img src="{{ image_urls.dorsal }}" alt="{% trans 'Dorsal view' %}" class="specimen-image expandable-image">
                     {% else %}
                         <div class="no-data-placeholder">
                             {% trans "No dorsal image available" %}
@@ -151,7 +155,7 @@
                 <div class="image-item">
                     <div class="image-label">{% trans "Ventral" %}</div>
                     {% if image_urls.ventral != 'no data' %}
-                        <img src="{{ image_urls.ventral }}" alt="{% trans 'Ventral view' %}" class="specimen-image">
+                        <img src="{{ image_urls.ventral }}" alt="{% trans 'Ventral view' %}" class="specimen-image expandable-image">
                     {% else %}
                         <div class="no-data-placeholder">
                             {% trans "No ventral image available" %}
@@ -161,6 +165,13 @@
             </div>
         </div>
         {% endif %}
+    </div>
+
+    <!-- Image Modal Overlay -->
+    <div id="image-modal" class="image-modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modal-image">
+        <div class="modal-instruction">{% trans "Click anywhere outside the image or on the X to close." %}</div>
     </div>
 
     <!-- Footer navigation -->

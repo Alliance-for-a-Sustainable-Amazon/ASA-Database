@@ -86,7 +86,6 @@
         </thead>
         <tbody>
             {% for item in preview %}
-            {% if not show_errors_only or item.errors %}
             <tr {% if item.duplicate %}style="background-color: #ffeeee;"{% endif %}>
                 <td>
                     {% if item.duplicate %}
@@ -121,12 +120,12 @@
                 {% for field in fields %}
                 <td>
                     {% if field == unique_field and item.duplicate %}
-                    <input type="text" name="row_{{ forloop.parentloop.counter0 }}_{{ field }}" 
+                    <input type="text" name="row_{{ item.original_idx }}_{{ field }}" 
                            value="{{ item.suggested_key|default:'' }}"
                            title="Original value: {{ item.data|get_item:field|default:'' }}">
                     <div style="font-size: 0.8em; color: #666;">Original: {{ item.data|get_item:field|default:'' }}</div>
                     {% else %}
-                    <input type="text" name="row_{{ forloop.parentloop.counter0 }}_{{ field }}" 
+                    <input type="text" name="row_{{ item.original_idx }}_{{ field }}" 
                            value="{{ item.data|get_item:field|default:'' }}"
                            {% if field in item.error_fields %}
                            style="border: 2px solid #f44336; background-color: #ffebee;"
@@ -136,7 +135,6 @@
                 </td>
                 {% endfor %}
             </tr>
-            {% endif %}
             {% empty %}
             <tr><td colspan="{{ fields|length|add:1 }}" style="text-align: center; padding: 20px; color: #666;">
                 No data available.
@@ -235,12 +233,10 @@
                         Show All Rows
                     </button>
                     {% else %}
-                    {% if error_count > 0 %}
                     <button type="submit" name="show_errors_only" value="true" class="btn btn-sm btn-warning"
                             onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Filtering...'; this.classList.add('btn-loading');">
                         Show Only Errors
                     </button>
-                    {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -268,7 +264,6 @@
             <strong>Instructions:</strong>
             <ul style="margin: 5px 0 0 0; padding-left: 20px;">
                 <li><strong>Apply Edits:</strong> Save your changes and refresh this page to see updated validation</li>
-                <li><strong>Re-validate:</strong> Apply current edits and check all pages for errors</li>
                 <li><strong>Confirm Import:</strong> Import all data to the database (only available when no errors exist)</li>
                 {% if has_errors or all_errors %}
                 <li><strong>Show Only Errors:</strong> Filter to display only rows that have validation errors</li>
@@ -285,10 +280,6 @@
             {% if all_errors %}
             <button type="button" class="btn btn-primary" disabled title="Fix all errors before importing">
                 Confirm Import
-            </button>
-            <button type="submit" name="revalidate" value="true" class="btn btn-secondary ml-2" title="Apply current edits and re-validate all data"
-                    onclick="this.innerHTML='<span class=&quot;loading-spinner&quot;></span>Re-validating...'; this.classList.add('btn-loading'); this.form.classList.add('form-loading');">
-                Re-validate
             </button>
             <span class="ml-2 text-danger">Please fix all errors before importing</span>
             {% else %}

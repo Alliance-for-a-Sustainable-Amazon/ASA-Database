@@ -254,6 +254,15 @@ def dynamic_list(request, model_name):
             'specimenNumber': {'field': 'specimenNumber', 'range_support': True},
             'year': {'field': 'year', 'range_support': True}
         }
+        
+    # Apply debug filter for NULL values
+    if request.GET.get('debug_nulls') == 'true':
+        null_q = models.Q()
+        for field in model._meta.fields:
+            if getattr(field, 'null', False):
+                null_q |= models.Q(**{f"{field.name}__isnull": True})
+        objects = objects.filter(null_q)
+
     
     # Apply all filters using the standardized filter utility
     objects = apply_model_filters(objects, model, request, special_filters)
@@ -1253,10 +1262,11 @@ def process_foreign_keys(row_data, row_index, request, debug_mode=False):
                 row_data[fk_field] = related_obj
             else:
                 row_data[fk_field] = None
-                messages.warning(
-                    request, 
-                    f"{related_model.__name__} '{lookup_value}' not found for {fk_field} in row {row_index+1}."
-                )
+                if debug_mode and request and hasattr(request, '_import_context'):
+                    messages.warning(
+                        request, 
+                        f"{related_model.__name__} '{lookup_value}' not found for {fk_field} in row {row_index+1}."
+                    )
 
 
 # Helper function to parse a date field
@@ -1360,7 +1370,7 @@ def handle_import_error(request, error_msg, row_index):
     request.session['import_errors'] = import_errors
 
 # Helper function for validating specimen data - unified approach for preview and import
-def validate_specimen_data(row_data, preview_item=None, common_errors=None, debug_mode=False):
+def validate_specimen_data(row_data, preview_item=None, common_errors=None, debug_mode=False, fk_fields_validation=None, valid_values_cache=None):
     """
     Performs common validation for specimen data.
     
@@ -1370,6 +1380,8 @@ def validate_specimen_data(row_data, preview_item=None, common_errors=None, debu
                      If None, only returns errors without modifying preview_item
         common_errors: Dictionary of pre-identified common errors (optional)
         debug_mode: Boolean indicating whether to show detailed debug information
+        fk_fields_validation: Dictionary of foreign key validation info (optional, for performance)
+        valid_values_cache: Dictionary of valid foreign key values (optional, for performance)
     
     Returns:
         Dictionary of errors by field (if preview_item is None)
@@ -1380,8 +1392,9 @@ def validate_specimen_data(row_data, preview_item=None, common_errors=None, debu
     collected_warnings = []
     collected_error_fields = set()
     
-    # Get the foreign key fields validation info
-    fk_fields_validation, valid_values_cache = build_fk_validation_cache()
+    # Get the foreign key fields validation info if not provided
+    if fk_fields_validation is None or valid_values_cache is None:
+        fk_fields_validation, valid_values_cache = build_fk_validation_cache()
     
     # Validate foreign key fields
     for fk_field, (related_model, lookup_field, display_name) in fk_fields_validation.items():
@@ -1637,6 +1650,82 @@ def process_event_date(row_data, context=None, request=None, row_index=None, deb
                 return False, False, None
             
     return True, False, None
+
+def check_entire_dataframe_for_errors(df, expected_fields, fk_fields, model_name, common_errors=None, debug_mode=False):
+    """
+    Checks the entire dataframe for any validation errors.
+    Returns True if any errors are found, False otherwise.
+    """
+    if df is None or df.empty:
+        return False
+        
+    fk_fields_validation, valid_values_cache = None, None
+    if model_name == 'specimen':
+        fk_fields_validation, valid_values_cache = build_fk_validation_cache()
+        
+    for idx in range(len(df)):
+        row = df.iloc[idx]
+        row_data = {}
+        for field in expected_fields:
+            if field in fk_fields:
+                col_name = fk_fields[field]
+                if col_name in row:
+                    row_data[field] = row[col_name]
+            elif field in row:
+                row_data[field] = row[field]
+                
+        if model_name == 'specimen':
+            temp_item = {'errors': [], 'error_fields': set()}
+            validate_specimen_data(
+                row_data, 
+                temp_item, 
+                common_errors, 
+                debug_mode,
+                fk_fields_validation,
+                valid_values_cache
+            )
+            if temp_item['errors']:
+                return True
+                
+    return False
+
+def get_all_error_indices(df, expected_fields, fk_fields, model_name, common_errors=None, debug_mode=False):
+    """
+    Scans the entire dataframe and returns a list of indices for rows that have validation errors.
+    """
+    error_indices = []
+    if df is None or df.empty:
+        return error_indices
+        
+    fk_fields_validation, valid_values_cache = None, None
+    if model_name == 'specimen':
+        fk_fields_validation, valid_values_cache = build_fk_validation_cache()
+        
+    for idx in range(len(df)):
+        row = df.iloc[idx]
+        row_data = {}
+        for field in expected_fields:
+            if field in fk_fields:
+                col_name = fk_fields[field]
+                if col_name in row:
+                    row_data[field] = row[col_name]
+            elif field in row:
+                row_data[field] = row[field]
+                
+        if model_name == 'specimen':
+            temp_item = {'errors': [], 'error_fields': set()}
+            validate_specimen_data(
+                row_data, 
+                temp_item, 
+                common_errors, 
+                debug_mode,
+                fk_fields_validation,
+                valid_values_cache
+            )
+            if temp_item['errors']:
+                error_indices.append(idx)
+                
+    return error_indices
 
 @csrf_exempt
 @admin_required
@@ -1909,7 +1998,7 @@ def import_model(request, model_name):
         request.session['import_fk_fields'] = fk_fields
         request.session['import_unique_field'] = unique_field
         request.session['import_model_name'] = model_name
-        request.session['import_all_errors'] = False  # Reset error tracking
+        request.session['import_all_errors'] = check_entire_dataframe_for_errors(df, expected_fields, fk_fields, model_name, None, False)
         request.session['show_errors_only'] = False  # Reset filter state for new import
         request.session.modified = True
         
@@ -1995,28 +2084,28 @@ def import_model(request, model_name):
         edited_count = 0
         edited_rows = set()  # Track which rows were actually edited
         
-        # Only process rows that actually have form data (important when error filter is active)
-        for i, idx in enumerate(range(start_idx, end_idx)):
-            # Check if this row has any form data - if not, skip it entirely
-            has_form_data = False
-            for field in fields:
-                form_key = f'row_{i}_{field}'
-                if form_key in request.POST:
-                    has_form_data = True
-                    break
-            
-            # Skip this row if no form data found (means it wasn't visible in the form)
-            if not has_form_data:
+        # Extract edited rows directly from POST keys (format: row_{idx}_{field})
+        import re
+        row_key_pattern = re.compile(r'^row_(\d+)_(.+)$')
+        
+        # Group POST data by row index
+        row_edits = {}
+        for key in request.POST:
+            match = row_key_pattern.match(key)
+            if match:
+                idx = int(match.group(1))
+                field = match.group(2)
+                if field in fields:
+                    if idx not in row_edits:
+                        row_edits[idx] = {}
+                    row_edits[idx][field] = request.POST.get(key, '').strip()
+
+        for idx, edits in row_edits.items():
+            if idx >= total_rows:
                 continue
-            
+                
             row_was_edited = False
-            for field in fields:
-                form_key = f'row_{i}_{field}'
-                # Only process if the form field actually exists in POST data
-                if form_key not in request.POST:
-                    continue
-                    
-                new_value = request.POST.get(form_key, '').strip()
+            for field, new_value in edits.items():
                 if new_value == '':
                     new_value = None
                 
@@ -2239,7 +2328,8 @@ def import_model(request, model_name):
         
         # Security check: Ensure there are no validation errors before proceeding
         # This prevents bypassing the disabled button via direct POST
-        if request.session.get('import_all_errors', False):
+        if request.session.get('import_all_errors', False) or check_entire_dataframe_for_errors(df, expected_fields, fk_fields, model_name, None, debug_mode):
+            request.session['import_all_errors'] = True
             messages.error(
                 request,
                 'Import cancelled: There are validation errors that must be fixed before importing.'
@@ -2500,8 +2590,24 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
         messages.error(request, 'Session expired or invalid data. Please upload the file again.')
         return redirect('import_model', model_name=model_name)
     
-    # Set up pagination
-    total_rows = len(df)
+    # Filter indices if show_errors_only is true
+    show_errors_only = request.session.get('show_errors_only', False)
+    debug_mode = request.POST.get('debug_mode') == 'true'
+    print(f"[DEBUG] Debug mode: {debug_mode}")
+    
+    if show_errors_only:
+        page_indices_to_use = get_all_error_indices(df, expected_fields, fk_fields, model_name, None, debug_mode)
+        if not page_indices_to_use:
+            show_errors_only = False
+            request.session['show_errors_only'] = False
+            request.session.modified = True
+            messages.info(request, 'Error filter automatically disabled - no errors found.')
+            page_indices_to_use = list(range(len(df)))
+    else:
+        page_indices_to_use = list(range(len(df)))
+        
+    # Set up pagination using the filtered indices
+    total_rows = len(page_indices_to_use)
     paginator = Paginator(range(total_rows), rows_per_page)
     
     try:
@@ -2511,14 +2617,11 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
     
-    # Get slice of dataframe for current page
+    # Get slice of indices for current page
     start_idx = (page_obj.number - 1) * rows_per_page
     end_idx = min(start_idx + rows_per_page, total_rows)
-    page_indices = list(range(start_idx, end_idx))
-    
-    # Get debug mode parameter
-    debug_mode = request.POST.get('debug_mode') == 'true'
-    print(f"[DEBUG] Debug mode: {debug_mode}")
+    page_indices = page_indices_to_use[start_idx:end_idx]
+
     
     # Extract rows for this page and convert to dictionaries
     all_rows_data = []
@@ -2536,7 +2639,7 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
             elif field in row:
                 row_data[field] = row[field]
         
-        all_rows_data.append(row_data)
+        all_rows_data.append((idx, row_data))
     
     # Pre-validate to identify common error patterns
     common_errors = {}
@@ -2545,7 +2648,7 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
         fk_fields_validation, valid_values_cache = build_fk_validation_cache()
         
         # Track invalid values
-        for row_data in all_rows_data:
+        for idx, row_data in all_rows_data:
             if 'sex' in row_data and row_data['sex']:
                 if row_data['sex'] not in ['male', 'female', '.']:
                     if 'sex_values' not in common_errors:
@@ -2567,7 +2670,7 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
     
     # Now process each row for preview with consistent error detection
     preview_data = []
-    for row_index, row_data in enumerate(all_rows_data):
+    for _, (idx, row_data) in enumerate(all_rows_data):
         # Check for duplicates if we have a unique field
         is_duplicate = False
         suggested_key = None
@@ -2589,6 +2692,7 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
         
         # Create preview item
         preview_item = {
+            'original_idx': idx,
             'data': row_data,
             'duplicate': is_duplicate,
             'suggested_key': suggested_key,
@@ -2638,61 +2742,25 @@ def process_paginated_import_data(request, page=1, rows_per_page=20, context=Non
     # Add error filter state
     show_errors_only = request.session.get('show_errors_only', False)
     
-    # Auto-disable error filter if there are no errors on this page or globally
-    if show_errors_only and not has_errors and not request.session.get('import_all_errors', False):
-        show_errors_only = False
-        request.session['show_errors_only'] = False
-        request.session.modified = True
-        messages.info(request, 'Error filter automatically disabled - no errors found.')
-    
     # Update all_errors in session to track if any page has errors
     all_errors = request.session.get('import_all_errors', False)
     
-    # If this is a revalidation request, do a comprehensive check across all data
+    # Always validate the entire dataset to keep global error state perfectly in sync.
+    # Since we've optimized this to use a cache, it runs in milliseconds even for huge files.
+    has_any_errors = check_entire_dataframe_for_errors(df, expected_fields, fk_fields, model_name, common_errors, debug_mode)
+    request.session['import_all_errors'] = has_any_errors
+    all_errors = has_any_errors
+    
+    # If the user explicitly clicked revalidate, we give them feedback messages
     if request.POST.get('revalidate'):
-        # For revalidation, scan the entire dataset to see if any errors remain
-        has_any_errors = False
-        
-        # Quick scan through all rows in the dataframe to check for errors
-        for idx in range(len(df)):
-            row = df.iloc[idx]
-            # Convert row to clean dict for validation
-            row_data = {}
-            for field in expected_fields:
-                if field in fk_fields:
-                    col_name = fk_fields[field]
-                    if col_name in row:
-                        row_data[field] = row[col_name]
-                elif field in row:
-                    row_data[field] = row[field]
-            
-            # Quick validation check for this row
-            if model_name == 'specimen':
-                # Check basic validation that would cause errors
-                temp_item = {'errors': [], 'error_fields': set()}
-                validate_specimen_data(row_data, temp_item, common_errors, debug_mode)
-                if temp_item['errors']:
-                    has_any_errors = True
-                    break  # Found at least one error, that's enough
-        
-        # Update the global error state based on comprehensive check
-        request.session['import_all_errors'] = has_any_errors
-        all_errors = has_any_errors
-        
-        # Add appropriate message
         if not has_any_errors:
             messages.success(request, 'All errors have been fixed! You can now import the data.')
-            # Also disable error filter since there are no more errors
             request.session['show_errors_only'] = False
             show_errors_only = False
         elif has_errors:
             messages.warning(request, f'Still found {error_count} error(s) on this page. Please fix all errors before importing.')
         else:
             messages.info(request, 'This page looks good, but there are still errors on other pages. Please check all pages.')
-    else:
-        # For regular navigation, maintain the cumulative error state
-        request.session['import_all_errors'] = all_errors or has_errors
-        all_errors = all_errors or has_errors
     
     # Set the context values after all processing is done
     context['show_errors_only'] = show_errors_only

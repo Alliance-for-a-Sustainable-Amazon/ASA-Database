@@ -3,8 +3,12 @@
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.views import LoginView
 from django.conf import settings
 from functools import wraps
+
+
+
 
 def is_guest_mode(request):
     """
@@ -59,3 +63,4 @@ def admin_required(view_func):
         return render(request, 'butterflies/auth/access_denied.html')
     
     return _wrapped_view
+

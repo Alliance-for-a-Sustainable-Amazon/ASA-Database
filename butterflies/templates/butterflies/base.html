@@ -17,7 +17,7 @@
     <script src="{% static 'butterflies/js/prevent-submit.js' %}"></script>
     <!-- Additional head content can be injected by templates -->
     {% block extra_head %}{% endblock %}
-    <!-- Language Switcher -->
+    <!-- Language Switcher 
     <div class="language-switcher">
         <form action="{% url 'set_language' %}" method="post">{% csrf_token %}
             <select name="language" onchange="this.form.submit()">
@@ -26,13 +26,23 @@
             </select>
         </form>
     </div>
+    -->
 </head>
 
 <body>
     <div class="header-container">
-        <h1>{% block header_link %}<a href="{% url 'report_table' %}" class="title-link">{% endblock header_link %}{% block header %}<img
-                    src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo"
-                    style="height: 50px;">{% endblock %}{% block header_link_close %}</a>{% endblock header_link_close %}</h1>
+        <h1>
+            {% block header_link %}
+            <a href="{% url 'report_table' %}" class="title-link">
+                {% endblock header_link %}
+                {% block header %}
+                <img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo"
+                    style="height: 50px;">
+                {% endblock %}
+                {% block header_link_close %}
+            </a>
+            {% endblock header_link_close %}
+        </h1>
     </div>
     <div>
         {% block content %}{% endblock %}
