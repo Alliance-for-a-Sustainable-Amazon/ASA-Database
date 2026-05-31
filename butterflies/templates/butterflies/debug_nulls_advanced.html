@@ -1,0 +1,217 @@
+{% extends "butterflies/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Advanced Debug View NULLs" %}{% endblock %}
+
+{% block header %}<img src="{% static 'butterflies/img/logo_ASA_curvas.jpg' %}" alt="ASA Logo" class="header-logo" style="height: 50px;">{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'butterflies/css/utilities.css' %}">
+<link rel="stylesheet" href="{% static 'butterflies/css/table-styles.css' %}">
+<link rel="stylesheet" href="{% static 'butterflies/css/pagination.css' %}">
+{% if supports_grid_view %}
+<link rel="stylesheet" href="{% static 'butterflies/css/grid-view.css' %}">
+{% endif %}
+
+<div class="d-flex align-items-center mb-3">
+  <h2 class="mb-0">{% trans "Advanced Debug View NULLs" %}</h2>
+  <div class="ml-3 text-muted" style="max-width: 500px;">
+    <p class="m-0">{% trans "Select fields below. This will find specimens where ANY of the selected fields have a true NULL value in the database." %}</p>
+  </div>
+</div>
+
+<div class="mb-3">
+  <a href="{% url 'dynamic_list' 'specimen' %}" class="btn btn-outline-secondary btn-sm">&larr; Back to Specimen Database</a>
+</div>
+
+{% if supports_grid_view %}
+<div class="view-toggle mb-3">
+  <span class="text-muted">{% trans "View:" %}</span>
+  <form method="post" class="view-toggle-form" style="display: inline-flex; align-items: center; gap: 5px;">
+    {% csrf_token %}
+    <input type="hidden" name="toggle_view_mode" value="1">
+    <button type="submit" name="view_mode" value="table" 
+            class="view-toggle-button {% if view_mode == 'table' %}active{% endif %}">
+      <svg class="view-toggle-icon" viewBox="0 0 24 24">
+        <path d="M3 3h18v4H3V3zm0 6h18v4H3V9zm0 6h18v4H3v-4z"/>
+      </svg>
+      {% trans "Table" %}
+    </button>
+    <button type="submit" name="view_mode" value="grid" 
+            class="view-toggle-button {% if view_mode == 'grid' %}active{% endif %}">
+      <svg class="view-toggle-icon" viewBox="0 0 24 24">
+        <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
+      </svg>
+      {% trans "Thumbnails" %}
+    </button>
+  </form>
+</div>
+{% endif %}
+
+<div class="mb-4">
+  <h3 class="mb-2">{% trans "Select Fields (OR Logic)" %}</h3>
+  <form method="get" class="filter-form" id="debugNullsForm">
+    
+    <div class="mb-2">
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="checkAll()">Check All</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="uncheckAll()">Uncheck All</button>
+    </div>
+
+    <div class="checkbox-grid">
+      {% for field in fields %}
+      <div class="checkbox-group">
+        <label class="custom-checkbox">
+          <input type="checkbox" name="check_{{ field.name }}" {% if field.name in selected_fields %}checked{% endif %}>
+          <span class="checkmark"></span>
+          {{ field.name }}
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="filter-controls mt-3">
+      <button type="submit" class="btn btn-primary">{% trans "Search for NULLs" %}</button>
+      <a href="?" class="btn btn-outline-secondary">{% trans "Clear" %}</a>
+    </div>
+  </form>
+</div>
+
+{# Results Count #}
+{% if request.GET %}
+<div class="results-summary mb-3">
+  <p class="font-bold">
+    {% blocktrans count counter=total_count %}
+      Found {{ counter }} specimen with NULLs
+    {% plural %}
+      Found {{ counter }} specimens with NULLs
+    {% endblocktrans %}
+  </p>
+</div>
+{% endif %}
+
+{% if has_filters and total_count %}
+  {% if view_mode == 'grid' %}
+  <div class="specimen-grid" id="guestGrid">
+    {% include "butterflies/partials/_debug_nulls_grid_page.html" with page_obj=page_obj debug_nulls=debug_nulls %}
+  </div>
+  {% else %}
+  <div class="specimen-list-container full-page">
+    <table class="concise-table table-hover">
+      <thead class="sticky-header">
+        <tr>
+          {% for field in fields %}
+          <th>{{ field.name }}</th>
+          {% endfor %}
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="guestTableBody">
+        {% include "butterflies/partials/_debug_nulls_table_page.html" with page_obj=page_obj debug_nulls=debug_nulls fields=fields %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% else %}
+  <div class="no-results alert alert-info">
+    {% if has_filters %}
+      <p>{% trans "No specimens match. There are no NULL values in the selected fields!" %}</p>
+    {% else %}
+      <p>{% trans "Select one or more fields above and search to find specimens with NULL values." %}</p>
+    {% endif %}
+  </div>
+{% endif %}
+
+<style>
+  .specimen-list-container {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: white;
+    position: relative;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .sticky-header th {
+    border-top: none;
+    padding: 12px 8px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  
+  .specimen-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .specimen-row:hover {
+    background-color: #f1f3f5 !important;
+  }
+  
+  .results-summary {
+    padding: 10px;
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+  }
+
+  /* Checkbox Grid Styles */
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    background: #f8f9fa;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+  }
+  
+  .checkbox-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin: 0;
+  }
+  
+  .checkbox-group input {
+    margin-right: 8px;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 40px;
+    margin: 20px 0;
+  }
+</style>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<script>
+  function checkAll() {
+    document.querySelectorAll('.checkbox-grid input[type="checkbox"]').forEach(cb => cb.checked = true);
+  }
+  
+  function uncheckAll() {
+    document.querySelectorAll('.checkbox-grid input[type="checkbox"]').forEach(cb => cb.checked = false);
+  }
+
+  document.addEventListener('click', function(e) {
+    const row = e.target.closest('.specimen-row');
+    if (!row) return;
+    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+    const link = row.querySelector('a[href]');
+    if (link) {
+      window.location.href = link.href;
+    }
+  });
+</script>
+
+{% endblock %}

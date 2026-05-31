@@ -2849,6 +2849,8 @@ def debug_bulk_delete_specimen_filtered(request):
             filtered_qs.delete()
             messages.success(request, f"Successfully deleted {count} filtered specimen records.")
             return redirect('dynamic_list', model_name='specimen')
+
+
         else:
             messages.error(request, "Confirmation text did not match. Deletion canceled.")
             return redirect('dynamic_list', model_name='specimen')
@@ -2996,3 +2998,121 @@ def guest_logout(request):
     
     messages.info(request, 'Guest session ended.')
     return redirect('/accounts/login/')
+
+@admin_required
+def debug_nulls_advanced(request):
+    """
+    Advanced debug view for finding specimens with NULL values.
+    Provides checkboxes for all fields using OR logic.
+    Requires admin privileges.
+    """
+    from django.db import models
+    model = Specimen
+    
+    # Get all fields
+    fields = [
+        {'name': field.name, 'verbose_name': getattr(field, 'verbose_name', field.name)}
+        for field in model._meta.fields
+        if field.name != 'id'
+    ]
+    # Move catalogNumber to front
+    fields = sorted(fields, key=lambda f: 0 if f['name'] == 'catalogNumber' else 1)
+    
+    # Handle view mode toggle
+    view_mode = request.session.get('guest_view_mode', 'table')
+    if request.method == 'POST' and 'toggle_view_mode' in request.POST:
+        new_view_mode = request.POST.get('view_mode', 'table')
+        request.session['guest_view_mode'] = new_view_mode
+        request.session.modified = True
+        return HttpResponseRedirect(request.get_full_path())
+        
+    # Find which checkboxes were selected
+    selected_fields = []
+    for field in fields:
+        if request.GET.get(f"check_{field['name']}") == 'on':
+            selected_fields.append(field['name'])
+            
+    # Base queryset optimized
+    specimens = Specimen.objects.select_related(
+        'locality', 
+        'recordedBy', 
+        'georeferencedBy', 
+        'identifiedBy'
+    )
+    
+    has_filters = len(selected_fields) > 0
+    
+    if has_filters:
+        # Build OR query for all selected fields
+        null_q = models.Q()
+        for field_name in selected_fields:
+            null_q |= models.Q(**{f"{field_name}__isnull": True})
+            
+        specimens = specimens.filter(null_q)
+        # Order by catalogNumber
+        specimens = specimens.order_by('-catalogNumber')
+    else:
+        specimens = Specimen.objects.none()
+        
+    # Pagination
+    per_page = 50 if view_mode == 'table' else 40
+    paginator = Paginator(specimens, per_page)
+    page = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages) if paginator.num_pages else paginator.page(1)
+
+    page_list = list(page_obj.object_list)
+
+    for specimen in page_list:
+        specimen.model_name_internal = 'specimen'
+
+    # Load images if grid view
+    if view_mode == 'grid':
+        catalog_numbers = [s.catalogNumber for s in page_list if s.catalogNumber]
+        if catalog_numbers:
+            batch_image_results = get_specimen_image_urls(catalog_numbers)
+        else:
+            batch_image_results = {}
+        for s in page_list:
+            s.dorsal_image_url = None
+            s.ventral_image_url = None
+            if s.catalogNumber in batch_image_results:
+                image_dict = batch_image_results[s.catalogNumber]
+                if image_dict.get('dorsal') and image_dict['dorsal'] != 'no data':
+                    s.dorsal_image_url = image_dict['dorsal']
+                if image_dict.get('ventral') and image_dict['ventral'] != 'no data':
+                    s.ventral_image_url = image_dict['ventral']
+
+    total_count = paginator.count
+    debug_nulls = True  # Bypass dot_if_none filter in table view
+
+    # HTMX partial responses for infinite scroll
+    is_htmx = request.headers.get('HX-Request', '').lower() == 'true'
+    if is_htmx:
+        template_name = (
+            'butterflies/partials/_debug_nulls_grid_page.html'
+            if view_mode == 'grid'
+            else 'butterflies/partials/_debug_nulls_table_page.html'
+        )
+        return render(request, template_name, {
+            'page_obj': page_obj,
+            'view_mode': view_mode,
+            'has_filters': has_filters,
+            'debug_nulls': debug_nulls,
+            'fields': fields,
+        })
+
+    return render(request, 'butterflies/debug_nulls_advanced.html', {
+        'page_obj': page_obj,
+        'view_mode': view_mode,
+        'supports_grid_view': True,
+        'has_filters': has_filters,
+        'total_count': total_count,
+        'fields': fields,
+        'selected_fields': selected_fields,
+        'debug_nulls': debug_nulls,
+    })

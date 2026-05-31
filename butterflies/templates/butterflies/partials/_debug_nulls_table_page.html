@@ -1,0 +1,35 @@
+{% load i18n %}
+{% load butterfly_extras %}
+
+{% for specimen in page_obj.object_list %}
+<tr class="specimen-row" data-catalog="{{ specimen.catalogNumber }}">
+  {% for field in fields %}
+    {% with value=specimen|get_field_value:field.name %}
+      {% if forloop.first %}
+        <td title="{{ value }}" class="font-mono">
+          <a href="{% url 'dynamic_detail' 'specimen' specimen.catalogNumber %}?from={% url 'debug_nulls_advanced' %}{% if request.GET.urlencode %}%3F{{ request.GET.urlencode|urlencode }}{% endif %}">
+            {% if value is None %}[NULL]{% elif value == '' %}[EMPTY]{% else %}{{ value }}{% endif %}
+          </a>
+        </td>
+      {% else %}
+        <td title="{{ value }}">
+          {% if value is None %}[NULL]{% elif value == '' %}[EMPTY]{% else %}{{ value }}{% endif %}
+        </td>
+      {% endif %}
+    {% endwith %}
+  {% endfor %}
+  <td>
+    <a href="{% url 'dynamic_detail' 'specimen' specimen.catalogNumber %}?from={% url 'debug_nulls_advanced' %}{% if request.GET.urlencode %}%3F{{ request.GET.urlencode|urlencode }}{% endif %}" class="btn btn-sm btn-info">{% trans "View" %}</a>
+  </td>
+</tr>
+{% endfor %}
+
+{% if page_obj.has_next %}
+<tr class="infinite-scroll-trigger"
+    hx-get="{% url 'debug_nulls_advanced' %}?page={{ page_obj.next_page_number }}"
+    hx-trigger="revealed"
+    hx-swap="outerHTML"
+    hx-include="#debugNullsForm">
+  <td colspan="{{ fields|length|add:1 }}" class="text-center text-muted">{% trans "Loading more…" %}</td>
+</tr>
+{% endif %}

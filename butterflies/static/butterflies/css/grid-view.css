@@ -158,21 +158,23 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #6c757d;
+    color: #a0aab2;
+    background: #f8f9fa;
     text-align: center;
     padding: 20px;
 }
 
 .specimen-no-image-icon {
-    width: 48px;
-    height: 48px;
-    margin-bottom: 8px;
-    opacity: 0.5;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
+    opacity: 0.4;
 }
 
 .specimen-no-image-text {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
+    letter-spacing: 0.3px;
 }
 
 .specimen-grid-info {

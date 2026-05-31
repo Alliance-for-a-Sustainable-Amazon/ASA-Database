@@ -36,7 +36,7 @@
           </a>
         {% endwith %}
         <span class="mx-2">|</span>
-        <a href="?debug_nulls=true" class="text-warning">
+        <a href="{% url 'debug_nulls_advanced' %}" class="text-warning">
           {% trans "Debug View NULLs" %}
         </a>
       {% endwith %}
