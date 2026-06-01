@@ -46,7 +46,15 @@
     </p>
     <div class="specimen-grid-details">
       {% if obj.locality %}
-        {{ obj.locality.localityCode|dot_if_none }}
+        {% if obj.locality.region and obj.locality.country %}
+          {{ obj.locality.region }}, {{ obj.locality.country }}
+        {% elif obj.locality.region %}
+          {{ obj.locality.region }}
+        {% elif obj.locality.country %}
+          {{ obj.locality.country }}
+        {% else %}
+          {{ obj.locality.localityCode|dot_if_none }}
+        {% endif %}
       {% endif %}
       {% if obj.eventDate %}
         {% if obj.locality %} • {% endif %}{{ obj.eventDate|dot_if_none }}
